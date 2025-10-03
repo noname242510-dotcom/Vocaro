@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Confetti } from '@/components/confetti';
 import { useFirebase } from '@/firebase';
-import { collection, doc, getDoc, getDocs, query, where, documentId } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, documentId, addDoc, serverTimestamp } from 'firebase/firestore';
 import type { VocabularyItem } from '@/lib/types';
 
 
@@ -115,14 +115,27 @@ export default function LearnPage() {
   
   const progress = vocabulary.length > 0 ? ((currentIndex) / vocabulary.length) * 100 : 0;
 
-  const handleAnswer = (knewIt: boolean) => {
-    if (!isFlipped) return;
+    const handleAnswer = async (knewIt: boolean) => {
+    if (!isFlipped || !user || !firestore) return;
     const currentCard = vocabulary[currentIndex];
 
     if (knewIt) {
       setCorrectAnswers(prev => prev + 1);
     } else {
       setIncorrectAnswers(prev => [...prev, currentCard]);
+      try {
+        const sessionVocabRef = collection(firestore, 'users', user.uid, 'learningSessionVocabulary');
+        await addDoc(sessionVocabRef, {
+            userId: user.uid,
+            vocabularyId: currentCard.id,
+            subjectId: subjectId,
+            stackId: currentCard.stackId, // Assuming stackId is on the vocab item
+            lastAnswered: serverTimestamp(),
+            correct: false
+        });
+      } catch (error) {
+          console.error("Error saving incorrect answer:", error);
+      }
     }
 
     if (currentIndex + 1 < vocabulary.length) {
@@ -130,9 +143,13 @@ export default function LearnPage() {
       setIsFlipped(false);
       setIsNewCard(true);
     } else {
-      // If there are incorrect answers, reshuffle them and continue
-      if (incorrectAnswers.length > 0) {
-          setVocabulary(shuffleArray(incorrectAnswers));
+        const remainingIncorrect = incorrectAnswers.filter(item => item.id !== currentCard.id);
+        if (!knewIt) {
+            remainingIncorrect.push(currentCard);
+        }
+
+        if (remainingIncorrect.length > 0) {
+          setVocabulary(shuffleArray(remainingIncorrect));
           setIncorrectAnswers([]);
           setCurrentIndex(0);
           setIsFlipped(false);
@@ -148,7 +165,7 @@ export default function LearnPage() {
     window.location.reload();
   };
   
-  const score = vocabulary.length > 0 ? Math.round((correctAnswers / vocabulary.length) * 100) : 0;
+  const score = vocabulary.length > 0 ? Math.round((correctAnswers / (correctAnswers + incorrectAnswers.length)) * 100) : 0;
   
   const handleBackToSelection = () => {
     if (subjectId) {
@@ -181,14 +198,16 @@ export default function LearnPage() {
 
 
   if (showResults) {
+    const totalAnswered = correctAnswers + incorrectAnswers.length;
+    const finalScore = totalAnswered > 0 ? Math.round((correctAnswers / totalAnswered) * 100) : 0;
     return (
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
-            <Confetti active={score >= 90} />
+            <Confetti active={finalScore >= 90} />
             <h1 className="text-4xl font-bold font-headline mb-4">Sitzung beendet!</h1>
-            <p className="text-7xl font-bold mb-4">{score}%</p>
+            <p className="text-7xl font-bold mb-4">{finalScore}%</p>
             <div className="flex gap-8 text-lg mb-8">
                 <p><span className="font-bold text-green-500">{correctAnswers}</span> Richtig</p>
-                <p><span className="font-bold text-red-500">{vocabulary.length - correctAnswers}</span> Falsch</p>
+                <p><span className="font-bold text-red-500">{incorrectAnswers.length}</span> Falsch</p>
             </div>
             <div className="flex gap-4">
                 <Button onClick={resetSession} size="lg"><RotateCcw className="mr-2 h-4 w-4" /> Nochmal versuchen</Button>
@@ -212,18 +231,18 @@ export default function LearnPage() {
       <div className="w-full max-w-2xl [perspective:1000px]">
         <Card
           className={cn(
-            "h-80 w-full transition-transform duration-700 [transform-style:preserve-3d]",
+            "h-80 w-full transition-transform duration-700 [transform-style:preserve-3d] shadow-lg",
             isFlipped && "[transform:rotateY(180deg)]",
             isNewCard && 'animate-pop-in'
           )}
           onClick={() => setIsFlipped(!isFlipped)}
         >
           {/* Front of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6">
+          <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6 bg-card rounded-2xl">
             <p className="text-4xl font-bold text-center font-headline">{currentCard.term}</p>
           </div>
           {/* Back of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-6 bg-card">
+          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-6 bg-card rounded-2xl">
             <p className="text-4xl font-bold text-center font-headline">{currentCard.definition}</p>
             {currentCard.notes && (
                 <p className="text-lg text-center text-muted-foreground mt-4">{currentCard.notes}</p>
@@ -249,3 +268,11 @@ export default function LearnPage() {
     </div>
   );
 }
+
+declare module '@/lib/types' {
+    interface VocabularyItem {
+        stackId?: string;
+    }
+}
+
+    

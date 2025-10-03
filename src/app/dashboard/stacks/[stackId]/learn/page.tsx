@@ -203,17 +203,17 @@ export default function LearnPage() {
       <div className="w-full max-w-2xl [perspective:1000px]">
         <Card
           className={cn(
-            "h-80 w-full transition-transform duration-700 [transform-style:preserve-3d]",
+            "h-80 w-full transition-transform duration-700 [transform-style:preserve-3d] shadow-lg",
             isFlipped && "[transform:rotateY(180deg)]"
           )}
           onClick={() => setIsFlipped(!isFlipped)}
         >
           {/* Front of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6">
+          <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6 bg-card rounded-2xl">
             <p className="text-4xl font-bold text-center font-headline">{currentCard.term}</p>
           </div>
           {/* Back of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-6 bg-card">
+          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-6 bg-card rounded-2xl">
             <p className="text-4xl font-bold text-center font-headline">{currentCard.definition}</p>
             {currentCard.notes && (
                 <p className="text-lg text-center text-muted-foreground mt-4">{currentCard.notes}</p>
@@ -239,3 +239,6 @@ export default function LearnPage() {
     </div>
   );
 }
+
+
+    
