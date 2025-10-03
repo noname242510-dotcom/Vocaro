@@ -276,7 +276,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
                             <Image src={previewImage} alt="Vorschau" layout="fill" objectFit="contain" className="rounded-md" />
                           </div>
                         )}
-                        <Button onClick={handleExtractVocabulary} disabled={!isExtracting || !previewImage}>
+                        <Button onClick={handleExtractVocabulary} disabled={isExtracting || !previewImage}>
                           {isExtracting ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : (
