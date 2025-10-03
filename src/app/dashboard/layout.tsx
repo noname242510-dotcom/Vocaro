@@ -61,7 +61,7 @@ export default function DashboardLayout({
       </header>
 
       {/* Side Menu */}
-      <div className={`fixed top-4 right-4 h-auto bottom-4 w-72 bg-card text-card-foreground shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'} rounded-2xl`}>
+      <div className={`fixed top-4 right-4 h-[calc(100%-2rem)] w-72 bg-card text-card-foreground shadow-2xl z-[100] transform transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-[calc(100%+2rem)]'} rounded-2xl`}>
         <div className="flex flex-col h-full p-6">
           <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(false)} className="self-end mb-8">
             <Menu className="h-5 w-5" />
@@ -106,7 +106,7 @@ export default function DashboardLayout({
        {/* Overlay */}
        {isMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black/30 z-40" 
+          className="fixed inset-0 bg-black/30 z-50" 
           onClick={() => setIsMenuOpen(false)}
         />
       )}
