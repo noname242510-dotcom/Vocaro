@@ -130,7 +130,7 @@ export default function SettingsPage() {
                 </Label>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Deutsches Wort</span>
-                    <Switch id="query-direction-overview" className="data-[state=checked]:bg-input data-[state=unchecked]:bg-input [&>span]:data-[state=checked]:bg-primary [&>span]:data-[state=unchecked]:bg-primary" />
+                    <Switch id="query-direction-overview" className="data-[state=checked]:bg-input data-[state=unchecked]:bg-input [&>span]:bg-background" />
                     <span className="text-sm text-muted-foreground">Fremdwort</span>
                 </div>
               </div>
@@ -140,7 +140,7 @@ export default function SettingsPage() {
                 </Label>
                  <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Deutsches Wort</span>
-                    <Switch id="query-direction-flashcards" className="data-[state=checked]:bg-input data-[state=unchecked]:bg-input [&>span]:data-[state=checked]:bg-primary [&>span]:data-[state=unchecked]:bg-primary" />
+                    <Switch id="query-direction-flashcards" className="data-[state=checked]:bg-input data-[state=unchecked]:bg-input [&>span]:bg-background" />
                     <span className="text-sm text-muted-foreground">Fremdwort</span>
                 </div>
               </div>
