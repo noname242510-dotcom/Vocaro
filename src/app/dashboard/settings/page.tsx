@@ -55,34 +55,6 @@ export default function SettingsPage() {
         <div className="grid gap-8 max-w-2xl w-full">
           <Card>
             <CardHeader>
-              <CardTitle>Wiederholung</CardTitle>
-              <CardDescription>Verwalte deine Lern- und Wiederholungseinstellungen.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="repetition-timeframe" className="flex flex-col space-y-1">
-                  <span>Wiederholungszeitraum</span>
-                  <span className="font-normal leading-snug text-muted-foreground">
-                    Falsch beantwortete Wörter aus diesem Zeitraum einbeziehen.
-                  </span>
-                </Label>
-                <Select defaultValue={settings.quiz.repetitionTimeframe}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Zeitraum auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="24h">Letzte 24 Stunden</SelectItem>
-                    <SelectItem value="7d">Letzte 7 Tage</SelectItem>
-                    <SelectItem value="30d">Letzte 30 Tage</SelectItem>
-                    <SelectItem value="all">Gesamte Zeit</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle>Erscheinungsbild</CardTitle>
               <CardDescription>Passe an, wie Vocaro aussieht.</CardDescription>
             </CardHeader>
@@ -113,6 +85,34 @@ export default function SettingsPage() {
                   </span>
                 </Label>
                 <Switch id="confetti-mode" defaultChecked={settings.quiz.enableConfetti} />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Wiederholung</CardTitle>
+              <CardDescription>Verwalte deine Lern- und Wiederholungseinstellungen.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="repetition-timeframe" className="flex flex-col space-y-1">
+                  <span>Wiederholungszeitraum</span>
+                  <span className="font-normal leading-snug text-muted-foreground">
+                    Falsch beantwortete Wörter aus diesem Zeitraum einbeziehen.
+                  </span>
+                </Label>
+                <Select defaultValue={settings.quiz.repetitionTimeframe}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Zeitraum auswählen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="24h">Letzte 24 Stunden</SelectItem>
+                    <SelectItem value="7d">Letzte 7 Tage</SelectItem>
+                    <SelectItem value="30d">Letzte 30 Tage</SelectItem>
+                    <SelectItem value="all">Gesamte Zeit</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
