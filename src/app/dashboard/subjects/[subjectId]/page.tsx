@@ -45,8 +45,17 @@ import { suggestVocabularyFromImageContext } from '@/ai/flows/suggest-vocabulary
 import { generateVocabularyFromExtractedText } from '@/ai/flows/generate-vocabulary-from-extracted-text';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, addDoc, writeBatch, serverTimestamp, getDocs } from 'firebase/firestore';
+import { doc, collection, addDoc, writeBatch, serverTimestamp, getDocs, updateDoc } from 'firebase/firestore';
 import { StackItem } from './_components/stack-item';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 export default function SubjectDetailPage() {
@@ -64,6 +73,9 @@ export default function SubjectDetailPage() {
   const [manualNotes, setManualNotes] = useState('');
   const [isAddingManually, setIsAddingManually] = useState(false);
   const [isOcrDialogOpen, setIsOcrDialogOpen] = useState(false);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [renamedSubjectName, setRenamedSubjectName] = useState('');
   const { toast } = useToast();
 
   const subjectDocRef = useMemoFirebase(() => {
@@ -71,7 +83,7 @@ export default function SubjectDetailPage() {
     return doc(firestore, 'users', user.uid, 'subjects', subjectId);
   }, [firestore, user, subjectId]);
 
-  const { data: subject, isLoading: isSubjectLoading } = useDoc<Subject>(subjectDocRef);
+  const { data: subject, isLoading: isSubjectLoading, forceUpdate: forceSubjectUpdate } = useDoc<Subject>(subjectDocRef);
 
   const stacksCollectionRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -79,6 +91,12 @@ export default function SubjectDetailPage() {
   }, [firestore, user, subjectId]);
 
   const { data: stacks, isLoading: areStacksLoading, forceUpdate } = useCollection<Stack>(stacksCollectionRef);
+
+  useEffect(() => {
+    if (subject) {
+      setRenamedSubjectName(subject.name);
+    }
+  }, [subject]);
 
   useEffect(() => {
     if (stacks && firestore && user) {
@@ -94,6 +112,67 @@ export default function SubjectDetailPage() {
         fetchAllVocab();
     }
 }, [stacks, firestore, user, subjectId, forceUpdate]);
+
+
+  const getEmojiForSubject = (subjectName: string) => {
+    const name = subjectName.toLowerCase();
+    if (name.includes('deutsch')) return '🇩🇪';
+    if (name.includes('englisch')) return '🇬🇧';
+    if (name.includes('französisch')) return '🇫🇷';
+    if (name.includes('spanisch')) return '🇪🇸';
+    if (name.includes('portugiesisch')) return '🇵🇹';
+    if (name.includes('italienisch')) return '🇮🇹';
+    if (name.includes('russich')) return '🇷🇺';
+    if (name.includes('griechiesch')) return '🇬🇷';
+    if (name.includes('japanisch')) return '🇯🇵';
+    if (name.includes('latein')) return '🏛️';
+    if (name.includes('mathe')) return '🔢';
+    return '🌐';
+  };
+
+  const handleRenameSubject = async () => {
+    if (renamedSubjectName.trim() && user && firestore && subjectDocRef) {
+      const newEmoji = getEmojiForSubject(renamedSubjectName);
+      await updateDoc(subjectDocRef, {
+        name: renamedSubjectName.trim(),
+        emoji: newEmoji,
+      });
+      setIsRenameDialogOpen(false);
+      forceSubjectUpdate();
+      toast({ title: 'Erfolg', description: 'Fach umbenannt.' });
+    }
+  };
+
+  const handleDeleteSubject = async () => {
+    if (!user || !firestore || !subjectDocRef) return;
+    
+    try {
+      const batch = writeBatch(firestore);
+      
+      // Delete all vocab in all stacks
+      if (stacks) {
+        for (const stack of stacks) {
+          const stackDocRef = doc(stacksCollectionRef!, stack.id);
+          const vocabSnapshot = await getDocs(collection(stackDocRef, 'vocabulary'));
+          vocabSnapshot.forEach(vocabDoc => batch.delete(vocabDoc.ref));
+          batch.delete(stackDocRef);
+        }
+      }
+      
+      // Delete the subject itself
+      batch.delete(subjectDocRef);
+
+      await batch.commit();
+      
+      toast({ title: 'Erfolg', description: `Fach "${subject?.name}" wurde gelöscht.` });
+      router.push('/dashboard');
+
+    } catch (error) {
+      console.error('Error deleting subject:', error);
+      toast({ variant: 'destructive', title: 'Fehler beim Löschen', description: 'Das Fach konnte nicht gelöscht werden.' });
+    }
+    setIsDeleteDialogOpen(false);
+  };
 
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -287,12 +366,57 @@ export default function SubjectDetailPage() {
           <span className="text-3xl md:text-4xl">{subject.emoji}</span>
           <h1 className="text-xl md:text-2xl font-bold font-headline truncate">{subject.name}</h1>
           <div className="hidden md:flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-              <Pen className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                  <Pen className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Fach umbenennen</DialogTitle>
+                  <DialogDescription>
+                    Geben Sie einen neuen Namen für das Fach &quot;{subject?.name}&quot; ein.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="rename-name" className="text-right">Name</Label>
+                    <Input
+                      id="rename-name"
+                      value={renamedSubjectName}
+                      onChange={(e) => setRenamedSubjectName(e.target.value)}
+                      className="col-span-3"
+                      onKeyDown={(e) => e.key === 'Enter' && handleRenameSubject()}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>Abbrechen</Button>
+                  <Button onClick={handleRenameSubject}>Speichern</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird das Fach und alle zugehörigen Stapel und Vokabeln dauerhaft gelöscht.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteSubject}>Löschen</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -422,3 +546,5 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
+    
