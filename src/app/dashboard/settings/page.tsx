@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useFirebase } from "@/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useFirebase();
@@ -26,7 +27,7 @@ export default function SettingsPage() {
 
   const handleFontChange = (newFont: string) => {
     if (typeof window !== 'undefined') {
-        document.body.classList.remove(font);
+        document.body.classList.remove('font-body', 'font-creative', 'font-code');
         document.body.classList.add(newFont);
         localStorage.setItem('app-font', newFont);
     }
@@ -129,7 +130,7 @@ export default function SettingsPage() {
                 </Label>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Deutsches Wort</span>
-                    <Switch id="query-direction-overview" />
+                    <Switch id="query-direction-overview" className="data-[state=checked]:bg-input data-[state=unchecked]:bg-input [&>span]:data-[state=checked]:bg-primary [&>span]:data-[state=unchecked]:bg-primary" />
                     <span className="text-sm text-muted-foreground">Fremdwort</span>
                 </div>
               </div>
@@ -139,7 +140,7 @@ export default function SettingsPage() {
                 </Label>
                  <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Deutsches Wort</span>
-                    <Switch id="query-direction-flashcards" />
+                    <Switch id="query-direction-flashcards" className="data-[state=checked]:bg-input data-[state=unchecked]:bg-input [&>span]:data-[state=checked]:bg-primary [&>span]:data-[state=unchecked]:bg-primary" />
                     <span className="text-sm text-muted-foreground">Fremdwort</span>
                 </div>
               </div>
