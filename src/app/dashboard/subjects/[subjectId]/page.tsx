@@ -615,7 +615,7 @@ export default function SubjectDetailPage() {
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="picture">Bild</Label>
-                          <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" disabled={isProcessingOcr} />
+                          <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" disabled={isProcessingOcr} multiple />
                         </div>
 
                         {isProcessingOcr ? (
