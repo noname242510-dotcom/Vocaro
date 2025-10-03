@@ -8,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useFirebase } from "@/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ArrowRightLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
@@ -170,22 +172,19 @@ export default function SettingsPage() {
               </div>
                <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="query-direction-flashcards">
-                  Abfragerichtung Karteikarten
+                  Abgefragtes Wort Karteikarten
                 </Label>
                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Deutsches Wort</span>
-                    <Switch 
-                      id="query-direction-flashcards" 
-                      className="data-[state=checked]:bg-input data-[state=unchecked]:bg-input [&>span]:bg-background"
-                      checked={queryDirectionFlashcards}
-                      onCheckedChange={handleQueryDirectionFlashcardsChange}
-                    />
-                    <span className="text-sm text-muted-foreground">Fremdwort</span>
+                    <span className={cn("text-sm transition-colors", !queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsches Wort</span>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQueryDirectionFlashcardsChange(!queryDirectionFlashcards)}>
+                        <ArrowRightLeft className="h-4 w-4"/>
+                    </Button>
+                    <span className={cn("text-sm transition-colors", queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort</span>
                 </div>
               </div>
               <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="show-hints">
-                  Hinweise auf der Rückseite
+                  <span>Hinweise auf der Rückseite</span>
                 </Label>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">ausblenden</span>
