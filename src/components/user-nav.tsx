@@ -29,7 +29,7 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Username</p>
+            <p className="text-sm font-medium leading-none">Benutzername</p>
             <p className="text-xs leading-none text-muted-foreground">
               user@example.com
             </p>
@@ -39,13 +39,13 @@ export function UserNav() {
         <DropdownMenuGroup>
           <Link href="/dashboard/settings">
             <DropdownMenuItem>
-              Settings
+              Einstellungen
             </DropdownMenuItem>
           </Link>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/")}>
-          Log out
+          Abmelden
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

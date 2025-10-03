@@ -10,41 +10,41 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold font-headline">Settings</h1>
-        <p className="text-muted-foreground">Customize your Vocaro experience.</p>
+        <h1 className="text-3xl font-bold font-headline">Einstellungen</h1>
+        <p className="text-muted-foreground">Passe dein Vocaro-Erlebnis an.</p>
       </div>
 
       <div className="grid gap-8 max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle>Quiz</CardTitle>
-            <CardDescription>Manage your learning and repetition settings.</CardDescription>
+            <CardDescription>Verwalte deine Lern- und Wiederholungseinstellungen.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="repetition-timeframe" className="flex flex-col space-y-1">
-                <span>Repetition Timeframe</span>
+                <span>Wiederholungszeitraum</span>
                 <span className="font-normal leading-snug text-muted-foreground">
-                  Include words you answered incorrectly within this period.
+                  Falsch beantwortete Wörter aus diesem Zeitraum einbeziehen.
                 </span>
               </Label>
               <Select defaultValue={settings.quiz.repetitionTimeframe}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select timeframe" />
+                  <SelectValue placeholder="Zeitraum auswählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="24h">Last 24 hours</SelectItem>
-                  <SelectItem value="7d">Last 7 days</SelectItem>
-                  <SelectItem value="30d">Last 30 days</SelectItem>
-                  <SelectItem value="all">All time</SelectItem>
+                  <SelectItem value="24h">Letzte 24 Stunden</SelectItem>
+                  <SelectItem value="7d">Letzte 7 Tage</SelectItem>
+                  <SelectItem value="30d">Letzte 30 Tage</SelectItem>
+                  <SelectItem value="all">Gesamte Zeit</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="confetti-mode" className="flex flex-col space-y-1">
-                <span>Victory Confetti</span>
+                <span>Sieges-Konfetti</span>
                 <span className="font-normal leading-snug text-muted-foreground">
-                  Enable a confetti animation for high scores.
+                  Aktiviere eine Konfetti-Animation für hohe Punktzahlen.
                 </span>
               </Label>
               <Switch id="confetti-mode" defaultChecked={settings.quiz.enableConfetti} />
@@ -54,20 +54,20 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Appearance</CardTitle>
-            <CardDescription>Customize how Vocaro looks and feels.</CardDescription>
+            <CardTitle>Erscheinungsbild</CardTitle>
+            <CardDescription>Passe an, wie Vocaro aussieht und sich anfühlt.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="font-selection" className="flex flex-col space-y-1">
-                <span>Font</span>
+                <span>Schriftart</span>
                 <span className="font-normal leading-snug text-muted-foreground">
-                  Choose the primary font for the application.
+                  Wähle die primäre Schriftart für die Anwendung.
                 </span>
               </Label>
               <Select defaultValue={settings.appearance.font}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select font" />
+                  <SelectValue placeholder="Schriftart auswählen" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="pt-sans">PT Sans</SelectItem>
@@ -78,18 +78,18 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="theme" className="flex flex-col space-y-1">
-                <span>Theme</span>
+                <span>Thema</span>
                 <span className="font-normal leading-snug text-muted-foreground">
-                  Choose between light, dark, or system default theme.
+                  Wähle zwischen hellem, dunklem oder System-Standardthema.
                 </span>
               </Label>
               <Select defaultValue={settings.appearance.theme}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select theme" />
+                  <SelectValue placeholder="Thema auswählen" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="light">Hell</SelectItem>
+                  <SelectItem value="dark">Dunkel</SelectItem>
                   <SelectItem value="system">System</SelectItem>
                 </SelectContent>
               </Select>

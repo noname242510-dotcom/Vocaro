@@ -11,8 +11,8 @@ export default function LoginPage() {
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader className="text-center">
           <Logo className="mx-auto mb-4" />
-          <CardTitle className="text-2xl font-headline">Welcome to Vocaro</CardTitle>
-          <CardDescription>Enter your email below to login to your account</CardDescription>
+          <CardTitle className="text-2xl font-headline">Willkommen bei Vocaro</CardTitle>
+          <CardDescription>Geben Sie Ihre E-Mail-Adresse unten ein, um sich bei Ihrem Konto anzumelden</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
@@ -22,24 +22,24 @@ export default function LoginPage() {
             </div>
             <div className="grid gap-2">
               <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Passwort</Label>
                 <Link href="/forgot-password" className="ml-auto inline-block text-sm underline">
-                  Forgot your password?
+                  Passwort vergessen?
                 </Link>
               </div>
               <Input id="password" type="password" required />
             </div>
             <Button type="submit" className="w-full">
-              Login
+              Anmelden
             </Button>
             <Button variant="outline" className="w-full">
-              Login with Google
+              Mit Google anmelden
             </Button>
           </div>
           <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
+            Sie haben noch kein Konto?{" "}
             <Link href="/signup" className="underline">
-              Sign up
+              Registrieren
             </Link>
           </div>
         </CardContent>

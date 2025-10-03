@@ -9,25 +9,25 @@ export default function RepetitionPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Repetition</h1>
-          <p className="text-muted-foreground">Review terms you've struggled with.</p>
+          <h1 className="text-3xl font-bold font-headline">Wiederholung</h1>
+          <p className="text-muted-foreground">Überprüfe Begriffe, mit denen du Schwierigkeiten hattest.</p>
         </div>
       </div>
 
       <Card className="max-w-2xl mx-auto">
         <CardHeader className="text-center">
             <Zap className="mx-auto h-12 w-12 text-primary mb-4" />
-          <CardTitle>Ready to Practice?</CardTitle>
+          <CardTitle>Bereit zum Üben?</CardTitle>
           <CardDescription>
-            You have {incorrectCount} terms marked for repetition from the last 7 days.
+            Du hast {incorrectCount} Begriffe zur Wiederholung aus den letzten 7 Tagen markiert.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center">
             <p className="text-sm text-muted-foreground mb-4">
-                This session will focus on the words you previously answered incorrectly to help reinforce your memory.
+                Diese Sitzung konzentriert sich auf die Wörter, die du zuvor falsch beantwortet hast, um dein Gedächtnis zu stärken.
             </p>
           <Button size="lg">
-            <Clock className="mr-2 h-4 w-4" /> Start Repetition Session
+            <Clock className="mr-2 h-4 w-4" /> Wiederholungssitzung starten
           </Button>
         </CardContent>
       </Card>

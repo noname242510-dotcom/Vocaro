@@ -16,10 +16,10 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold font-headline">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back! Here are your subjects.</p>
+          <p className="text-muted-foreground">Willkommen zurück! Hier sind deine Fächer.</p>
         </div>
         <Button>
-          <Plus className="mr-2 h-4 w-4" /> Create Subject
+          <Plus className="mr-2 h-4 w-4" /> Fach erstellen
         </Button>
       </div>
 
@@ -36,8 +36,8 @@ export default function DashboardPage() {
                     </CardTitle>
                     <CardDescription>
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1.5"><ListTree className="h-3 w-3" /> {subject.stackCount} stacks</span>
-                        <span className="flex items-center gap-1.5"><BookCopy className="h-3 w-3" /> {subject.vocabCount} terms</span>
+                        <span className="flex items-center gap-1.5"><ListTree className="h-3 w-3" /> {subject.stackCount} Stapel</span>
+                        <span className="flex items-center gap-1.5"><BookCopy className="h-3 w-3" /> {subject.vocabCount} Begriffe</span>
                       </div>
                     </CardDescription>
                   </div>
@@ -49,15 +49,15 @@ export default function DashboardPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Rename</DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                    <DropdownMenuItem>Umbenennen</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Löschen</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             </CardHeader>
             <CardContent>
               <Button variant="secondary" className="w-full" asChild>
-                <Link href={`/dashboard/subjects/${subject.id}`}>View Subject</Link>
+                <Link href={`/dashboard/subjects/${subject.id}`}>Fach ansehen</Link>
               </Button>
             </CardContent>
           </Card>

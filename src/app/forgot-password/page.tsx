@@ -11,8 +11,8 @@ export default function ForgotPasswordPage() {
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader className="text-center">
           <Logo className="mx-auto mb-4" />
-          <CardTitle className="text-2xl font-headline">Forgot Password</CardTitle>
-          <CardDescription>Enter your email and we'll send you a link to reset your password.</CardDescription>
+          <CardTitle className="text-2xl font-headline">Passwort vergessen</CardTitle>
+          <CardDescription>Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen Ihres Passworts.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
@@ -21,13 +21,13 @@ export default function ForgotPasswordPage() {
               <Input id="email" type="email" placeholder="m@example.com" required />
             </div>
             <Button type="submit" className="w-full">
-              Send Reset Link
+              Link zum Zurücksetzen senden
             </Button>
           </div>
           <div className="mt-4 text-center text-sm">
-            Remember your password?{" "}
+            Erinnern Sie sich an Ihr Passwort?{" "}
             <Link href="/" className="underline">
-              Log in
+              Anmelden
             </Link>
           </div>
         </CardContent>

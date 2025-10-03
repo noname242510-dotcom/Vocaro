@@ -30,7 +30,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
   const ocrImage = PlaceHolderImages[0];
 
   if (!subject) {
-    return <div>Subject not found</div>;
+    return <div>Fach nicht gefunden</div>;
   }
 
   return (
@@ -40,55 +40,55 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
           <span className="text-5xl">{subject.emoji}</span>
           <div>
             <h1 className="text-3xl font-bold font-headline">{subject.name}</h1>
-            <p className="text-muted-foreground">Manage your vocabulary stacks for this subject.</p>
+            <p className="text-muted-foreground">Verwalte deine Vokabelstapel für dieses Fach.</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">Create Stack</Button>
+          <Button variant="outline">Stapel erstellen</Button>
           <Dialog>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="mr-2 h-4 w-4" /> Add Vocabulary
+                <Plus className="mr-2 h-4 w-4" /> Vokabeln hinzufügen
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[625px]">
               <DialogHeader>
-                <DialogTitle>Add New Vocabulary</DialogTitle>
+                <DialogTitle>Neue Vokabeln hinzufügen</DialogTitle>
                 <DialogDescription>
-                  Add terms manually or upload an image to extract text with OCR.
+                  Füge Begriffe manuell hinzu oder lade ein Bild hoch, um Text mit OCR zu extrahieren.
                 </DialogDescription>
               </DialogHeader>
               <Tabs defaultValue="manual">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="manual"><Pen className="mr-2 h-4 w-4" />Manual</TabsTrigger>
-                  <TabsTrigger value="ocr"><Upload className="mr-2 h-4 w-4" />OCR from Image</TabsTrigger>
+                  <TabsTrigger value="manual"><Pen className="mr-2 h-4 w-4" />Manuell</TabsTrigger>
+                  <TabsTrigger value="ocr"><Upload className="mr-2 h-4 w-4" />OCR aus Bild</TabsTrigger>
                 </TabsList>
                 <TabsContent value="manual" className="pt-4">
                   <div className="grid gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="term">Term</Label>
-                      <Input id="term" placeholder="e.g., Photosynthesis" />
+                      <Label htmlFor="term">Begriff</Label>
+                      <Input id="term" placeholder="z.B., Fotosynthese" />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="definition">Definition</Label>
-                      <Textarea id="definition" placeholder="e.g., The process by which green plants use sunlight..." />
+                      <Textarea id="definition" placeholder="z.B., Der Prozess, bei dem grüne Pflanzen Sonnenlicht nutzen..." />
                     </div>
-                    <Button>Add Term</Button>
+                    <Button>Begriff hinzufügen</Button>
                   </div>
                 </TabsContent>
                 <TabsContent value="ocr" className="pt-4">
                   <div className="grid gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="picture">Image</Label>
+                      <Label htmlFor="picture">Bild</Label>
                       <Input id="picture" type="file" />
                     </div>
                     <div className="relative w-full h-64 rounded-md border border-dashed flex items-center justify-center bg-muted/40">
                       {ocrImage && (
                         <Image src={ocrImage.imageUrl} alt={ocrImage.description} layout="fill" objectFit="contain" className="rounded-md" data-ai-hint={ocrImage.imageHint} />
                       )}
-                      <p className="text-sm text-muted-foreground">Image preview</p>
+                      <p className="text-sm text-muted-foreground">Bildvorschau</p>
                     </div>
-                    <Button><Upload className="mr-2 h-4 w-4" /> Extract Vocabulary</Button>
+                    <Button><Upload className="mr-2 h-4 w-4" /> Vokabeln extrahieren</Button>
                   </div>
                 </TabsContent>
               </Tabs>
@@ -104,7 +104,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
               <div>
                 <CardTitle className="font-headline">{stack.name}</CardTitle>
                 <CardDescription className="flex items-center gap-4 mt-2 text-xs">
-                  <span className="flex items-center gap-1.5"><BookCopy className="h-3 w-3" /> {stack.vocabCount} terms</span>
+                  <span className="flex items-center gap-1.5"><BookCopy className="h-3 w-3" /> {stack.vocabCount} Begriffe</span>
                   {stack.lastStudied && <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> {stack.lastStudied}</span>}
                 </CardDescription>
               </div>
@@ -115,14 +115,14 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>Rename</DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                  <DropdownMenuItem>Umbenennen</DropdownMenuItem>
+                  <DropdownMenuItem className="text-destructive">Löschen</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </CardHeader>
             <CardContent className="flex-grow flex items-end">
               <Button className="w-full" asChild>
-                <Link href={`/dashboard/stacks/${stack.id}/learn`}><Zap className="mr-2 h-4 w-4"/> Start Learning</Link>
+                <Link href={`/dashboard/stacks/${stack.id}/learn`}><Zap className="mr-2 h-4 w-4"/> Lernen starten</Link>
               </Button>
             </CardContent>
           </Card>

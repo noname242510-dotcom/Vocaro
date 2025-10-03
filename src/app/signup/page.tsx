@@ -22,13 +22,22 @@ export default function SignUpPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth) {
+      console.error("Auth service is not available.");
+      toast({
+        variant: 'destructive',
+        title: 'Registrierung fehlgeschlagen',
+        description: 'Authentifizierungsdienst nicht verfügbar.',
+      });
+      return;
+    }
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Sign-up failed',
+        title: 'Registrierung fehlgeschlagen',
         description: error.message,
       });
     }
@@ -39,17 +48,17 @@ export default function SignUpPage() {
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader className="text-center">
           <Logo className="mx-auto mb-4" />
-          <CardTitle className="text-2xl font-headline">Create an account</CardTitle>
-          <CardDescription>Enter your information to create a new account</CardDescription>
+          <CardTitle className="text-2xl font-headline">Konto erstellen</CardTitle>
+          <CardDescription>Geben Sie Ihre Informationen ein, um ein neues Konto zu erstellen</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">Benutzername</Label>
                 <Input
                   id="username"
-                  placeholder="Your Name"
+                  placeholder="Ihr Name"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -67,7 +76,7 @@ export default function SignUpPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Passwort</Label>
                 <Input
                   id="password"
                   type="password"
@@ -77,14 +86,14 @@ export default function SignUpPage() {
                 />
               </div>
               <Button type="submit" className="w-full">
-                Create an account
+                Konto erstellen
               </Button>
             </div>
           </form>
           <div className="mt-4 text-center text-sm">
-            Already have an account?{' '}
+            Haben Sie bereits ein Konto?{' '}
             <Link href="/" className="underline">
-              Log in
+              Anmelden
             </Link>
           </div>
         </CardContent>

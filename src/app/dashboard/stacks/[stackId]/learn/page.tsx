@@ -53,16 +53,16 @@ export default function LearnPage({ params }: { params: { stackId: string } }) {
     return (
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
             <Confetti active={score >= 90} />
-            <h1 className="text-4xl font-bold font-headline mb-4">Session Complete!</h1>
+            <h1 className="text-4xl font-bold font-headline mb-4">Sitzung abgeschlossen!</h1>
             <p className="text-7xl font-bold mb-4">{score}%</p>
             <div className="flex gap-8 text-lg mb-8">
-                <p><span className="font-bold text-green-500">{correctAnswers}</span> Correct</p>
-                <p><span className="font-bold text-red-500">{incorrectAnswers}</span> Incorrect</p>
+                <p><span className="font-bold text-green-500">{correctAnswers}</span> Richtig</p>
+                <p><span className="font-bold text-red-500">{incorrectAnswers}</span> Falsch</p>
             </div>
             <div className="flex gap-4">
-                <Button onClick={resetSession} size="lg"><RotateCcw className="mr-2 h-4 w-4" /> Try Again</Button>
+                <Button onClick={resetSession} size="lg"><RotateCcw className="mr-2 h-4 w-4" /> Nochmal versuchen</Button>
                 <Button variant="outline" size="lg" asChild>
-                    <Link href="/dashboard">Back to Dashboard</Link>
+                    <Link href="/dashboard">Zurück zum Dashboard</Link>
                 </Button>
             </div>
         </div>
@@ -74,7 +74,7 @@ export default function LearnPage({ params }: { params: { stackId: string } }) {
       <div className="w-full max-w-2xl mb-8">
         <Progress value={progress} className="h-2" />
         <p className="text-sm text-muted-foreground text-center mt-2">
-          Card {currentIndex + 1} of {vocabulary.length}
+          Karte {currentIndex + 1} von {vocabulary.length}
         </p>
       </div>
 
@@ -96,10 +96,10 @@ export default function LearnPage({ params }: { params: { stackId: string } }) {
 
       <div className={cn("flex gap-4 mt-8 transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
         <Button variant="destructive" size="lg" className="w-40 h-16 text-lg" onClick={() => handleAnswer(false)}>
-          <X className="mr-2" /> I didn't know
+          <X className="mr-2" /> Wusste ich nicht
         </Button>
         <Button variant="secondary" size="lg" className="w-40 h-16 text-lg bg-green-600 hover:bg-green-700 text-white" onClick={() => handleAnswer(true)}>
-          <Check className="mr-2" /> I knew it
+          <Check className="mr-2" /> Wusste ich
         </Button>
       </div>
       

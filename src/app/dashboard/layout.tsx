@@ -40,18 +40,18 @@ export default function DashboardLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Repetition">
+              <SidebarMenuButton asChild tooltip="Wiederholung">
                 <Link href="/dashboard/repetition">
                   <Repeat />
-                  <span>Repetition</span>
+                  <span>Wiederholung</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Settings">
+              <SidebarMenuButton asChild tooltip="Einstellungen">
                 <Link href="/dashboard/settings">
                   <Settings />
-                  <span>Settings</span>
+                  <span>Einstellungen</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -60,7 +60,7 @@ export default function DashboardLayout({
         <SidebarFooter>
           <Button className="w-full" asChild>
             <Link href="/dashboard">
-              <Plus className="mr-2 h-4 w-4" /> New Subject
+              <Plus className="mr-2 h-4 w-4" /> Neues Fach
             </Link>
           </Button>
         </SidebarFooter>
@@ -72,7 +72,7 @@ export default function DashboardLayout({
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search..."
+              placeholder="Suchen..."
               className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
             />
           </div>
