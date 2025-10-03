@@ -232,15 +232,15 @@ export default function LearnPage() {
         </Card>
       </div>
       
-       <div className="h-16 mt-8 flex items-center">
+       <div className="w-full max-w-2xl h-16 mt-8 flex items-center justify-center">
           {!isFlipped && (
-            <Button size="lg" className="w-[336px]" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+            <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           )}
-          <div className={cn("flex gap-4 transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
-            <Button variant="outline" size="lg" className="w-40 text-base" onClick={() => handleAnswer(false)}>
+          <div className={cn("flex gap-4 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
+            <Button variant="outline" size="lg" className="w-full h-12 text-base" onClick={() => handleAnswer(false)}>
               <X className="mr-2 h-4 w-4" /> Wusste ich nicht
             </Button>
-            <Button variant="default" size="lg" className="w-40 text-base" onClick={() => handleAnswer(true)}>
+            <Button variant="default" size="lg" className="w-full h-12 text-base" onClick={() => handleAnswer(true)}>
               <Check className="mr-2 h-4 w-4" /> Wusste ich
             </Button>
           </div>
