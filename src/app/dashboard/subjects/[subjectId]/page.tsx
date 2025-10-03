@@ -78,6 +78,7 @@ export default function SubjectDetailPage() {
   const [isOcrDialogOpen, setIsOcrDialogOpen] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleteVocabDialogOpen, setIsDeleteVocabDialogOpen] = useState(false);
   const [renamedSubjectName, setRenamedSubjectName] = useState('');
   const { toast } = useToast();
 
@@ -101,20 +102,22 @@ export default function SubjectDetailPage() {
     }
   }, [subject]);
 
-  useEffect(() => {
+  const fetchAllVocab = async () => {
     if (stacks && firestore && user) {
-        const fetchAllVocab = async () => {
-            const vocabData: Record<string, VocabularyItem[]> = {};
-            for (const stack of stacks) {
-                const vocabCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stack.id, 'vocabulary');
-                const vocabSnapshot = await getDocs(vocabCollectionRef);
-                vocabData[stack.id] = vocabSnapshot.docs.map(d => ({ ...d.data(), id: d.id, isSelected: false } as VocabularyItem));
-            }
-            setAllVocabulary(vocabData);
-        };
-        fetchAllVocab();
+      const vocabData: Record<string, VocabularyItem[]> = {};
+      const currentSelection = new Set(selectedVocab);
+      for (const stack of stacks) {
+        const vocabCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stack.id, 'vocabulary');
+        const vocabSnapshot = await getDocs(vocabCollectionRef);
+        vocabData[stack.id] = vocabSnapshot.docs.map(d => ({ ...d.data(), id: d.id, isSelected: currentSelection.has(d.id) } as VocabularyItem));
+      }
+      setAllVocabulary(vocabData);
     }
-}, [stacks, firestore, user, subjectId, forceUpdate]);
+  };
+
+  useEffect(() => {
+    fetchAllVocab();
+  }, [stacks, firestore, user, subjectId]);
 
 
   const getEmojiForSubject = (subjectName: string) => {
@@ -147,22 +150,20 @@ export default function SubjectDetailPage() {
   };
 
   const handleDeleteSubject = async () => {
-    if (!user || !firestore || !subjectDocRef) return;
+    if (!user || !firestore || !subjectDocRef || !stacksCollectionRef) return;
     
     try {
       const batch = writeBatch(firestore);
       
-      // Delete all vocab in all stacks
       if (stacks) {
         for (const stack of stacks) {
-          const stackDocRef = doc(stacksCollectionRef!, stack.id);
+          const stackDocRef = doc(stacksCollectionRef, stack.id);
           const vocabSnapshot = await getDocs(collection(stackDocRef, 'vocabulary'));
           vocabSnapshot.forEach(vocabDoc => batch.delete(vocabDoc.ref));
           batch.delete(stackDocRef);
         }
       }
       
-      // Delete the subject itself
       batch.delete(subjectDocRef);
 
       await batch.commit();
@@ -212,7 +213,6 @@ export default function SubjectDetailPage() {
     setIsProcessingOcr(true);
 
     try {
-      // 1. Extract text from image
       const ocrResult = await suggestVocabularyFromImageContext({ imageDataUri: previewImage });
       const extractedText = ocrResult.suggestedVocabulary.join('\n');
       
@@ -220,7 +220,6 @@ export default function SubjectDetailPage() {
         throw new Error("Im Bild wurde kein Text gefunden.");
       }
 
-      // 2. Generate structured vocabulary from text
       const generationResult = await generateVocabularyFromExtractedText({ extractedText });
       const generatedVocab = generationResult.vocabulary;
 
@@ -228,12 +227,11 @@ export default function SubjectDetailPage() {
         throw new Error("Aus dem extrahierten Text konnten keine Vokabeln generiert werden.");
       }
       
-      // 3. Save to Firestore
-      if (!user || !firestore) {
+      if (!user || !firestore || !stacksCollectionRef) {
          throw new Error("Benutzer nicht authentifiziert.");
       }
 
-      const stackRef = await addDoc(stacksCollectionRef!, {
+      const stackRef = await addDoc(stacksCollectionRef, {
         name: newStackName,
         createdAt: serverTimestamp(),
         vocabCount: generatedVocab.length,
@@ -255,11 +253,11 @@ export default function SubjectDetailPage() {
 
       toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im neuen Stapel "${newStackName}" gespeichert.` });
       
-      // 4. Reset state and close dialog
       setNewStackName('');
       setPreviewImage(null);
       setIsOcrDialogOpen(false);
       forceUpdate();
+      fetchAllVocab();
 
     } catch (error: any) {
       console.error("Error during OCR and save process:", error);
@@ -275,7 +273,7 @@ export default function SubjectDetailPage() {
 
 
   const handleAddManualVocabulary = async (closeOnFinish = true) => {
-    if (!manualTerm || !manualDefinition || !newStackName || !user || !firestore) {
+    if (!manualTerm || !manualDefinition || !newStackName || !user || !firestore || !stacksCollectionRef) {
         toast({ variant: 'destructive', title: 'Fehlende Informationen', description: 'Bitte füllen Sie Stapelname, Begriff und Definition aus.' });
         return;
     }
@@ -285,12 +283,12 @@ export default function SubjectDetailPage() {
         const existingStacks = stacks?.filter(s => s.name === newStackName);
 
         if (existingStacks && existingStacks.length > 0) {
-            stackRef = doc(stacksCollectionRef!, existingStacks[0].id);
+            stackRef = doc(stacksCollectionRef, existingStacks[0].id);
             await updateDoc(stackRef, {
                 vocabCount: (existingStacks[0].vocabCount || 0) + 1
             });
         } else {
-            stackRef = await addDoc(stacksCollectionRef!, {
+            stackRef = await addDoc(stacksCollectionRef, {
                 name: newStackName,
                 createdAt: serverTimestamp(),
                 vocabCount: 1,
@@ -315,6 +313,7 @@ export default function SubjectDetailPage() {
           setIsOcrDialogOpen(false);
         }
         forceUpdate();
+        fetchAllVocab();
 
     } catch (error) {
         console.error("Error adding manual vocabulary:", error);
@@ -350,6 +349,58 @@ export default function SubjectDetailPage() {
       sessionStorage.setItem('learn-session-vocab', JSON.stringify(selectedVocab));
       sessionStorage.setItem('learn-session-subject', subjectId);
       router.push(`/dashboard/learn`);
+    }
+  };
+  
+  const handleDeleteSelectedVocabulary = async () => {
+    if (!user || !firestore || !stacks || selectedVocab.length === 0) {
+      return;
+    }
+  
+    const batch = writeBatch(firestore);
+    let deletedCount = 0;
+  
+    const vocabToStackMap: Record<string, string> = {};
+    Object.entries(allVocabulary).forEach(([stackId, vocabs]) => {
+      vocabs.forEach(v => {
+        vocabToStackMap[v.id] = stackId;
+      });
+    });
+  
+    selectedVocab.forEach(vocabId => {
+      const stackId = vocabToStackMap[vocabId];
+      if (stackId) {
+        const vocabDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stackId, 'vocabulary', vocabId);
+        batch.delete(vocabDocRef);
+        deletedCount++;
+      }
+    });
+  
+    try {
+      await batch.commit();
+      toast({
+        title: 'Erfolg',
+        description: `${deletedCount} Vokabel(n) wurden gelöscht.`,
+      });
+      // Deselect all and refetch
+      setAllVocabulary(prev => {
+        const deselected = { ...prev };
+        for (const stackId in deselected) {
+          deselected[stackId] = deselected[stackId].map(v => ({ ...v, isSelected: false }));
+        }
+        return deselected;
+      });
+      forceUpdate(); // Re-fetch stacks which will trigger vocab re-fetch
+      fetchAllVocab();
+    } catch (error) {
+      console.error("Error deleting selected vocabulary:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Fehler beim Löschen',
+        description: 'Die ausgewählten Vokabeln konnten nicht gelöscht werden.',
+      });
+    } finally {
+      setIsDeleteVocabDialogOpen(false);
     }
   };
 
@@ -462,8 +513,8 @@ export default function SubjectDetailPage() {
             stack={stack}
             subjectId={subjectId}
             vocabulary={allVocabulary[stack.id] || []}
-            onDelete={forceUpdate}
-            onRename={forceUpdate}
+            onDelete={() => { forceUpdate(); fetchAllVocab(); }}
+            onRename={() => { forceUpdate(); fetchAllVocab(); }}
             onSelectionChange={handleSelectionChange}
           />
         ))}
@@ -474,14 +525,30 @@ export default function SubjectDetailPage() {
       {/* Floating Action Bar */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md mx-auto z-50">
          <div className="glass-effect p-2 rounded-full flex items-center justify-between gap-2">
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                className={`transition-opacity duration-300 rounded-full ${isAnyVocabSelected ? 'opacity-100' : 'opacity-0'}`}
-                disabled={!isAnyVocabSelected}
-            >
-                <Trash2 className="h-5 w-5 text-destructive" />
-            </Button>
+            <AlertDialog open={isDeleteVocabDialogOpen} onOpenChange={setIsDeleteVocabDialogOpen}>
+              <AlertDialogTrigger asChild>
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className={`transition-opacity duration-300 rounded-full ${isAnyVocabSelected ? 'opacity-100' : 'opacity-0'}`}
+                    disabled={!isAnyVocabSelected}
+                >
+                    <Trash2 className="h-5 w-5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Diese Aktion kann nicht rückgängig gemacht werden. Es werden {selectedVocab.length} Vokabel(n) dauerhaft gelöscht.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteSelectedVocabulary}>Löschen</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             
             <Button 
                 className="flex-1 rounded-full text-base" 
@@ -529,7 +596,8 @@ export default function SubjectDetailPage() {
                           <Textarea id="notes" placeholder="z.B., Begrüßung" value={manualNotes} onChange={e => setManualNotes(e.target.value)} />
                         </div>
                         <div className="flex flex-col gap-2">
-                          <Button variant="outline" onClick={handleAddMoreVocabulary} disabled={isAddingManually}>
+                           <Button variant="outline" onClick={handleAddMoreVocabulary} disabled={isAddingManually}>
+                            {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Weitere Begriffe hinzufügen
                           </Button>
                           <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually}>

@@ -123,10 +123,10 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                <Checkbox 
                   checked={allVisibleInStackSelected}
                   onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
-                />
+               />
              </div>
             <h3 className="font-headline text-lg">{stack.name}</h3>
-            <Badge variant="secondary">{stack.vocabCount || 0} Begriffe</Badge>
+            <Badge variant="secondary">{vocabulary.length || 0} Begriffe</Badge>
           </div>
           <div className="flex items-center gap-2">
             <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
