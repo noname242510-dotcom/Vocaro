@@ -274,7 +274,7 @@ export default function SubjectDetailPage() {
   };
 
 
-  const handleAddManualVocabulary = async () => {
+  const handleAddManualVocabulary = async (closeOnFinish = true) => {
     if (!manualTerm || !manualDefinition || !newStackName || !user || !firestore) {
         toast({ variant: 'destructive', title: 'Fehlende Informationen', description: 'Bitte füllen Sie Stapelname, Begriff und Definition aus.' });
         return;
@@ -299,8 +299,10 @@ export default function SubjectDetailPage() {
         setManualTerm('');
         setManualDefinition('');
         setManualNotes('');
-        setNewStackName('');
-        setIsOcrDialogOpen(false);
+        if (closeOnFinish) {
+          setNewStackName('');
+          setIsOcrDialogOpen(false);
+        }
         forceUpdate();
 
     } catch (error) {
@@ -310,6 +312,10 @@ export default function SubjectDetailPage() {
         setIsAddingManually(false);
     }
   };
+  
+  const handleAddMoreVocabulary = () => {
+    handleAddManualVocabulary(false);
+  }
   
   const handleSelectionChange = (vocabId: string, isSelected: boolean) => {
     setAllVocabulary(currentVocab => {
@@ -511,10 +517,15 @@ export default function SubjectDetailPage() {
                           <Label htmlFor="notes">Hinweise (optional)</Label>
                           <Textarea id="notes" placeholder="z.B., Begrüßung" value={manualNotes} onChange={e => setManualNotes(e.target.value)} />
                         </div>
-                        <Button onClick={handleAddManualVocabulary} disabled={isAddingManually}>
-                            {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Begriff hinzufügen
-                        </Button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button variant="outline" onClick={handleAddMoreVocabulary} disabled={isAddingManually}>
+                            Weitere Begriffe hinzufügen
+                          </Button>
+                          <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually}>
+                              {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              Begriff hinzufügen
+                          </Button>
+                        </div>
                       </div>
                     </TabsContent>
                     <TabsContent value="ocr" className="pt-4">
