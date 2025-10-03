@@ -229,10 +229,10 @@ export default function LearnPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-2xl h-80 [perspective:1000px]">
+      <div className="w-full max-w-2xl h-80 [perspective:1000px] relative">
         <Card
           className={cn(
-            "relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] shadow-lg",
+            "relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]",
             isFlipped && "[transform:rotateX(-180deg)]",
             isNewCard && 'animate-pop-in'
           )}
@@ -253,6 +253,7 @@ export default function LearnPage() {
             )}
           </div>
         </Card>
+        <div className="absolute inset-0 rounded-2xl shadow-lg -z-10" />
       </div>
       
        <div className="w-full max-w-2xl h-16 mt-8 flex items-center justify-center">
