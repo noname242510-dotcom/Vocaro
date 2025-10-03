@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
+import { useFirebase } from '@/firebase';
 
 export default function DashboardLayout({
   children,
@@ -18,6 +19,7 @@ export default function DashboardLayout({
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { user, isUserLoading } = useFirebase();
 
   useEffect(() => {
     setMounted(true);
@@ -31,7 +33,9 @@ export default function DashboardLayout({
   };
   
   const handleLogout = () => {
-    // Implement Firebase logout logic here
+    if (user) {
+      user.auth.signOut();
+    }
     router.push('/');
   };
 
@@ -39,6 +43,16 @@ export default function DashboardLayout({
     { href: '/dashboard', icon: Home, label: 'Fächer' },
     { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
   ];
+
+  const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
+    if (name) {
+      return name.charAt(0).toUpperCase();
+    }
+    if (email) {
+      return email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -88,11 +102,11 @@ export default function DashboardLayout({
           <div className="mt-auto">
              <div className="flex items-center p-2 rounded-full mb-4">
                 <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl mr-3">
-                  U
+                  {isUserLoading ? '' : getInitials(user?.displayName, user?.email)}
                 </div>
                 <div>
-                  <p className="font-semibold">Username</p>
-                  <p className="text-sm text-muted-foreground">user@example.com</p>
+                  <p className="font-semibold">{isUserLoading ? 'Laden...' : (user?.displayName || 'Benutzer')}</p>
+                  <p className="text-sm text-muted-foreground">{isUserLoading ? '' : user?.email}</p>
                 </div>
              </div>
             <Button variant="ghost" className="w-full justify-start text-lg rounded-full" onClick={handleLogout}>
