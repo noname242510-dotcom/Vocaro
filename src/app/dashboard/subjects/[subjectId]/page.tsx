@@ -2,7 +2,7 @@
 
 import { useState, useMemo, ChangeEvent, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import {
   MoreVertical,
   Plus,
@@ -49,9 +49,12 @@ import { doc, collection, addDoc, writeBatch, serverTimestamp } from 'firebase/f
 import { StackItem } from './_components/stack-item';
 
 
-export default function SubjectDetailPage({ params }: { params: { subjectId: string } }) {
+export default function SubjectDetailPage() {
   const { firestore, user } = useFirebase();
   const router = useRouter();
+  const params = useParams();
+  const subjectId = params.subjectId as string;
+
   const [selectedVocab, setSelectedVocab] = useState<string[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
@@ -68,15 +71,15 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
 
   const subjectDocRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return doc(firestore, 'users', user.uid, 'subjects', params.subjectId);
-  }, [firestore, user, params.subjectId]);
+    return doc(firestore, 'users', user.uid, 'subjects', subjectId);
+  }, [firestore, user, subjectId]);
 
   const { data: subject, isLoading: isSubjectLoading } = useDoc<Subject>(subjectDocRef);
 
   const stacksCollectionRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'subjects', params.subjectId, 'stacks');
-  }, [firestore, user, params.subjectId]);
+    return collection(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks');
+  }, [firestore, user, subjectId]);
 
   const { data: stacks, isLoading: areStacksLoading, forceUpdate } = useCollection<Stack>(stacksCollectionRef);
 
@@ -167,7 +170,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
             name: newStackName,
             createdAt: serverTimestamp(),
             vocabCount: 1,
-            subjectId: params.subjectId,
+            subjectId: subjectId,
         });
 
         await addDoc(collection(stackRef, 'vocabulary'), {
@@ -204,7 +207,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
         name: newStackName,
         createdAt: serverTimestamp(),
         vocabCount: generatedVocab.length,
-        subjectId: params.subjectId,
+        subjectId: subjectId,
       });
 
       // Batch write all vocabulary items
@@ -243,7 +246,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
       // The learn page is generic and doesn't belong to a single stack.
       // We will use sessionStorage to pass the vocab IDs.
       sessionStorage.setItem('learn-session-vocab', JSON.stringify(selectedVocab));
-      sessionStorage.setItem('learn-session-subject', params.subjectId);
+      sessionStorage.setItem('learn-session-subject', subjectId);
       router.push(`/dashboard/learn`);
     }
   };
@@ -310,7 +313,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
           <StackItem 
             key={stack.id} 
             stack={stack}
-            subjectId={params.subjectId}
+            subjectId={subjectId}
             onDelete={() => forceUpdate()}
             onSelectionChange={(vocabId, isSelected) => {
               setSelectedVocab(prev => 
