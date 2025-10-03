@@ -178,7 +178,7 @@ export default function SettingsPage() {
                  <div className="flex items-center gap-4">
                     <span className={cn("text-sm transition-colors", !queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsches Wort</span>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQueryDirectionFlashcardsChange(!queryDirectionFlashcards)}>
-                        {queryDirectionFlashcards ? <ArrowLeft className="h-5 w-5"/> : <ArrowRight className="h-5 w-5"/>}
+                        {queryDirectionFlashcards ? <ArrowRight className="h-5 w-5"/> : <ArrowLeft className="h-5 w-5"/>}
                     </Button>
                     <span className={cn("text-sm transition-colors", queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort</span>
                 </div>
