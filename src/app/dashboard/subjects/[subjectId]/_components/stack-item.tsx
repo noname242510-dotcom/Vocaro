@@ -58,7 +58,8 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
   const router = useRouter();
   
   useEffect(() => {
-    const setting = localStorage.getItem('query-direction-overview') === 'false';
+    // query-direction-overview: false = term first (Fremdwort), true = definition first (Deutsches Wort)
+    const setting = localStorage.getItem('query-direction-overview') !== 'true';
     setIsTermFirst(setting);
   }, []);
 

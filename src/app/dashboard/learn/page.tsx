@@ -48,7 +48,8 @@ export default function LearnPage() {
 
   useEffect(() => {
     // Load settings from local storage
-    const termFirstSetting = localStorage.getItem('query-direction-flashcards') === 'false';
+    // query-direction-flashcards: false = term first (Fremdwort), true = definition first (Deutsches Wort)
+    const termFirstSetting = localStorage.getItem('query-direction-flashcards') !== 'true';
     setIsTermFirst(termFirstSetting);
     
     const showHintsSetting = localStorage.getItem('show-hints') !== 'false';
