@@ -505,7 +505,7 @@ export default function SubjectDetailPage() {
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="definition">Deutsches Wort</Label>
-                          <Textarea id="definition" placeholder="z.B., Hallo" value={manualDefinition} onChange={e => setManualDefinition(e.target.value)} />
+                          <Input id="definition" placeholder="z.B., Hallo" value={manualDefinition} onChange={e => setManualDefinition(e.target.value)} />
                         </div>
                          <div className="grid gap-2">
                           <Label htmlFor="notes">Hinweise (optional)</Label>
