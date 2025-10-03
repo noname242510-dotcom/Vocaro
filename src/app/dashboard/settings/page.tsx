@@ -78,7 +78,7 @@ export default function SettingsPage() {
 
       <div className="flex justify-center">
         <div className="grid gap-8 max-w-2xl w-full">
-          <Card>
+           <Card>
             <CardHeader>
               <CardTitle>Erscheinungsbild</CardTitle>
               <CardDescription>Passe an, wie Vocaro aussieht.</CardDescription>
@@ -124,22 +124,24 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="query-direction-overview" className="flex flex-col space-y-1">
-                  <span>Abfragerichtung Vokabelübersicht</span>
-                  <span className="font-normal leading-snug text-muted-foreground">
-                    Zeige zuerst das deutsche oder das Fremdwort an.
-                  </span>
+                <Label htmlFor="query-direction-overview">
+                  Abfragerichtung Vokabelübersicht
                 </Label>
-                <Switch id="query-direction-overview" />
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Deutsches Wort</span>
+                    <Switch id="query-direction-overview" />
+                    <span className="text-sm text-muted-foreground">Fremdwort</span>
+                </div>
               </div>
                <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="query-direction-flashcards" className="flex flex-col space-y-1">
-                  <span>Abfragerichtung Karteikarten</span>
-                  <span className="font-normal leading-snug text-muted-foreground">
-                    Lege die Vorderseite der Karteikarten fest.
-                  </span>
+                <Label htmlFor="query-direction-flashcards">
+                  Abfragerichtung Karteikarten
                 </Label>
-                <Switch id="query-direction-flashcards" />
+                 <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Deutsches Wort</span>
+                    <Switch id="query-direction-flashcards" />
+                    <span className="text-sm text-muted-foreground">Fremdwort</span>
+                </div>
               </div>
               <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="show-hints" className="flex flex-col space-y-1">
