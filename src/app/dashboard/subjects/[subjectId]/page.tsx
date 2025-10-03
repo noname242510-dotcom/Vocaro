@@ -11,7 +11,6 @@ import {
   Trash2,
   BookCopy,
   Zap,
-  Clock,
   ArrowLeft,
   ArrowRight,
   ChevronDown,
@@ -493,11 +492,7 @@ export default function SubjectDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="secondary" className="rounded-full relative">
-                <Clock className="mr-2 h-4 w-4" />
-                Wiederholen
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">0</Badge>
-            </Button>
+            
         </div>
       </div>
 

@@ -37,7 +37,7 @@ export default function LearnPage() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [persistentlyIncorrectIds, setPersistentlyIncorrectIds] = useState<Set<string>>(new Set());
+  const [incorrectlyAnsweredIds, setIncorrectlyAnsweredIds] = useState<Set<string>>(new Set());
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [isNewCard, setIsNewCard] = useState(false);
@@ -133,23 +133,9 @@ export default function LearnPage() {
     let remainingCards = [...vocabulary];
 
     if (!knewIt) {
-        // Mark as persistently incorrect for final scoring
-        if (!persistentlyIncorrectIds.has(currentCard.id)) {
-            setPersistentlyIncorrectIds(prev => new Set(prev).add(currentCard.id));
-            
-            try {
-                const sessionVocabRef = collection(firestore, 'users', user.uid, 'learningSessionVocabulary');
-                addDoc(sessionVocabRef, {
-                    userId: user.uid,
-                    vocabularyId: currentCard.id,
-                    subjectId: subjectId,
-                    stackId: currentCard.stackId,
-                    lastAnswered: serverTimestamp(),
-                    correct: false
-                });
-            } catch (error) {
-                console.error("Error saving incorrect answer:", error);
-            }
+        // Mark as incorrect for this session
+        if (!incorrectlyAnsweredIds.has(currentCard.id)) {
+            setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
         }
         
         // Move card to the end of the queue for repetition
@@ -161,7 +147,7 @@ export default function LearnPage() {
     }
 
     if (remainingCards.length === 0) {
-        const incorrectCount = persistentlyIncorrectIds.size;
+        const incorrectCount = incorrectlyAnsweredIds.size;
         const correctCount = totalVocabCount - incorrectCount;
         const finalScore = totalVocabCount > 0 ? Math.round((correctCount / totalVocabCount) * 100) : 0;
         
@@ -187,7 +173,7 @@ export default function LearnPage() {
     setIsFlipped(false);
     setShowResults(false);
     setShowConfetti(false);
-    setPersistentlyIncorrectIds(new Set());
+    setIncorrectlyAnsweredIds(new Set());
     setIsNewCard(true);
   };
   
@@ -222,7 +208,7 @@ export default function LearnPage() {
 
 
   if (showResults) {
-    const incorrectCount = persistentlyIncorrectIds.size;
+    const incorrectCount = incorrectlyAnsweredIds.size;
     const correctCount = totalVocabCount - incorrectCount;
     const finalScore = totalVocabCount > 0 ? Math.round((correctCount / totalVocabCount) * 100) : 0;
     
