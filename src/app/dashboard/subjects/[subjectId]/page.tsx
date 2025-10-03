@@ -161,6 +161,7 @@ export default function SubjectDetailPage() {
       setNewStackName('');
       setPreviewImage(null);
       setIsOcrDialogOpen(false);
+      forceUpdate();
 
     } catch (error: any) {
       console.error("Error during OCR and save process:", error);
@@ -202,6 +203,7 @@ export default function SubjectDetailPage() {
         setManualNotes('');
         setNewStackName('');
         setIsOcrDialogOpen(false);
+        forceUpdate();
 
     } catch (error) {
         console.error("Error adding manual vocabulary:", error);
@@ -379,12 +381,6 @@ export default function SubjectDetailPage() {
                               Extrahieren und Speichern
                             </Button>
                         )}
-                        
-                        {previewImage && !isProcessingOcr && (
-                            <div className="relative w-full aspect-video rounded-md border p-1">
-                                <Image src={previewImage} alt="Vorschau" layout="fill" objectFit="contain" />
-                            </div>
-                        )}
                       </div>
                     </TabsContent>
                   </Tabs>
@@ -395,3 +391,5 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
+    
