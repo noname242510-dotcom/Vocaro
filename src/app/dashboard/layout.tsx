@@ -80,7 +80,7 @@ export default function DashboardLayout({
           )}
         </div>
         <div className="flex-1 text-center">
-          <Logo className="text-2xl" />
+          <Logo className="text-3xl" />
         </div>
         <div className="flex-1 flex justify-end">
           <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
