@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ChevronDown, Pen, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
 
 interface StackItemProps {
   stack: Stack;
@@ -66,25 +67,27 @@ export function StackItem({ stack, subjectId, onSelectionChange }: StackItemProp
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="px-4 pb-4 space-y-2">
+        <div className="px-4 pb-4 space-y-3">
           {isLoading && <p className="p-2 text-muted-foreground text-sm">Lade Vokabeln...</p>}
           {!isLoading && vocabulary && vocabulary.length > 0 ? (
             vocabulary.map((item) => (
-              <div
+              <Card 
                 key={item.id}
-                className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted"
+                className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 shadow-none border"
               >
                 <Checkbox 
                     id={`vocab-${item.id}`}
                     checked={item.isSelected}
                     onCheckedChange={(checked) => onSelectionChange(item.id, Boolean(checked))}
                 />
-                <label htmlFor={`vocab-${item.id}`} className="flex-1 cursor-pointer">{item.term}</label>
-                <span className="flex-1 text-muted-foreground">{item.definition}</span>
-              </div>
+                <label htmlFor={`vocab-${item.id}`} className="flex-1 grid grid-cols-2 gap-4 cursor-pointer">
+                  <span className="font-medium">{item.term}</span>
+                  <span className="text-muted-foreground">{item.definition}</span>
+                </label>
+              </Card>
             ))
           ) : (
-            !isLoading && <p className="p-2 text-muted-foreground text-sm">Keine Vokabeln in diesem Stapel.</p>
+            !isLoading && <p className="p-4 text-center text-muted-foreground text-sm">Keine Vokabeln in diesem Stapel.</p>
           )}
         </div>
       </CollapsibleContent>
