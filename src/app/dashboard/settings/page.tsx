@@ -93,7 +93,7 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Erscheinungsbild</CardTitle>
-              <CardDescription>Passe an, wie Vocaro aussieht und sich anfühlt.</CardDescription>
+              <CardDescription>Passe an, wie Vocaro aussieht.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between space-x-2">
