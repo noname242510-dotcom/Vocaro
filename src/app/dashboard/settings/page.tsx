@@ -145,13 +145,14 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="show-hints" className="flex flex-col space-y-1">
-                  <span>Hinweise auf der Rückseite</span>
-                  <span className="font-normal leading-snug text-muted-foreground">
-                    Hinweise auf der Kartenrückseite ein- oder ausblenden.
-                  </span>
+                <Label htmlFor="show-hints">
+                  Hinweise auf der Rückseite
                 </Label>
-                <Switch id="show-hints" />
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">ausblenden</span>
+                  <Switch id="show-hints" />
+                  <span className="text-sm text-muted-foreground">einblenden</span>
+                </div>
               </div>
             </CardContent>
           </Card>
