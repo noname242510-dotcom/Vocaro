@@ -524,7 +524,7 @@ export default function SubjectDetailPage() {
 
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md mx-auto z-50">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-50">
          <div className="p-2 flex items-center justify-between gap-2">
             <AlertDialog open={isDeleteVocabDialogOpen} onOpenChange={setIsDeleteVocabDialogOpen}>
               <AlertDialogTrigger asChild>
@@ -552,7 +552,7 @@ export default function SubjectDetailPage() {
             </AlertDialog>
             
             <Button 
-                className="flex-1 rounded-full text-base" 
+                className="rounded-full text-base px-8" 
                 disabled={!isAnyVocabSelected}
                 onClick={handleStartLearning}
             >
@@ -640,7 +640,3 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
-
-    
-
-    
