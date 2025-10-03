@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from "react";
@@ -6,13 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { mockSettings } from "@/lib/data";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useFirebase } from "@/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsPage() {
-  const settings = mockSettings;
   const { user, isUserLoading } = useFirebase();
   const [font, setFont] = useState('font-body');
   const [enableConfetti, setEnableConfetti] = useState(true);
@@ -81,7 +78,7 @@ export default function SettingsPage() {
 
       <div className="flex justify-center">
         <div className="grid gap-8 max-w-2xl w-full">
-           <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Erscheinungsbild</CardTitle>
               <CardDescription>Passe an, wie Vocaro aussieht.</CardDescription>
@@ -120,30 +117,38 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
           
-          <Card>
+           <Card>
             <CardHeader>
-              <CardTitle>Wiederholung</CardTitle>
-              <CardDescription>Verwalte deine Lern- und Wiederholungseinstellungen.</CardDescription>
+              <CardTitle>Abfragen</CardTitle>
+              <CardDescription>Verwalte deine Lern- und Abfrageeinstellungen.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="repetition-timeframe" className="flex flex-col space-y-1">
-                  <span>Wiederholungszeitraum</span>
+                <Label htmlFor="query-direction-overview" className="flex flex-col space-y-1">
+                  <span>Abfragerichtung Vokabelübersicht</span>
                   <span className="font-normal leading-snug text-muted-foreground">
-                    Falsch beantwortete Wörter aus diesem Zeitraum einbeziehen.
+                    Zeige zuerst das deutsche oder das Fremdwort an.
                   </span>
                 </Label>
-                <Select defaultValue={settings.quiz.repetitionTimeframe}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Zeitraum auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="24h">Letzte 24 Stunden</SelectItem>
-                    <SelectItem value="7d">Letzte 7 Tage</SelectItem>
-                    <SelectItem value="30d">Letzte 30 Tage</SelectItem>
-                    <SelectItem value="all">Gesamte Zeit</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Switch id="query-direction-overview" />
+              </div>
+               <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="query-direction-flashcards" className="flex flex-col space-y-1">
+                  <span>Abfragerichtung Karteikarten</span>
+                  <span className="font-normal leading-snug text-muted-foreground">
+                    Lege die Vorderseite der Karteikarten fest.
+                  </span>
+                </Label>
+                <Switch id="query-direction-flashcards" />
+              </div>
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="show-hints" className="flex flex-col space-y-1">
+                  <span>Hinweise auf der Rückseite</span>
+                  <span className="font-normal leading-snug text-muted-foreground">
+                    Hinweise auf der Kartenrückseite ein- oder ausblenden.
+                  </span>
+                </Label>
+                <Switch id="show-hints" />
               </div>
             </CardContent>
           </Card>
