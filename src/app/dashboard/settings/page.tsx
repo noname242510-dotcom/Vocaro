@@ -78,15 +78,6 @@ export default function SettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="confetti-mode" className="flex flex-col space-y-1">
-                  <span>Sieges-Konfetti</span>
-                  <span className="font-normal leading-snug text-muted-foreground">
-                    Aktiviere eine Konfetti-Animation für hohe Punktzahlen.
-                  </span>
-                </Label>
-                <Switch id="confetti-mode" defaultChecked={settings.quiz.enableConfetti} />
-              </div>
             </CardContent>
           </Card>
 
@@ -115,22 +106,13 @@ export default function SettingsPage() {
                 </Select>
               </div>
               <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="theme" className="flex flex-col space-y-1">
-                  <span>Thema</span>
+                <Label htmlFor="confetti-mode" className="flex flex-col space-y-1">
+                  <span>Sieges-Konfetti</span>
                   <span className="font-normal leading-snug text-muted-foreground">
-                    Wähle zwischen hellem, dunklem oder System-Standardthema.
+                    Aktiviere eine Konfetti-Animation für hohe Punktzahlen.
                   </span>
                 </Label>
-                <Select defaultValue={settings.appearance.theme}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Thema auswählen" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">Hell</SelectItem>
-                    <SelectItem value="dark">Dunkel</SelectItem>
-                    <SelectItem value="system">System</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Switch id="confetti-mode" defaultChecked={settings.quiz.enableConfetti} />
               </div>
             </CardContent>
           </Card>
