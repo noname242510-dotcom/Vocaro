@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useFirebase } from "@/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowRightLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
@@ -174,10 +174,10 @@ export default function SettingsPage() {
                 <Label htmlFor="query-direction-flashcards">
                   Abgefragtes Wort Karteikarten
                 </Label>
-                 <div className="flex items-center gap-2">
+                 <div className="flex items-center gap-4">
                     <span className={cn("text-sm transition-colors", !queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsches Wort</span>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQueryDirectionFlashcardsChange(!queryDirectionFlashcards)}>
-                        <ArrowRightLeft className="h-4 w-4"/>
+                        {queryDirectionFlashcards ? <ArrowLeft className="h-5 w-5"/> : <ArrowRight className="h-5 w-5"/>}
                     </Button>
                     <span className={cn("text-sm transition-colors", queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort</span>
                 </div>
