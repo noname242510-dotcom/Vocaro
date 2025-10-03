@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Home, Settings, LogOut, Menu, Sun, Moon, ChevronDown } from 'lucide-react';
@@ -106,7 +107,10 @@ export default function DashboardLayout({
                     >
                       <button
                         className="flex items-center h-full"
-                        onClick={() => router.push('/dashboard')}
+                        onClick={() => {
+                          router.push('/dashboard');
+                          setIsMenuOpen(false);
+                        }}
                       >
                         <Home className="mr-4 h-5 w-5" />
                         Fächer
