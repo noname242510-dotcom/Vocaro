@@ -49,6 +49,21 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
   const [stacks, setStacks] = useState<Stack[]>(stacksData);
   const [selectedVocab, setSelectedVocab] = useState<string[]>([]);
   const ocrImage = PlaceHolderImages[0];
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPreviewImage(null);
+    }
+  };
+
 
   if (!subject) {
     return (
@@ -204,13 +219,14 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="picture">Bild</Label>
-                          <Input id="picture" type="file" />
+                          <Input id="picture" type="file" onChange={handleFileChange} />
                         </div>
                         <div className="relative w-full h-64 rounded-md border border-dashed flex items-center justify-center bg-muted/40">
-                          {ocrImage && (
-                            <Image src={ocrImage.imageUrl} alt={ocrImage.description} layout="fill" objectFit="contain" className="rounded-md" data-ai-hint={ocrImage.imageHint} />
+                          {previewImage ? (
+                            <Image src={previewImage} alt="Vorschau" layout="fill" objectFit="contain" className="rounded-md" />
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Bildvorschau</p>
                           )}
-                          <p className="text-sm text-muted-foreground">Bildvorschau</p>
                         </div>
                         <Button><Upload className="mr-2 h-4 w-4" /> Vokabeln extrahieren</Button>
                       </div>
