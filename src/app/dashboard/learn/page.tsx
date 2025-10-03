@@ -211,8 +211,8 @@ export default function LearnPage() {
             <h1 className="text-4xl font-bold font-headline mb-4">Sitzung beendet!</h1>
             <p className="text-7xl font-bold mb-4">{finalScore}%</p>
             <div className="flex gap-8 text-lg mb-8">
-                <p><span className="font-bold text-green-500">{correctCount}</span> Richtig</p>
-                <p><span className="font-bold text-red-500">{incorrectCount}</span> Falsch</p>
+                <p><span className="font-bold">{correctCount}</span> Richtig</p>
+                <p><span className="font-bold">{incorrectCount}</span> Falsch</p>
             </div>
             <div className="flex gap-4">
                 <Button onClick={resetSession} size="lg"><RotateCcw className="mr-2 h-4 w-4" /> Nochmal versuchen</Button>
@@ -282,6 +282,8 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
+
+    
 
     
 
