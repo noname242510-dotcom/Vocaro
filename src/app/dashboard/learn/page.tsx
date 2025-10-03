@@ -223,14 +223,14 @@ export default function LearnPage() {
       
        <div className="h-16 mt-8 flex items-center">
           {!isFlipped && (
-            <Button size="lg" className="w-80" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+            <Button size="lg" className="w-[336px]" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           )}
           <div className={cn("flex gap-4 transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
-            <Button variant="destructive" size="lg" className="w-40 h-16 text-lg" onClick={() => handleAnswer(false)}>
-              <X className="mr-2" /> Wusste ich nicht
+            <Button variant="outline" size="lg" className="w-40 text-base" onClick={() => handleAnswer(false)}>
+              <X className="mr-2 h-4 w-4" /> Wusste ich nicht
             </Button>
-            <Button variant="secondary" size="lg" className="w-40 h-16 text-lg bg-green-600 hover:bg-green-700 text-white" onClick={() => handleAnswer(true)}>
-              <Check className="mr-2" /> Wusste ich
+            <Button variant="default" size="lg" className="w-40 text-base" onClick={() => handleAnswer(true)}>
+              <Check className="mr-2 h-4 w-4" /> Wusste ich
             </Button>
           </div>
        </div>
