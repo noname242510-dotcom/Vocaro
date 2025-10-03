@@ -110,7 +110,9 @@ export default function LearnPage() {
     }
   }, [isNewCard]);
   
-  const progress = totalVocabCount > 0 ? ((totalVocabCount - vocabulary.length) / totalVocabCount) * 100 : 0;
+  const correctAnswersCount = totalVocabCount > 0 ? totalVocabCount - vocabulary.length : 0;
+  const progress = totalVocabCount > 0 ? (correctAnswersCount / totalVocabCount) * 100 : 0;
+
 
   const handleAnswer = (knewIt: boolean) => {
     if (!isFlipped || !user || !firestore) return;
@@ -227,7 +229,7 @@ export default function LearnPage() {
       <div className="w-full max-w-2xl mb-8">
         <Progress value={progress} className="h-2" />
         <p className="text-sm text-muted-foreground text-center mt-2">
-          Verbleibend: {vocabulary.length} von {totalVocabCount}
+          ({correctAnswersCount}/{totalVocabCount})
         </p>
       </div>
 
@@ -280,5 +282,7 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
+
+    
 
     
