@@ -52,7 +52,6 @@ export function StackItem({ stack, subjectId, onSelectionChange }: StackItemProp
           <Badge variant="secondary">{stack.vocabCount || 0} Begriffe</Badge>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{stack.lastStudied || 'Noch nicht gelernt'}</span>
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100">
             <Pen className="h-4 w-4" />
           </Button>
