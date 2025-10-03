@@ -5,7 +5,6 @@ import { Plus, MoreVertical, BookCopy, ListTree, Trash2, Edit, ArrowRight, X } f
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { mockSubjects as initialSubjects } from '@/lib/data';
 import type { Subject } from '@/lib/types';
 import {
   AlertDialog,
@@ -31,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function DashboardPage() {
-  const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
