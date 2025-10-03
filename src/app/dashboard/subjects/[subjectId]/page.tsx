@@ -57,15 +57,12 @@ export default function SubjectDetailPage() {
 
   const [selectedVocab, setSelectedVocab] = useState<string[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [extractedText, setExtractedText] = useState<string | null>(null);
+  const [isProcessingOcr, setIsProcessingOcr] = useState(false);
   const [newStackName, setNewStackName] = useState('');
   const [manualTerm, setManualTerm] = useState('');
   const [manualDefinition, setManualDefinition] = useState('');
   const [manualNotes, setManualNotes] = useState('');
   const [isAddingManually, setIsAddingManually] = useState(false);
-  const [generatedVocab, setGeneratedVocab] = useState<VocabularyItem[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isOcrDialogOpen, setIsOcrDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -83,13 +80,6 @@ export default function SubjectDetailPage() {
 
   const { data: stacks, isLoading: areStacksLoading, forceUpdate } = useCollection<Stack>(stacksCollectionRef);
 
-
-  useEffect(() => {
-    if (extractedText && !isGenerating) {
-      handleGenerateVocabulary();
-    }
-  }, [extractedText]);
-
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -103,7 +93,7 @@ export default function SubjectDetailPage() {
     }
   };
 
-  const handleExtractVocabulary = async () => {
+  const handleExtractAndSaveVocabulary = async () => {
     if (!previewImage) {
       toast({
         variant: "destructive",
@@ -112,52 +102,78 @@ export default function SubjectDetailPage() {
       });
       return;
     }
-
-    setIsExtracting(true);
-    setGeneratedVocab([]);
-    try {
-      // This flow now just does OCR
-      const result = await suggestVocabularyFromImageContext({ imageDataUri: previewImage });
-      setExtractedText(result.suggestedVocabulary.join('\n'));
-      toast({
-        title: "Text extrahiert!",
-        description: `Text wurde erfolgreich aus dem Bild gelesen.`,
-      });
-    } catch (error) {
-      console.error("Error extracting vocabulary:", error);
+     if (!newStackName) {
       toast({
         variant: "destructive",
-        title: "Fehler bei der Extraktion",
-        description: "Der Text konnte nicht extrahiert werden. Bitte versuchen Sie es erneut.",
+        title: "Kein Stapelname",
+        description: "Bitte geben Sie einen Namen für den neuen Stapel an.",
       });
-      setIsExtracting(false); // Only set to false on error, success leads to generation
+      return;
     }
-  };
 
-  const handleGenerateVocabulary = async () => {
-    if (!extractedText) return;
+    setIsProcessingOcr(true);
 
-    setIsGenerating(true);
     try {
-      const result = await generateVocabularyFromExtractedText({ extractedText });
-      const vocabWithTempIds = result.vocabulary.map(v => ({ ...v, id: crypto.randomUUID() }));
-      setGeneratedVocab(vocabWithTempIds as VocabularyItem[]);
-      toast({
-        title: "Vokabeln generiert!",
-        description: `${result.vocabulary.length} Begriffe gefunden.`,
+      // 1. Extract text from image
+      const ocrResult = await suggestVocabularyFromImageContext({ imageDataUri: previewImage });
+      const extractedText = ocrResult.suggestedVocabulary.join('\n');
+      
+      if (!extractedText.trim()) {
+        throw new Error("Im Bild wurde kein Text gefunden.");
+      }
+
+      // 2. Generate structured vocabulary from text
+      const generationResult = await generateVocabularyFromExtractedText({ extractedText });
+      const generatedVocab = generationResult.vocabulary;
+
+      if (generatedVocab.length === 0) {
+        throw new Error("Aus dem extrahierten Text konnten keine Vokabeln generiert werden.");
+      }
+      
+      // 3. Save to Firestore
+      if (!user || !firestore) {
+         throw new Error("Benutzer nicht authentifiziert.");
+      }
+
+      const stackRef = await addDoc(stacksCollectionRef!, {
+        name: newStackName,
+        createdAt: serverTimestamp(),
+        vocabCount: generatedVocab.length,
+        subjectId: subjectId,
       });
-    } catch (error) {
-      console.error("Error generating vocabulary:", error);
+
+      const batch = writeBatch(firestore);
+      const vocabCollectionRef = collection(stackRef, 'vocabulary');
+      generatedVocab.forEach((vocabItem) => {
+        const newVocabRef = doc(vocabCollectionRef);
+        batch.set(newVocabRef, {
+          term: vocabItem.term,
+          definition: vocabItem.definition,
+          notes: vocabItem.notes || '',
+          createdAt: serverTimestamp(),
+        });
+      });
+      await batch.commit();
+
+      toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im neuen Stapel "${newStackName}" gespeichert.` });
+      
+      // 4. Reset state and close dialog
+      setNewStackName('');
+      setPreviewImage(null);
+      setIsOcrDialogOpen(false);
+
+    } catch (error: any) {
+      console.error("Error during OCR and save process:", error);
       toast({
         variant: "destructive",
-        title: "Fehler bei der Vokabelgenerierung",
-        description: "Die Vokabeln konnten nicht generiert werden.",
+        title: "Fehler beim Verarbeiten",
+        description: error.message || "Der Vorgang konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.",
       });
     } finally {
-      setIsExtracting(false);
-      setIsGenerating(false);
+      setIsProcessingOcr(false);
     }
   };
+
 
   const handleAddManualVocabulary = async () => {
     if (!manualTerm || !manualDefinition || !newStackName || !user || !firestore) {
@@ -195,56 +211,8 @@ export default function SubjectDetailPage() {
     }
   };
 
-  const handleSaveOcrVocabulary = async () => {
-    if (!newStackName || generatedVocab.length === 0 || !user || !firestore) {
-      toast({ variant: 'destructive', title: 'Fehlende Informationen', description: 'Bitte geben Sie einen Stapelnamen an und extrahieren Sie Vokabeln.' });
-      return;
-    }
-    setIsGenerating(true); // Reuse loading state
-    try {
-      // Create new stack document
-      const stackRef = await addDoc(stacksCollectionRef!, {
-        name: newStackName,
-        createdAt: serverTimestamp(),
-        vocabCount: generatedVocab.length,
-        subjectId: subjectId,
-      });
-
-      // Batch write all vocabulary items
-      const batch = writeBatch(firestore);
-      const vocabCollectionRef = collection(stackRef, 'vocabulary');
-      generatedVocab.forEach((vocabItem) => {
-        const newVocabRef = doc(vocabCollectionRef);
-        batch.set(newVocabRef, {
-          term: vocabItem.term,
-          definition: vocabItem.definition,
-          notes: vocabItem.notes || '',
-          createdAt: serverTimestamp(),
-        });
-      });
-      await batch.commit();
-
-      toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im neuen Stapel "${newStackName}" gespeichert.` });
-      // Reset state
-      setNewStackName('');
-      setPreviewImage(null);
-      setExtractedText(null);
-      setGeneratedVocab([]);
-      setIsOcrDialogOpen(false);
-
-    } catch (error) {
-      console.error("Error saving OCR vocabulary:", error);
-      toast({ variant: 'destructive', title: 'Fehler beim Speichern', description: 'Die Vokabeln konnten nicht gespeichert werden.' });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const handleStartLearning = () => {
     if (selectedVocab.length > 0) {
-      // We need a way to pass selected vocab to the learn page.
-      // The learn page is generic and doesn't belong to a single stack.
-      // We will use sessionStorage to pass the vocab IDs.
       sessionStorage.setItem('learn-session-vocab', JSON.stringify(selectedVocab));
       sessionStorage.setItem('learn-session-subject', subjectId);
       router.push(`/dashboard/learn`);
@@ -397,37 +365,25 @@ export default function SubjectDetailPage() {
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="picture">Bild</Label>
-                          <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" disabled={isExtracting || isGenerating} />
+                          <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" disabled={isProcessingOcr} />
                         </div>
-                        {(isExtracting || isGenerating) && (
-                            <div className="flex flex-col items-center justify-center h-64 rounded-md border border-dashed bg-muted/40">
-                                <Loader2 className="mr-2 h-8 w-8 animate-spin" />
-                                <p className="mt-4 text-muted-foreground">{isGenerating ? 'Generiere Vokabeln...' : 'Extrahiere Text...'}</p>
-                            </div>
-                        )}
 
-                        {generatedVocab.length > 0 && !isExtracting && !isGenerating && (
-                            <>
-                            <div className="space-y-2 max-h-64 overflow-y-auto rounded-md border p-4">
-                                {generatedVocab.map((item) => (
-                                    <div key={item.id} className="grid grid-cols-2 gap-4 text-sm">
-                                        <p className="font-medium">{item.term}</p>
-                                        <p className="text-muted-foreground">{item.definition}</p>
-                                    </div>
-                                ))}
-                            </div>
-                             <Button onClick={handleSaveOcrVocabulary} disabled={isGenerating}>
-                                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Vokabeln Speichern
+                        {isProcessingOcr ? (
+                            <Button disabled>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Verarbeite und speichere...
                             </Button>
-                            </>
+                        ) : (
+                             <Button onClick={handleExtractAndSaveVocabulary} disabled={!previewImage || !newStackName}>
+                              <Upload className="mr-2 h-4 w-4" />
+                              Extrahieren und Speichern
+                            </Button>
                         )}
                         
-                        {generatedVocab.length === 0 && !isExtracting && !isGenerating && (
-                             <Button onClick={handleExtractVocabulary} disabled={!previewImage}>
-                              <Upload className="mr-2 h-4 w-4" />
-                              Vokabeln extrahieren
-                            </Button>
+                        {previewImage && !isProcessingOcr && (
+                            <div className="relative w-full aspect-video rounded-md border p-1">
+                                <Image src={previewImage} alt="Vorschau" layout="fill" objectFit="contain" />
+                            </div>
                         )}
                       </div>
                     </TabsContent>
