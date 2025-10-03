@@ -8,11 +8,12 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const VocabularyItemSchema = z.object({
   term: z.string().describe('The foreign word or phrase.'),
   definition: z.string().describe('The definition or translation of the term.'),
+  notes: z.string().optional().describe('Optional contextual notes, examples, or hints for the term.'),
 });
 
 const GenerateVocabularyFromExtractedTextInputSchema = z.object({
@@ -23,7 +24,7 @@ export type GenerateVocabularyFromExtractedTextInput = z.infer<typeof GenerateVo
 const GenerateVocabularyFromExtractedTextOutputSchema = z.object({
   vocabulary: z.array(VocabularyItemSchema).describe('An array of structured vocabulary items.'),
 });
-export type GenerateVocabularyFromExtractedTextOutput = z.infer<typeof GenerateVocabularyFromExtractedTextOutputSchema>;
+export type GenerateVocabularyFromExtractedTextOutput = z_infer<typeof GenerateVocabularyFromExtractedTextOutputSchema>;
 
 
 export async function generateVocabularyFromExtractedText(input: GenerateVocabularyFromExtractedTextInput): Promise<GenerateVocabularyFromExtractedTextOutput> {
@@ -41,6 +42,7 @@ Your task is to analyze the text and convert it into a structured array of term/
 
 - The text may have various formats (e.g., "word - definition", "word: definition", "word   definition", etc.).
 - Each word and its corresponding definition should be a separate item in the output array.
+- If there is any additional context, hint, or example sentence, include it in the 'notes' field.
 - Clean up any OCR artifacts or noise if possible, but prioritize preserving the original content.
 
 Extracted Text:

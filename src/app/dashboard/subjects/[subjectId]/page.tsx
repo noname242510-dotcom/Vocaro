@@ -138,7 +138,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
     try {
       const result = await generateVocabularyFromExtractedText({ extractedText });
       const vocabWithTempIds = result.vocabulary.map(v => ({ ...v, id: crypto.randomUUID() }));
-      setGeneratedVocab(vocabWithTempIds);
+      setGeneratedVocab(vocabWithTempIds as VocabularyItem[]);
       toast({
         title: "Vokabeln generiert!",
         description: `${result.vocabulary.length} Begriffe gefunden.`,
@@ -215,7 +215,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
         batch.set(newVocabRef, {
           term: vocabItem.term,
           definition: vocabItem.definition,
-          notes: '', // Notes are not part of OCR generation for now
+          notes: vocabItem.notes || '',
           createdAt: serverTimestamp(),
         });
       });
@@ -395,11 +395,6 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
                           <Label htmlFor="picture">Bild</Label>
                           <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" disabled={isExtracting || isGenerating} />
                         </div>
-                        {previewImage && !isExtracting && !isGenerating && generatedVocab.length === 0 && (
-                          <div className="relative w-full h-64 rounded-md border border-dashed flex items-center justify-center bg-muted/40">
-                            <Image src={previewImage} alt="Vorschau" fill={true} objectFit="contain" className="rounded-md" />
-                          </div>
-                        )}
                         {(isExtracting || isGenerating) && (
                             <div className="flex flex-col items-center justify-center h-64 rounded-md border border-dashed bg-muted/40">
                                 <Loader2 className="mr-2 h-8 w-8 animate-spin" />
@@ -407,7 +402,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
                             </div>
                         )}
 
-                        {generatedVocab.length > 0 && (
+                        {generatedVocab.length > 0 && !isExtracting && !isGenerating && (
                             <>
                             <div className="space-y-2 max-h-64 overflow-y-auto rounded-md border p-4">
                                 {generatedVocab.map((item) => (
@@ -424,14 +419,10 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
                             </>
                         )}
                         
-                        {generatedVocab.length === 0 && (
-                             <Button onClick={handleExtractVocabulary} disabled={isExtracting || !previewImage || isGenerating}>
-                              {(isExtracting || isGenerating) ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              ) : (
-                                <Upload className="mr-2 h-4 w-4" />
-                              )}
-                              {isExtracting ? 'Extrahiere...' : isGenerating ? 'Generiere...' : 'Vokabeln extrahieren'}
+                        {generatedVocab.length === 0 && !isExtracting && !isGenerating && (
+                             <Button onClick={handleExtractVocabulary} disabled={!previewImage}>
+                              <Upload className="mr-2 h-4 w-4" />
+                              Vokabeln extrahieren
                             </Button>
                         )}
                       </div>
@@ -444,5 +435,3 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
     </div>
   );
 }
-
-    
