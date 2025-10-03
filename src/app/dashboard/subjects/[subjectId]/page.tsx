@@ -13,6 +13,7 @@ import {
   Zap,
   Clock,
   ArrowLeft,
+  ArrowRight,
   ChevronDown,
   Circle,
   Loader2,
@@ -524,7 +525,7 @@ export default function SubjectDetailPage() {
 
       {/* Floating Action Bar */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md mx-auto z-50">
-         <div className="p-2 rounded-full flex items-center justify-between gap-2">
+         <div className="p-2 flex items-center justify-between gap-2">
             <AlertDialog open={isDeleteVocabDialogOpen} onOpenChange={setIsDeleteVocabDialogOpen}>
               <AlertDialogTrigger asChild>
                 <Button 
@@ -555,8 +556,8 @@ export default function SubjectDetailPage() {
                 disabled={!isAnyVocabSelected}
                 onClick={handleStartLearning}
             >
-                <Zap className="mr-2 h-5 w-5" /> 
-                Lernen ({selectedVocab.length})
+                Lernen
+                <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
 
             <Dialog open={isOcrDialogOpen} onOpenChange={setIsOcrDialogOpen}>
@@ -639,5 +640,7 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
+    
 
     
