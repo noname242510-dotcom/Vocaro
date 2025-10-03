@@ -1,11 +1,60 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Logo } from "@/components/logo";
+'use client';
+
+import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Logo } from '@/components/logo';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const auth = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) {
+      toast({
+        variant: 'destructive',
+        title: 'Anmeldung fehlgeschlagen',
+        description: 'Authentifizierungsdienst nicht verfügbar.',
+      });
+      return;
+    }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push('/dashboard');
+    } catch (error: any) {
+      let description = 'Ein unbekannter Fehler ist aufgetreten.';
+      switch (error.code) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          description = 'E-Mail oder Passwort ist falsch.';
+          break;
+        case 'auth/invalid-email':
+          description = 'Die E-Mail-Adresse ist ungültig.';
+          break;
+        default:
+          description = 'Bitte versuchen Sie es später erneut.';
+          break;
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Anmeldung fehlgeschlagen',
+        description: description,
+      });
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
       <Card className="mx-auto max-w-sm w-full shadow-lg">
@@ -15,24 +64,41 @@ export default function LoginPage() {
           <CardDescription>Melden Sie sich bei Ihrem Konto an, um fortzufahren</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="m@example.com" required className="rounded-full" />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Passwort</Label>
-                <Link href="/forgot-password" className="ml-auto inline-block text-sm underline">
-                  Passwort vergessen?
-                </Link>
+          <form onSubmit={handleLogin}>
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  className="rounded-full"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
-              <Input id="password" type="password" required className="rounded-full" />
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Passwort</Label>
+                  <Link href="/forgot-password" className="ml-auto inline-block text-sm underline">
+                    Passwort vergessen?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  className="rounded-full"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                Anmelden
+              </Button>
             </div>
-            <Button type="submit" className="w-full">
-              Anmelden
-            </Button>
-          </div>
+          </form>
           <div className="mt-4 text-center text-sm">
             Sie haben noch kein Konto?{" "}
             <Link href="/signup" className="underline">
