@@ -111,7 +111,7 @@ export default function LearnPage() {
   
   const progress = totalVocabCount > 0 ? ((currentIndex) / vocabulary.length) * 100 : 0;
 
-    const handleAnswer = async (knewIt: boolean) => {
+    const handleAnswer = (knewIt: boolean) => {
     if (!isFlipped || !user || !firestore) return;
     const currentCard = vocabulary[currentIndex];
 
@@ -121,7 +121,7 @@ export default function LearnPage() {
       
       try {
         const sessionVocabRef = collection(firestore, 'users', user.uid, 'learningSessionVocabulary');
-        await addDoc(sessionVocabRef, {
+        addDoc(sessionVocabRef, {
             userId: user.uid,
             vocabularyId: currentCard.id,
             subjectId: subjectId,
@@ -139,6 +139,7 @@ export default function LearnPage() {
       setIsFlipped(false);
       setIsNewCard(true);
     } else {
+      // Check if there are any cards left in the incorrect pile
       if (incorrectAnswers.length > 0) {
         setVocabulary(shuffleArray(incorrectAnswers));
         setIncorrectAnswers([]);
@@ -267,5 +268,7 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
+
+    
 
     
