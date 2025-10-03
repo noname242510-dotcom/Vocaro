@@ -200,10 +200,10 @@ export default function LearnPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-2xl [perspective:1000px]">
+      <div className="w-full max-w-2xl h-80 [perspective:1000px]">
         <Card
           className={cn(
-            "h-80 w-full transition-transform duration-700 [transform-style:preserve-3d] shadow-lg",
+            "relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] shadow-lg",
             isFlipped && "[transform:rotateX(-180deg)]"
           )}
           onClick={() => setIsFlipped(!isFlipped)}
