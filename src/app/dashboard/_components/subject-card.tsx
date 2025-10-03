@@ -154,7 +154,7 @@ export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed }: Sub
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                    className="h-8 w-8 rounded-full"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSubjectToDelete(subject);

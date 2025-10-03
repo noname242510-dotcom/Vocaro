@@ -472,7 +472,7 @@ export default function SubjectDetailPage() {
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>

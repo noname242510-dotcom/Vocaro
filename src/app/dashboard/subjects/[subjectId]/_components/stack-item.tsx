@@ -168,7 +168,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                   <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                      className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100"
                   >
                       <Trash2 className="h-4 w-4" />
                   </Button>
