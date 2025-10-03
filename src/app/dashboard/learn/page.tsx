@@ -30,13 +30,13 @@ export default function LearnPage() {
   const router = useRouter();
   
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
+  const [initialVocab, setInitialVocab] = useState<VocabularyItem[]>([]);
   const [totalVocabCount, setTotalVocabCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [incorrectAnswers, setIncorrectAnswers] = useState<VocabularyItem[]>([]);
   const [persistentlyIncorrectIds, setPersistentlyIncorrectIds] = useState<Set<string>>(new Set());
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
@@ -87,6 +87,7 @@ export default function LearnPage() {
         } else {
           const shuffledVocab = shuffleArray(selectedVocab);
           setVocabulary(shuffledVocab);
+          setInitialVocab(shuffledVocab);
           setTotalVocabCount(shuffledVocab.length);
           setIsNewCard(true);
         }
@@ -109,51 +110,62 @@ export default function LearnPage() {
     }
   }, [isNewCard]);
   
-  const progress = totalVocabCount > 0 ? ((currentIndex) / vocabulary.length) * 100 : 0;
+  const progress = totalVocabCount > 0 ? ((totalVocabCount - vocabulary.length) / totalVocabCount) * 100 : 0;
 
-    const handleAnswer = (knewIt: boolean) => {
+  const handleAnswer = (knewIt: boolean) => {
     if (!isFlipped || !user || !firestore) return;
+
     const currentCard = vocabulary[currentIndex];
+    let remainingCards = [...vocabulary];
 
     if (!knewIt) {
-      setIncorrectAnswers(prev => [...prev, currentCard]);
-      setPersistentlyIncorrectIds(prev => new Set(prev).add(currentCard.id));
-      
-      try {
-        const sessionVocabRef = collection(firestore, 'users', user.uid, 'learningSessionVocabulary');
-        addDoc(sessionVocabRef, {
-            userId: user.uid,
-            vocabularyId: currentCard.id,
-            subjectId: subjectId,
-            stackId: currentCard.stackId, // Assuming stackId is on the vocab item
-            lastAnswered: serverTimestamp(),
-            correct: false
-        });
-      } catch (error) {
-          console.error("Error saving incorrect answer:", error);
-      }
+        // Mark as persistently incorrect for final scoring
+        if (!persistentlyIncorrectIds.has(currentCard.id)) {
+            setPersistentlyIncorrectIds(prev => new Set(prev).add(currentCard.id));
+            
+            try {
+                const sessionVocabRef = collection(firestore, 'users', user.uid, 'learningSessionVocabulary');
+                addDoc(sessionVocabRef, {
+                    userId: user.uid,
+                    vocabularyId: currentCard.id,
+                    subjectId: subjectId,
+                    stackId: currentCard.stackId,
+                    lastAnswered: serverTimestamp(),
+                    correct: false
+                });
+            } catch (error) {
+                console.error("Error saving incorrect answer:", error);
+            }
+        }
+        
+        // Move card to the end of the queue for repetition
+        const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
+        remainingCards.push(cardToRepeat);
+    } else {
+        // Correct answer: remove the card from this session's queue
+        remainingCards.splice(currentIndex, 1);
     }
 
-    if (currentIndex + 1 < vocabulary.length) {
-      setCurrentIndex(prev => prev + 1);
-      setIsFlipped(false);
-      setIsNewCard(true);
+    if (remainingCards.length === 0) {
+        setShowResults(true);
     } else {
-      // Check if there are any cards left in the incorrect pile
-      if (incorrectAnswers.length > 0) {
-        setVocabulary(shuffleArray(incorrectAnswers));
-        setIncorrectAnswers([]);
-        setCurrentIndex(0);
+        // If we removed the last item, the new index should be 0
+        const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
+        
+        setVocabulary(remainingCards);
+        setCurrentIndex(newIndex);
         setIsFlipped(false);
         setIsNewCard(true);
-      } else {
-        setShowResults(true);
-      }
     }
   };
 
   const resetSession = () => {
-    window.location.reload();
+    setVocabulary(shuffleArray(initialVocab));
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    setShowResults(false);
+    setPersistentlyIncorrectIds(new Set());
+    setIsNewCard(true);
   };
   
   const handleBackToSelection = () => {
@@ -215,7 +227,7 @@ export default function LearnPage() {
       <div className="w-full max-w-2xl mb-8">
         <Progress value={progress} className="h-2" />
         <p className="text-sm text-muted-foreground text-center mt-2">
-          Karte {currentIndex + 1} von {vocabulary.length}
+          Verbleibend: {vocabulary.length} von {totalVocabCount}
         </p>
       </div>
 
@@ -268,7 +280,5 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
-
-    
 
     
