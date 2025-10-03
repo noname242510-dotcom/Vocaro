@@ -233,7 +233,7 @@ export default function LearnPage() {
         <Card
           className={cn(
             "h-80 w-full transition-transform duration-700 [transform-style:preserve-3d] shadow-lg",
-            isFlipped && "[transform:rotateX(180deg)]",
+            isFlipped && "[transform:rotateX(-180deg)]",
             isNewCard && 'animate-pop-in'
           )}
           onClick={() => setIsFlipped(!isFlipped)}
