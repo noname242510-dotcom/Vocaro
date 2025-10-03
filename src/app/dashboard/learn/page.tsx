@@ -212,8 +212,11 @@ export default function LearnPage() {
             <p className="text-4xl font-bold text-center font-headline">{currentCard.term}</p>
           </div>
           {/* Back of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center p-6 bg-card">
-            <p className="text-xl text-center text-muted-foreground">{currentCard.definition}</p>
+          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-6 bg-card">
+            <p className="text-4xl font-bold text-center font-headline">{currentCard.definition}</p>
+            {currentCard.notes && (
+                <p className="text-lg text-center text-muted-foreground mt-4">{currentCard.notes}</p>
+            )}
           </div>
         </Card>
       </div>
