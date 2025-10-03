@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -121,66 +122,64 @@ export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed }: Sub
 
   return (
     <>
-      <Card className="group relative hover:shadow-lg transition-shadow duration-300 flex flex-col">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <span className="text-4xl">{subject.emoji}</span>
-              <div>
-                <CardTitle className="font-headline hover:underline">
-                  <Link href={`/dashboard/subjects/${subject.id}`}>{subject.name}</Link>
-                </CardTitle>
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-muted-foreground text-sm">{stacks?.length ?? 0} Stapel</span>
-                  <span className="text-muted-foreground text-sm font-black">·</span>
-                  <span className="text-muted-foreground text-sm">{totalVocabCount} Begriffe</span>
-                </div>
+      <Card className="group relative hover:shadow-lg transition-shadow duration-300 flex flex-col justify-center items-center text-center p-6">
+        <CardHeader className="p-0">
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-4xl">{subject.emoji}</span>
+            <div>
+              <CardTitle className="font-headline hover:underline">
+                <Link href={`/dashboard/subjects/${subject.id}`}>{subject.name}</Link>
+              </CardTitle>
+              <div className="flex items-center justify-center gap-1 mt-1">
+                <span className="text-muted-foreground text-sm">{stacks?.length ?? 0} Stapel</span>
+                <span className="text-muted-foreground text-sm font-black">·</span>
+                <span className="text-muted-foreground text-sm">{totalVocabCount} Begriffe</span>
               </div>
             </div>
-            <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                onClick={() => {
-                  setRenamedSubjectName(subject.name);
-                  setIsRenameDialogOpen(true);
-                }}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSubjectToDelete(subject);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird das Fach und alle zugehörigen Stapel und Vokabeln dauerhaft gelöscht.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setSubjectToDelete(null)}>Abbrechen</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteSubject}>Löschen</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+          </div>
+          <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full"
+              onClick={() => {
+                setRenamedSubjectName(subject.name);
+                setIsRenameDialogOpen(true);
+              }}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSubjectToDelete(subject);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird das Fach und alle zugehörigen Stapel und Vokabeln dauerhaft gelöscht.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setSubjectToDelete(null)}>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteSubject}>Löschen</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </CardHeader>
-        <CardContent className="mt-auto">
-          <Link href={`/dashboard/subjects/${subject.id}`} className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+        <CardContent className="p-0 mt-auto absolute bottom-4 right-4">
+          <Link href={`/dashboard/subjects/${subject.id}`} className="opacity-0 group-hover:opacity-100 transition-opacity">
             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-secondary">
               <ArrowRight className="h-5 w-5" />
             </Button>
