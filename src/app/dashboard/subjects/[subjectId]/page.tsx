@@ -491,7 +491,7 @@ export default function SubjectDetailPage() {
                   <Tabs defaultValue="manual">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="manual"><Pen className="mr-2 h-4 w-4" />Manuell</TabsTrigger>
-                      <TabsTrigger value="ocr"><Upload className="mr-2 h-4 w-4" />OCR aus Bild</TabsTrigger>
+                      <TabsTrigger value="ocr"><Upload className="mr-2 h-4 w-4" />nur aus Bild</TabsTrigger>
                     </TabsList>
                     <TabsContent value="manual" className="pt-4">
                       <div className="grid gap-4">
