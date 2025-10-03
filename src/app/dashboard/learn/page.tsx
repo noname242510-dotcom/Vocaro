@@ -30,13 +30,14 @@ export default function LearnPage() {
   const router = useRouter();
   
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
+  const [totalVocabCount, setTotalVocabCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const [correctAnswers, setCorrectAnswers] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState<VocabularyItem[]>([]);
+  const [persistentlyIncorrectIds, setPersistentlyIncorrectIds] = useState<Set<string>>(new Set());
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [isNewCard, setIsNewCard] = useState(false);
@@ -64,14 +65,6 @@ export default function LearnPage() {
       }
       
       try {
-        // This is complex. We need to query vocab items across different stacks.
-        // A single query with `documentId` `in` operator is limited to 30 items.
-        // For more, we need multiple queries.
-        // Firestore path: /users/{userId}/subjects/{subjectId}/stacks/{stackId}/vocabulary/{vocabularyId}
-        // We only have vocab IDs, not stack IDs. This makes it impossible to query directly.
-        // This is a data modeling problem. A better model would be to have a single `vocabulary` collection for a subject.
-        // For now, let's assume all vocab is in one subject and we can query all stacks.
-        
         const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', storedSubjectId, 'stacks');
         const stacksSnapshot = await getDocs(stacksCollectionRef);
         const allVocab: VocabularyItem[] = [];
@@ -92,7 +85,9 @@ export default function LearnPage() {
         if (selectedVocab.length === 0) {
           setError('Ausgewählte Vokabeln konnten nicht geladen werden.');
         } else {
-          setVocabulary(shuffleArray(selectedVocab));
+          const shuffledVocab = shuffleArray(selectedVocab);
+          setVocabulary(shuffledVocab);
+          setTotalVocabCount(shuffledVocab.length);
           setIsNewCard(true);
         }
       } catch (e) {
@@ -114,16 +109,16 @@ export default function LearnPage() {
     }
   }, [isNewCard]);
   
-  const progress = vocabulary.length > 0 ? ((currentIndex) / vocabulary.length) * 100 : 0;
+  const progress = totalVocabCount > 0 ? ((currentIndex) / vocabulary.length) * 100 : 0;
 
     const handleAnswer = async (knewIt: boolean) => {
     if (!isFlipped || !user || !firestore) return;
     const currentCard = vocabulary[currentIndex];
 
-    if (knewIt) {
-      setCorrectAnswers(prev => prev + 1);
-    } else {
+    if (!knewIt) {
       setIncorrectAnswers(prev => [...prev, currentCard]);
+      setPersistentlyIncorrectIds(prev => new Set(prev).add(currentCard.id));
+      
       try {
         const sessionVocabRef = collection(firestore, 'users', user.uid, 'learningSessionVocabulary');
         await addDoc(sessionVocabRef, {
@@ -144,17 +139,12 @@ export default function LearnPage() {
       setIsFlipped(false);
       setIsNewCard(true);
     } else {
-        const remainingIncorrect = incorrectAnswers.filter(item => item.id !== currentCard.id);
-        if (!knewIt) {
-            remainingIncorrect.push(currentCard);
-        }
-
-        if (remainingIncorrect.length > 0) {
-          setVocabulary(shuffleArray(remainingIncorrect));
-          setIncorrectAnswers([]);
-          setCurrentIndex(0);
-          setIsFlipped(false);
-          setIsNewCard(true);
+      if (incorrectAnswers.length > 0) {
+        setVocabulary(shuffleArray(incorrectAnswers));
+        setIncorrectAnswers([]);
+        setCurrentIndex(0);
+        setIsFlipped(false);
+        setIsNewCard(true);
       } else {
         setShowResults(true);
       }
@@ -162,11 +152,8 @@ export default function LearnPage() {
   };
 
   const resetSession = () => {
-    // This should re-fetch and re-shuffle
     window.location.reload();
   };
-  
-  const score = vocabulary.length > 0 ? Math.round((correctAnswers / (correctAnswers + incorrectAnswers.length)) * 100) : 0;
   
   const handleBackToSelection = () => {
     if (subjectId) {
@@ -199,16 +186,18 @@ export default function LearnPage() {
 
 
   if (showResults) {
-    const totalAnswered = correctAnswers + incorrectAnswers.length;
-    const finalScore = totalAnswered > 0 ? Math.round((correctAnswers / totalAnswered) * 100) : 0;
+    const incorrectCount = persistentlyIncorrectIds.size;
+    const correctCount = totalVocabCount - incorrectCount;
+    const finalScore = totalVocabCount > 0 ? Math.round((correctCount / totalVocabCount) * 100) : 0;
+    
     return (
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
             <Confetti active={finalScore >= 90} />
             <h1 className="text-4xl font-bold font-headline mb-4">Sitzung beendet!</h1>
             <p className="text-7xl font-bold mb-4">{finalScore}%</p>
             <div className="flex gap-8 text-lg mb-8">
-                <p><span className="font-bold text-green-500">{correctAnswers}</span> Richtig</p>
-                <p><span className="font-bold text-red-500">{incorrectAnswers.length}</span> Falsch</p>
+                <p><span className="font-bold text-green-500">{correctCount}</span> Richtig</p>
+                <p><span className="font-bold text-red-500">{incorrectCount}</span> Falsch</p>
             </div>
             <div className="flex gap-4">
                 <Button onClick={resetSession} size="lg"><RotateCcw className="mr-2 h-4 w-4" /> Nochmal versuchen</Button>
@@ -278,3 +267,5 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
+
+    
