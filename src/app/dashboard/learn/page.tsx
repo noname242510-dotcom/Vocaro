@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -238,11 +239,11 @@ export default function LearnPage() {
           onClick={() => setIsFlipped(!isFlipped)}
         >
           {/* Front of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6 bg-card rounded-2xl">
+          <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6 rounded-2xl">
             <p className="text-4xl font-bold text-center font-headline">{currentCard.term}</p>
           </div>
           {/* Back of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-6 bg-card rounded-2xl">
+          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl">
             <p className="text-4xl font-bold text-center font-headline">{currentCard.definition}</p>
             {currentCard.notes && (
                 <p className="text-lg text-center text-muted-foreground mt-4">{currentCard.notes}</p>
