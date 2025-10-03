@@ -93,32 +93,47 @@ export function StackItem({ stack, subjectId, onSelectionChange, onDelete }: Sta
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-2xl">
         <div className="w-full p-4 flex items-center justify-between group">
-          <div className="flex items-center gap-4">
-            <Checkbox 
-              checked={allVisibleInStackSelected}
-              onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
-            />
-             <CollapsibleTrigger asChild>
-                <div className="flex items-center gap-4 cursor-pointer">
-                    <h3 className="font-headline text-lg">{stack.name}</h3>
-                    <Badge variant="secondary">{stack.vocabCount || 0} Begriffe</Badge>
-                </div>
-            </CollapsibleTrigger>
-          </div>
+          <CollapsibleTrigger asChild>
+            <div className="flex items-center gap-4 cursor-pointer">
+               <div onClick={(e) => e.stopPropagation()}>
+                 <Checkbox 
+                    checked={allVisibleInStackSelected}
+                    onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
+                  />
+               </div>
+              <h3 className="font-headline text-lg">{stack.name}</h3>
+              <Badge variant="secondary">{stack.vocabCount || 0} Begriffe</Badge>
+            </div>
+          </CollapsibleTrigger>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100">
               <Pen className="h-4 w-4" />
             </Button>
-            <AlertDialogTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                >
-                    <Trash2 className="h-4 w-4" />
-                </Button>
-            </AlertDialogTrigger>
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+              <AlertDialogTrigger asChild>
+                  <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
+                  >
+                      <Trash2 className="h-4 w-4" />
+                  </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Bist du absolut sicher?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird der Stapel und alle zugehörigen Vokabeln dauerhaft gelöscht.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteStack} disabled={isDeleting}>
+                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Löschen"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
              <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                     <ChevronDown className={cn('h-5 w-5 transition-transform duration-300', isOpen && 'rotate-180')} />
@@ -152,23 +167,6 @@ export function StackItem({ stack, subjectId, onSelectionChange, onDelete }: Sta
           </div>
         </CollapsibleContent>
       </Collapsible>
-      
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Bist du absolut sicher?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird der Stapel und alle zugehörigen Vokabeln dauerhaft gelöscht.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteStack} disabled={isDeleting}>
-              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Löschen"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
