@@ -273,7 +273,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
   return (
     <div className="pb-24">
       {/* Sticky Header */}
-      <div className="sticky top-24 md:top-20 z-30 bg-background/80 backdrop-blur-sm rounded-full p-2 flex items-center justify-between shadow-md mb-6 w-full max-w-4xl mx-auto group border">
+      <div className="sticky top-24 md:top-20 z-30 p-2 flex items-center justify-between mb-6 w-full max-w-4xl mx-auto group glass-effect">
         <div className="flex items-center gap-2 md:gap-4">
           <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
             <Link href="/dashboard"><ArrowLeft className="h-5 w-5" /></Link>
@@ -435,3 +435,5 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
     </div>
   );
 }
+
+    
