@@ -61,7 +61,7 @@ export default function DashboardLayout({
       </header>
 
       {/* Side Menu */}
-      <div className={`fixed top-0 right-0 h-full w-72 bg-card text-card-foreground shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-full w-72 bg-card text-card-foreground shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'} rounded-l-2xl`}>
         <div className="flex flex-col h-full p-6">
           <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(false)} className="self-end mb-8">
             <Menu className="h-5 w-5" />
