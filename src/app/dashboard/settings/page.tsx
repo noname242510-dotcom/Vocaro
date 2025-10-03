@@ -155,7 +155,7 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="query-direction-overview">
-                  Abfragerichtung Vokabelübersicht
+                  Anzeige Vokabelübersicht
                 </Label>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Deutsches Wort</span>
