@@ -38,6 +38,7 @@ export default function LearnPage() {
   const [incorrectAnswers, setIncorrectAnswers] = useState<VocabularyItem[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
+  const [isNewCard, setIsNewCard] = useState(false);
 
   useEffect(() => {
     if (!firestore || !user) return;
@@ -91,6 +92,7 @@ export default function LearnPage() {
           setError('Ausgewählte Vokabeln konnten nicht geladen werden.');
         } else {
           setVocabulary(shuffleArray(selectedVocab));
+          setIsNewCard(true);
         }
       } catch (e) {
         console.error(e);
@@ -104,6 +106,12 @@ export default function LearnPage() {
 
   }, [firestore, user]);
 
+  useEffect(() => {
+    if (isNewCard) {
+      const timer = setTimeout(() => setIsNewCard(false), 300); // Duration of the animation
+      return () => clearTimeout(timer);
+    }
+  }, [isNewCard]);
   
   const progress = vocabulary.length > 0 ? ((currentIndex) / vocabulary.length) * 100 : 0;
 
@@ -120,6 +128,7 @@ export default function LearnPage() {
     if (currentIndex + 1 < vocabulary.length) {
       setCurrentIndex(prev => prev + 1);
       setIsFlipped(false);
+      setIsNewCard(true);
     } else {
       // If there are incorrect answers, reshuffle them and continue
       if (incorrectAnswers.length > 0) {
@@ -127,6 +136,7 @@ export default function LearnPage() {
           setIncorrectAnswers([]);
           setCurrentIndex(0);
           setIsFlipped(false);
+          setIsNewCard(true);
       } else {
         setShowResults(true);
       }
@@ -203,7 +213,8 @@ export default function LearnPage() {
         <Card
           className={cn(
             "h-80 w-full transition-transform duration-700 [transform-style:preserve-3d]",
-            isFlipped && "[transform:rotateY(180deg)]"
+            isFlipped && "[transform:rotateY(180deg)]",
+            isNewCard && 'animate-pop-in'
           )}
           onClick={() => setIsFlipped(!isFlipped)}
         >
