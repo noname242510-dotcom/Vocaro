@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview Suggests relevant vocabulary based on the image's content.
+ * @fileOverview Extracts text from an image using OCR.
  *
- * - suggestVocabularyFromImageContext - A function that handles the vocabulary suggestion process from an image.
+ * - suggestVocabularyFromImageContext - A function that performs OCR on an image.
  * - SuggestVocabularyFromImageContextInput - The input type for the suggestVocabularyFromImageContext function.
  * - SuggestVocabularyFromImageContextOutput - The return type for the suggestVocabularyFromImageContext function.
  */
@@ -20,7 +20,7 @@ const SuggestVocabularyFromImageContextInputSchema = z.object({
 export type SuggestVocabularyFromImageContextInput = z.infer<typeof SuggestVocabularyFromImageContextInputSchema>;
 
 const SuggestVocabularyFromImageContextOutputSchema = z.object({
-  suggestedVocabulary: z.array(z.string()).describe('An array of suggested vocabulary words based on the image content.'),
+  suggestedVocabulary: z.array(z.string()).describe('An array of text blocks extracted from the image.'),
 });
 export type SuggestVocabularyFromImageContextOutput = z.infer<typeof SuggestVocabularyFromImageContextOutputSchema>;
 
@@ -32,10 +32,10 @@ const prompt = ai.definePrompt({
   name: 'suggestVocabularyFromImageContextPrompt',
   input: {schema: SuggestVocabularyFromImageContextInputSchema},
   output: {schema: SuggestVocabularyFromImageContextOutputSchema},
-  prompt: `You are a helpful assistant designed to suggest relevant vocabulary words based on the content of an image.
-
-  Based on the image provided, suggest a list of vocabulary words that are directly related to the objects, scenes, and concepts depicted in the image.
-
+  prompt: `You are an Optical Character Recognition (OCR) specialist. Your task is to extract all text from the provided image.
+  
+  Return the text exactly as it appears in the image. Do not summarize, translate, or interpret the text.
+  
   Image: {{media url=imageDataUri}}
   `,
 });

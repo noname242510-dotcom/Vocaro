@@ -18,6 +18,7 @@ export type VocabularyItem = {
   id: string;
   term: string;
   definition: string;
+  notes?: string;
 };
 
 export type QuizSettings = {
