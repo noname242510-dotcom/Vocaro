@@ -28,7 +28,7 @@ export type QuizSettings = {
 };
 
 export type AppearanceSettings = {
-  font: 'pt-sans' | 'inter' | 'source-code-pro';
+  font: 'font-body' | 'font-creative' | 'font-code';
   theme: 'light' | 'dark' | 'system';
 };
 

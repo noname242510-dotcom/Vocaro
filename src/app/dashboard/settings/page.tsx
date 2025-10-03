@@ -1,6 +1,6 @@
-
 'use client';
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,6 +13,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function SettingsPage() {
   const settings = mockSettings;
   const { user, isUserLoading } = useFirebase();
+  const [font, setFont] = useState('font-body');
+
+  useEffect(() => {
+    // On mount, set the initial font class
+    document.body.classList.add(font);
+
+    // Clean up function to remove the class when the component unmounts
+    return () => {
+      document.body.classList.remove(font);
+    };
+  }, []); // Run only on mount
+
+  const handleFontChange = (newFont: string) => {
+    // Remove the old font class
+    document.body.classList.remove(font);
+    // Add the new font class
+    document.body.classList.add(newFont);
+    // Update the state
+    setFont(newFont);
+  };
+
 
   const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
     if (name) {
@@ -53,7 +74,7 @@ export default function SettingsPage() {
 
       <div className="flex justify-center">
         <div className="grid gap-8 max-w-2xl w-full">
-          <Card>
+           <Card>
             <CardHeader>
               <CardTitle>Erscheinungsbild</CardTitle>
               <CardDescription>Passe an, wie Vocaro aussieht.</CardDescription>
@@ -66,14 +87,17 @@ export default function SettingsPage() {
                     Wähle die primäre Schriftart für die Anwendung.
                   </span>
                 </Label>
-                <Select defaultValue={settings.appearance.font}>
+                <Select
+                  defaultValue={settings.appearance.font}
+                  onValueChange={handleFontChange}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Schriftart auswählen" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pt-sans">PT Sans</SelectItem>
-                    <SelectItem value="inter">Inter</SelectItem>
-                    <SelectItem value="source-code-pro">Source Code Pro</SelectItem>
+                    <SelectItem value="font-body">PT Sans</SelectItem>
+                    <SelectItem value="font-creative">Merriweather</SelectItem>
+                    <SelectItem value="font-code">Inconsolata</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -42,7 +42,7 @@ export const mockSettings: UserSettings = {
     enableConfetti: true,
   },
   appearance: {
-    font: 'pt-sans',
+    font: 'font-body',
     theme: 'dark',
   }
 };

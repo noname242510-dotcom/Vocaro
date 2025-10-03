@@ -10,10 +10,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['"PT Sans"', 'sans-serif'],
-        headline: ['"PT Sans"', 'sans-serif'],
-        creative: ['"Merriweather"', 'serif'],
-        code: ['"Inconsolata"', 'monospace'],
+        body: ['var(--font-pt-sans)', 'sans-serif'],
+        headline: ['var(--font-pt-sans)', 'sans-serif'],
+        creative: ['var(--font-merriweather)', 'serif'],
+        code: ['var(--font-inconsolata)', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',
