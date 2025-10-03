@@ -40,9 +40,9 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-4 z-40 flex justify-between items-center h-16 px-4 md:px-6 m-2 md:m-4">
+      <header className="sticky top-4 z-40 flex justify-between items-center h-16 px-4 md:px-6 m-2 md:m-4 rounded-full glass-effect shadow-md">
         <div className="flex-1">
-          <Button variant="ghost" size="icon" onClick={toggleTheme} className="glass-effect">
+          <Button variant="ghost" size="icon" onClick={toggleTheme}>
             {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
         </div>
@@ -50,7 +50,7 @@ export default function DashboardLayout({
           <Logo className="text-2xl" />
         </div>
         <div className="flex-1 flex justify-end">
-          <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)} className="glass-effect">
+          <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
             <Menu className="h-5 w-5" />
           </Button>
         </div>
