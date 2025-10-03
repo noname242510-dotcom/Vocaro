@@ -92,18 +92,21 @@ export function StackItem({ stack, subjectId, onSelectionChange, onDelete }: Sta
   return (
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-2xl">
-        <CollapsibleTrigger className="w-full p-4 flex items-center justify-between group">
+        <div className="w-full p-4 flex items-center justify-between group">
           <div className="flex items-center gap-4">
             <Checkbox 
               checked={allVisibleInStackSelected}
               onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
-              onClick={(e) => e.stopPropagation()}
             />
-            <h3 className="font-headline text-lg">{stack.name}</h3>
-            <Badge variant="secondary">{stack.vocabCount || 0} Begriffe</Badge>
+             <CollapsibleTrigger asChild>
+                <div className="flex items-center gap-4 cursor-pointer">
+                    <h3 className="font-headline text-lg">{stack.name}</h3>
+                    <Badge variant="secondary">{stack.vocabCount || 0} Begriffe</Badge>
+                </div>
+            </CollapsibleTrigger>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100" onClick={e => e.stopPropagation()}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100">
               <Pen className="h-4 w-4" />
             </Button>
             <AlertDialogTrigger asChild>
@@ -111,17 +114,18 @@ export function StackItem({ stack, subjectId, onSelectionChange, onDelete }: Sta
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setIsDeleteDialogOpen(true);
-                    }}
+                    onClick={() => setIsDeleteDialogOpen(true)}
                 >
                     <Trash2 className="h-4 w-4" />
                 </Button>
             </AlertDialogTrigger>
-            <ChevronDown className={cn('h-5 w-5 transition-transform duration-300', isOpen && 'rotate-180')} />
+             <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <ChevronDown className={cn('h-5 w-5 transition-transform duration-300', isOpen && 'rotate-180')} />
+                </Button>
+            </CollapsibleTrigger>
           </div>
-        </CollapsibleTrigger>
+        </div>
         <CollapsibleContent>
           <div className="px-4 pb-4 space-y-3">
             {isLoading && <p className="p-2 text-muted-foreground text-sm">Lade Vokabeln...</p>}
