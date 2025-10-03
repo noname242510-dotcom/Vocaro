@@ -32,24 +32,20 @@ export default function SettingsPage() {
 
       <div className="flex flex-col items-center mb-8">
         {isUserLoading ? (
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-16 w-16 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-[150px]" />
-              <Skeleton className="h-4 w-[200px]" />
-            </div>
+          <div className="flex flex-col items-center gap-4">
+            <Skeleton className="h-24 w-24 rounded-full" />
+            <Skeleton className="h-6 w-[150px]" />
           </div>
         ) : user ? (
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
+          <div className="flex flex-col items-center gap-4">
+            <Avatar className="h-24 w-24">
               <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName ?? 'Benutzer'} />
-              <AvatarFallback className="text-2xl font-bold">
+              <AvatarFallback className="text-4xl font-bold">
                 {getInitials(user.displayName, user.email)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-xl font-semibold">{user.displayName || 'Benutzer'}</p>
-              <p className="text-muted-foreground">{user.email}</p>
+              <p className="text-2xl font-semibold text-center">{user.displayName || 'Benutzer'}</p>
             </div>
           </div>
         ) : null}
