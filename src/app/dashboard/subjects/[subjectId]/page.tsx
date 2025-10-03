@@ -45,7 +45,7 @@ import { suggestVocabularyFromImageContext } from '@/ai/flows/suggest-vocabulary
 import { generateVocabularyFromExtractedText } from '@/ai/flows/generate-vocabulary-from-extracted-text';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, addDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, addDoc, writeBatch, serverTimestamp, getDocs } from 'firebase/firestore';
 import { StackItem } from './_components/stack-item';
 
 
@@ -55,7 +55,7 @@ export default function SubjectDetailPage() {
   const params = useParams();
   const subjectId = params.subjectId as string;
 
-  const [selectedVocab, setSelectedVocab] = useState<string[]>([]);
+  const [allVocabulary, setAllVocabulary] = useState<Record<string, VocabularyItem[]>>({});
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isProcessingOcr, setIsProcessingOcr] = useState(false);
   const [newStackName, setNewStackName] = useState('');
@@ -79,6 +79,22 @@ export default function SubjectDetailPage() {
   }, [firestore, user, subjectId]);
 
   const { data: stacks, isLoading: areStacksLoading, forceUpdate } = useCollection<Stack>(stacksCollectionRef);
+
+  useEffect(() => {
+    if (stacks && firestore && user) {
+        const fetchAllVocab = async () => {
+            const vocabData: Record<string, VocabularyItem[]> = {};
+            for (const stack of stacks) {
+                const vocabCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stack.id, 'vocabulary');
+                const vocabSnapshot = await getDocs(vocabCollectionRef);
+                vocabData[stack.id] = vocabSnapshot.docs.map(d => ({ ...d.data(), id: d.id, isSelected: false } as VocabularyItem));
+            }
+            setAllVocabulary(vocabData);
+        };
+        fetchAllVocab();
+    }
+}, [stacks, firestore, user, subjectId, forceUpdate]);
+
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -212,6 +228,23 @@ export default function SubjectDetailPage() {
         setIsAddingManually(false);
     }
   };
+  
+  const handleSelectionChange = (vocabId: string, isSelected: boolean) => {
+    setAllVocabulary(currentVocab => {
+        const newVocab = { ...currentVocab };
+        for (const stackId in newVocab) {
+            newVocab[stackId] = newVocab[stackId].map(v => 
+                v.id === vocabId ? { ...v, isSelected } : v
+            );
+        }
+        return newVocab;
+    });
+  };
+
+  const selectedVocab = useMemo(() => {
+    return Object.values(allVocabulary).flat().filter(v => v.isSelected).map(v => v.id);
+  }, [allVocabulary]);
+
 
   const handleStartLearning = () => {
     if (selectedVocab.length > 0) {
@@ -284,13 +317,10 @@ export default function SubjectDetailPage() {
             key={stack.id} 
             stack={stack}
             subjectId={subjectId}
+            vocabulary={allVocabulary[stack.id] || []}
             onDelete={forceUpdate}
             onRename={forceUpdate}
-            onSelectionChange={(vocabId, isSelected) => {
-              setSelectedVocab(prev => 
-                isSelected ? [...prev, vocabId] : prev.filter(id => id !== vocabId)
-              )
-            }}
+            onSelectionChange={handleSelectionChange}
           />
         ))}
         </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { collection, doc, writeBatch, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase';
 import type { Stack, VocabularyItem } from '@/lib/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
@@ -40,12 +40,13 @@ import { useRouter } from 'next/navigation';
 interface StackItemProps {
   stack: Stack;
   subjectId: string;
+  vocabulary: VocabularyItem[];
   onSelectionChange: (vocabId: string, isSelected: boolean) => void;
   onDelete: () => void;
   onRename: () => void;
 }
 
-export function StackItem({ stack, subjectId, onSelectionChange, onDelete, onRename }: StackItemProps) {
+export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onDelete, onRename }: StackItemProps) {
   const { firestore, user } = useFirebase();
   const [isOpen, setIsOpen] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -56,21 +57,11 @@ export function StackItem({ stack, subjectId, onSelectionChange, onDelete, onRen
   const router = useRouter();
 
 
-  const vocabCollectionRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stack.id, 'vocabulary');
-  }, [firestore, user, subjectId, stack.id]);
-
-  const { data: vocabulary, isLoading } = useCollection<VocabularyItem>(vocabCollectionRef);
-
-  const allVisibleInStackSelected = vocabulary ? vocabulary.every(v => v.isSelected) : false;
+  const allVisibleInStackSelected = vocabulary.length > 0 && vocabulary.every(v => v.isSelected);
 
   const handleSelectAll = (checked: boolean) => {
     vocabulary?.forEach(v => {
         onSelectionChange(v.id, checked);
-        if (v) {
-          v.isSelected = checked;
-        }
     });
   }
 
@@ -127,7 +118,7 @@ export function StackItem({ stack, subjectId, onSelectionChange, onDelete, onRen
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-2xl">
         <div className="w-full p-4 flex items-center justify-between group">
-           <div className="flex items-center gap-4 flex-1" onClick={() => setIsOpen(!isOpen)}>
+           <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
              <div onClick={(e) => e.stopPropagation()}>
                <Checkbox 
                   checked={allVisibleInStackSelected}
@@ -204,8 +195,7 @@ export function StackItem({ stack, subjectId, onSelectionChange, onDelete, onRen
         </div>
         <CollapsibleContent>
           <div className="px-4 pb-4 space-y-3">
-            {isLoading && <p className="p-2 text-muted-foreground text-sm">Lade Vokabeln...</p>}
-            {!isLoading && vocabulary && vocabulary.length > 0 ? (
+            {vocabulary && vocabulary.length > 0 ? (
               vocabulary.map((item) => (
                 <Card 
                   key={item.id}
@@ -223,7 +213,7 @@ export function StackItem({ stack, subjectId, onSelectionChange, onDelete, onRen
                 </Card>
               ))
             ) : (
-              !isLoading && <p className="p-4 text-center text-muted-foreground text-sm">Keine Vokabeln in diesem Stapel.</p>
+              <p className="p-4 text-center text-muted-foreground text-sm">Keine Vokabeln in diesem Stapel.</p>
             )}
           </div>
         </CollapsibleContent>
