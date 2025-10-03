@@ -500,11 +500,11 @@ export default function SubjectDetailPage() {
                             <Input id="stack-name" placeholder="z.B. Kapitel 1" value={newStackName} onChange={e => setNewStackName(e.target.value)} />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="term">Begriff</Label>
+                          <Label htmlFor="term">Fremdwort</Label>
                           <Input id="term" placeholder="z.B., Hola" value={manualTerm} onChange={e => setManualTerm(e.target.value)} />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="definition">Definition</Label>
+                          <Label htmlFor="definition">Deutsches Wort</Label>
                           <Textarea id="definition" placeholder="z.B., Hallo" value={manualDefinition} onChange={e => setManualDefinition(e.target.value)} />
                         </div>
                          <div className="grid gap-2">
