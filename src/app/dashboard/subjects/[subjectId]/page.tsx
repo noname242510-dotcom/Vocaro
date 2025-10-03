@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   ChevronDown,
   Circle,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,6 +41,8 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Badge } from '@/components/ui/badge';
 import type { Stack } from '@/lib/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { suggestVocabularyFromImageContext } from '@/ai/flows/suggest-vocabulary-from-image-context';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock data for demonstration until Firebase is fully integrated
 const subject = { id: '1', name: 'Spanisch', emoji: '🇪🇸' };
@@ -48,8 +51,9 @@ const stacksData: Stack[] = []; // Start with no stacks
 export default function SubjectDetailPage({ params }: { params: { subjectId: string } }) {
   const [stacks, setStacks] = useState<Stack[]>(stacksData);
   const [selectedVocab, setSelectedVocab] = useState<string[]>([]);
-  const ocrImage = PlaceHolderImages[0];
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const { toast } = useToast();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -61,6 +65,37 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
       reader.readAsDataURL(file);
     } else {
       setPreviewImage(null);
+    }
+  };
+
+  const handleExtractVocabulary = async () => {
+    if (!previewImage) {
+      toast({
+        variant: "destructive",
+        title: "Kein Bild ausgewählt",
+        description: "Bitte wählen Sie zuerst ein Bild aus.",
+      });
+      return;
+    }
+
+    setIsExtracting(true);
+    try {
+      const result = await suggestVocabularyFromImageContext({ imageDataUri: previewImage });
+      console.log('Extracted Vocabulary:', result.suggestedVocabulary);
+      // Here you would typically update the state to show the extracted vocab
+      toast({
+        title: "Vokabeln extrahiert!",
+        description: `${result.suggestedVocabulary.length} Begriffe gefunden.`,
+      });
+    } catch (error) {
+      console.error("Error extracting vocabulary:", error);
+      toast({
+        variant: "destructive",
+        title: "Fehler bei der Extraktion",
+        description: "Die Vokabeln konnten nicht extrahiert werden. Bitte versuchen Sie es erneut.",
+      });
+    } finally {
+      setIsExtracting(false);
     }
   };
 
@@ -219,14 +254,21 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="picture">Bild</Label>
-                          <Input id="picture" type="file" onChange={handleFileChange} />
+                          <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" />
                         </div>
                         {previewImage && (
                           <div className="relative w-full h-64 rounded-md border border-dashed flex items-center justify-center bg-muted/40">
                             <Image src={previewImage} alt="Vorschau" layout="fill" objectFit="contain" className="rounded-md" />
                           </div>
                         )}
-                        <Button><Upload className="mr-2 h-4 w-4" /> Vokabeln extrahieren</Button>
+                        <Button onClick={handleExtractVocabulary} disabled={isExtracting}>
+                          {isExtracting ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Upload className="mr-2 h-4 w-4" />
+                          )}
+                          {isExtracting ? 'Extrahiere...' : 'Vokabeln extrahieren'}
+                        </Button>
                       </div>
                     </TabsContent>
                   </Tabs>
