@@ -14,6 +14,9 @@ export default function SettingsPage() {
   const { user, isUserLoading } = useFirebase();
   const [font, setFont] = useState('font-body');
   const [enableConfetti, setEnableConfetti] = useState(true);
+  const [queryDirectionOverview, setQueryDirectionOverview] = useState(false); // false: term first, true: definition first
+  const [queryDirectionFlashcards, setQueryDirectionFlashcards] = useState(false); // false: term first, true: definition first
+  const [showHints, setShowHints] = useState(true);
 
   useEffect(() => {
     // Load persisted settings on mount
@@ -22,6 +25,16 @@ export default function SettingsPage() {
 
     const persistedConfetti = localStorage.getItem('enable-confetti');
     setEnableConfetti(persistedConfetti === null ? true : persistedConfetti === 'true');
+    
+    const persistedQueryDirectionOverview = localStorage.getItem('query-direction-overview');
+    setQueryDirectionOverview(persistedQueryDirectionOverview === 'true');
+
+    const persistedQueryDirectionFlashcards = localStorage.getItem('query-direction-flashcards');
+    setQueryDirectionFlashcards(persistedQueryDirectionFlashcards === 'true');
+
+    const persistedShowHints = localStorage.getItem('show-hints');
+    setShowHints(persistedShowHints === null ? true : persistedShowHints === 'true');
+
 
   }, []);
 
@@ -37,6 +50,21 @@ export default function SettingsPage() {
   const handleConfettiChange = (checked: boolean) => {
     setEnableConfetti(checked);
     localStorage.setItem('enable-confetti', String(checked));
+  };
+  
+  const handleQueryDirectionOverviewChange = (checked: boolean) => {
+    setQueryDirectionOverview(checked);
+    localStorage.setItem('query-direction-overview', String(checked));
+  };
+
+  const handleQueryDirectionFlashcardsChange = (checked: boolean) => {
+    setQueryDirectionFlashcards(checked);
+    localStorage.setItem('query-direction-flashcards', String(checked));
+  };
+  
+  const handleShowHintsChange = (checked: boolean) => {
+    setShowHints(checked);
+    localStorage.setItem('show-hints', String(checked));
   };
 
 
@@ -108,7 +136,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="confetti-mode">
-                  Konfetti bei Erfolg
+                  <span>Konfetti bei Erfolg</span>
                 </Label>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">aus</span>
@@ -131,7 +159,12 @@ export default function SettingsPage() {
                 </Label>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Deutsches Wort</span>
-                    <Switch id="query-direction-overview" className="data-[state=checked]:bg-input data-[state=unchecked]:bg-input [&>span]:bg-background" />
+                    <Switch 
+                      id="query-direction-overview" 
+                      className="data-[state=checked]:bg-input data-[state=unchecked]:bg-input [&>span]:bg-background"
+                      checked={queryDirectionOverview}
+                      onCheckedChange={handleQueryDirectionOverviewChange}
+                    />
                     <span className="text-sm text-muted-foreground">Fremdwort</span>
                 </div>
               </div>
@@ -141,7 +174,12 @@ export default function SettingsPage() {
                 </Label>
                  <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Deutsches Wort</span>
-                    <Switch id="query-direction-flashcards" className="data-[state=checked]:bg-input data-[state=unchecked]:bg-input [&>span]:bg-background" />
+                    <Switch 
+                      id="query-direction-flashcards" 
+                      className="data-[state=checked]:bg-input data-[state=unchecked]:bg-input [&>span]:bg-background"
+                      checked={queryDirectionFlashcards}
+                      onCheckedChange={handleQueryDirectionFlashcardsChange}
+                    />
                     <span className="text-sm text-muted-foreground">Fremdwort</span>
                 </div>
               </div>
@@ -151,7 +189,11 @@ export default function SettingsPage() {
                 </Label>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">ausblenden</span>
-                  <Switch id="show-hints" />
+                  <Switch 
+                    id="show-hints"
+                    checked={showHints}
+                    onCheckedChange={handleShowHintsChange}
+                  />
                   <span className="text-sm text-muted-foreground">einblenden</span>
                 </div>
               </div>

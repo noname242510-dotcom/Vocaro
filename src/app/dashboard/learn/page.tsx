@@ -42,8 +42,18 @@ export default function LearnPage() {
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [isNewCard, setIsNewCard] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  
+  const [isTermFirst, setIsTermFirst] = useState(true);
+  const [shouldShowHints, setShouldShowHints] = useState(true);
 
   useEffect(() => {
+    // Load settings from local storage
+    const termFirstSetting = localStorage.getItem('query-direction-flashcards') === 'false';
+    setIsTermFirst(termFirstSetting);
+    
+    const showHintsSetting = localStorage.getItem('show-hints') !== 'false';
+    setShouldShowHints(showHintsSetting);
+    
     if (!firestore || !user) return;
 
     const fetchVocab = async () => {
@@ -254,12 +264,12 @@ export default function LearnPage() {
         >
           {/* Front of the card */}
           <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6 rounded-2xl bg-card">
-            <p className="text-4xl font-bold text-center font-headline">{currentCard.term}</p>
+            <p className="text-4xl font-bold text-center font-headline">{isTermFirst ? currentCard.term : currentCard.definition}</p>
           </div>
           {/* Back of the card */}
           <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
-            <p className="text-4xl font-bold text-center font-headline">{currentCard.definition}</p>
-            {currentCard.notes && (
+            <p className="text-4xl font-bold text-center font-headline">{isTermFirst ? currentCard.definition : currentCard.term}</p>
+            {shouldShowHints && currentCard.notes && (
                 <div className="flex items-center gap-2 text-lg text-center text-muted-foreground mt-4">
                   <Lightbulb className="h-5 w-5" />
                   <p>{currentCard.notes}</p>

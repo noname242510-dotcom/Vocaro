@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { collection, doc, writeBatch, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import type { Stack, VocabularyItem } from '@/lib/types';
@@ -53,8 +53,14 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [newStackName, setNewStackName] = useState(stack.name);
+  const [isTermFirst, setIsTermFirst] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
+  
+  useEffect(() => {
+    const setting = localStorage.getItem('query-direction-overview') === 'false';
+    setIsTermFirst(setting);
+  }, []);
 
 
   const allVisibleInStackSelected = vocabulary.length > 0 && vocabulary.every(v => v.isSelected);
@@ -207,8 +213,8 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                       onCheckedChange={(checked) => onSelectionChange(item.id, Boolean(checked))}
                   />
                   <label htmlFor={`vocab-${item.id}`} className="flex-1 grid grid-cols-2 gap-4 cursor-pointer">
-                    <span className="font-medium">{item.term}</span>
-                    <span className="text-muted-foreground">{item.definition}</span>
+                    <span className="font-medium">{isTermFirst ? item.term : item.definition}</span>
+                    <span className="text-muted-foreground">{isTermFirst ? item.definition : item.term}</span>
                   </label>
                 </Card>
               ))
