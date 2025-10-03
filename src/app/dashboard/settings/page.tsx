@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -172,7 +173,7 @@ export default function SettingsPage() {
               </div>
                <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="query-direction-flashcards">
-                  Abgefragtes Wort Karteikarten
+                  Abfragerichtung Karteikarten
                 </Label>
                  <div className="flex items-center gap-4">
                     <span className={cn("text-sm transition-colors", !queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsches Wort</span>
