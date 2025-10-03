@@ -1,0 +1,181 @@
+/**
+ * @description This ruleset enforces a strict user-ownership model for the Vocaro application.
+ * All data is nested under /users/{userId}, ensuring that only the authenticated user can access their own data.
+ *
+ * Data Structure:
+ * - /users/{userId}: User documents.
+ * - /users/{userId}/subjects/{subjectId}: Subjects created by the user.
+ * - /users/{userId}/subjects/{subjectId}/stacks/{stackId}: Stacks within a subject.
+ * - /users/{userId}/subjects/{subjectId}/stacks/{stackId}/vocabulary/{vocabularyId}: Vocabulary words within a stack.
+ * - /users/{userId}/settings/{settingsId}: User settings.
+ * - /users/{userId}/learningSessions/{learningSessionId}: Learning sessions.
+ * - /users/{userId}/learningSessions/{learningSessionId}/vocabulary/{vocabularyId}: Vocabulary learned in a session.
+ *
+ * Key Security Decisions:
+ * - Users can only access their own data.
+ * - Data is organized hierarchically under the user's ID.
+ * - The rules use path-based ownership, eliminating the need for 'get()' calls.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Allows a user to create, read, update, and delete their own user document.
+     * @path /users/{userId}
+     * @allow (create) User with ID matching auth.uid can create their document.
+     * @allow (get) Any authenticated user can read a user document.
+     * @allow (update) User with ID matching auth.uid can update their document.
+     * @allow (delete) User with ID matching auth.uid can delete their document.
+     * @deny (create) User tries to create a document with an ID that doesn't match their auth.uid.
+     * @deny (update) User tries to update a document with an ID that doesn't match their auth.uid.
+     * @deny (delete) User tries to delete a document with an ID that doesn't match their auth.uid.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows a user to create, read, update, and delete subjects under their user document.
+     * @path /users/{userId}/subjects/{subjectId}
+     * @allow (create) User with ID matching the path can create a subject.
+     * @allow (get) User with ID matching the path can read a subject.
+     * @allow (update) User with ID matching the path can update a subject.
+     * @allow (delete) User with ID matching the path can delete a subject.
+     * @deny (create) User tries to create a subject under another user's document.
+     * @deny (get) User tries to read a subject under another user's document.
+     * @deny (update) User tries to update a subject under another user's document.
+     * @deny (delete) User tries to delete a subject under another user's document.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/subjects/{subjectId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows a user to create, read, update, and delete stacks under their subject.
+     * @path /users/{userId}/subjects/{subjectId}/stacks/{stackId}
+     * @allow (create) User with ID matching the path can create a stack.
+     * @allow (get) User with ID matching the path can read a stack.
+     * @allow (update) User with ID matching the path can update a stack.
+     * @allow (delete) User with ID matching the path can delete a stack.
+     * @deny (create) User tries to create a stack under another user's subject.
+     * @deny (get) User tries to read a stack under another user's subject.
+     * @deny (update) User tries to update a stack under another user's subject.
+     * @deny (delete) User tries to delete a stack under another user's subject.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/subjects/{subjectId}/stacks/{stackId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows a user to create, read, update, and delete vocabulary words under their stack.
+     * @path /users/{userId}/subjects/{subjectId}/stacks/{stackId}/vocabulary/{vocabularyId}
+     * @allow (create) User with ID matching the path can create a vocabulary word.
+     * @allow (get) User with ID matching the path can read a vocabulary word.
+     * @allow (update) User with ID matching the path can update a vocabulary word.
+     * @allow (delete) User with ID matching the path can delete a vocabulary word.
+     * @deny (create) User tries to create a vocabulary word under another user's stack.
+     * @deny (get) User tries to read a vocabulary word under another user's stack.
+     * @deny (update) User tries to update a vocabulary word under another user's stack.
+     * @deny (delete) User tries to delete a vocabulary word under another user's stack.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/subjects/{subjectId}/stacks/{stackId}/vocabulary/{vocabularyId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows a user to create, read, update, and delete their own settings.
+     * @path /users/{userId}/settings/{settingsId}
+     * @allow (create) User with ID matching the path can create settings.
+     * @allow (get) User with ID matching the path can read settings.
+     * @allow (update) User with ID matching the path can update settings.
+     * @allow (delete) User with ID matching the path can delete settings.
+     * @deny (create) User tries to create settings under another user's document.
+     * @deny (get) User tries to read settings under another user's document.
+     * @deny (update) User tries to update settings under another user's document.
+     * @deny (delete) User tries to delete settings under another user's document.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/settings/{settingsId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows a user to create, read, update, and delete learning sessions.
+     * @path /users/{userId}/learningSessions/{learningSessionId}
+     * @allow (create) User with ID matching the path can create a learning session.
+     * @allow (get) User with ID matching the path can read a learning session.
+     * @allow (update) User with ID matching the path can update a learning session.
+     * @allow (delete) User with ID matching the path can delete a learning session.
+     * @deny (create) User tries to create a learning session under another user's document.
+     * @deny (get) User tries to read a learning session under another user's document.
+     * @deny (update) User tries to update a learning session under another user's document.
+     * @deny (delete) User tries to delete a learning session under another user's document.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/learningSessions/{learningSessionId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows a user to create, read, update, and delete vocabulary learned in a session.
+     * @path /users/{userId}/learningSessions/{learningSessionId}/vocabulary/{vocabularyId}
+     * @allow (create) User with ID matching the path can create vocabulary in a session.
+     * @allow (get) User with ID matching the path can read vocabulary in a session.
+     * @allow (update) User with ID matching the path can update vocabulary in a session.
+     * @allow (delete) User with ID matching the path can delete vocabulary in a session.
+     * @deny (create) User tries to create vocabulary in a session under another user's document.
+     * @deny (get) User tries to read vocabulary in a session under another user's document.
+     * @deny (update) User tries to update vocabulary in a session under another user's document.
+     * @deny (delete) User tries to delete vocabulary in a session under another user's document.
+     * @principle Restricts access to a user's own data tree.
+     */
+    match /users/{userId}/learningSessions/{learningSessionId}/vocabulary/{vocabularyId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
