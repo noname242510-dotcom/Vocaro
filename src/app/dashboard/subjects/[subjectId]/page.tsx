@@ -221,13 +221,11 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
                           <Label htmlFor="picture">Bild</Label>
                           <Input id="picture" type="file" onChange={handleFileChange} />
                         </div>
-                        <div className="relative w-full h-64 rounded-md border border-dashed flex items-center justify-center bg-muted/40">
-                          {previewImage ? (
+                        {previewImage && (
+                          <div className="relative w-full h-64 rounded-md border border-dashed flex items-center justify-center bg-muted/40">
                             <Image src={previewImage} alt="Vorschau" layout="fill" objectFit="contain" className="rounded-md" />
-                          ) : (
-                            <p className="text-sm text-muted-foreground">Bildvorschau</p>
-                          )}
-                        </div>
+                          </div>
+                        )}
                         <Button><Upload className="mr-2 h-4 w-4" /> Vokabeln extrahieren</Button>
                       </div>
                     </TabsContent>
