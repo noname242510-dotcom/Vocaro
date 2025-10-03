@@ -520,7 +520,7 @@ export default function SubjectDetailPage() {
 
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-50">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
          <div className="p-2 flex items-center justify-between gap-2">
             <AlertDialog open={isDeleteVocabDialogOpen} onOpenChange={setIsDeleteVocabDialogOpen}>
               <AlertDialogTrigger asChild>
