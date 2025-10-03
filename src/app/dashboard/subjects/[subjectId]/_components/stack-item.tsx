@@ -58,8 +58,8 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
   const router = useRouter();
   
   useEffect(() => {
-    // query-direction-overview: false = term first (Fremdwort), true = definition first (Deutsches Wort)
-    const setting = localStorage.getItem('query-direction-overview') !== 'true';
+    // query-direction-overview: false = German word first, true = foreign term first
+    const setting = localStorage.getItem('query-direction-overview') === 'true';
     setIsTermFirst(setting);
   }, []);
 
