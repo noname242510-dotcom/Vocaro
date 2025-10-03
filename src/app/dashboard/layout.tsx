@@ -15,10 +15,12 @@ export default function DashboardLayout({
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     const isDark = document.documentElement.classList.contains('dark');
     setIsDarkMode(isDark);
   }, []);
@@ -42,9 +44,11 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-4 z-40 flex justify-between items-center h-16 px-4 md:px-6 m-2 md:m-4 rounded-full glass-effect shadow-md">
         <div className="flex-1">
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
+          {mounted && (
+            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+          )}
         </div>
         <div className="flex-1 text-center">
           <Logo className="text-2xl" />
