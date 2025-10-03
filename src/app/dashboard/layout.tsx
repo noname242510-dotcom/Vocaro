@@ -98,20 +98,25 @@ export default function DashboardLayout({
             <ul>
                 <li className="mb-4">
                   <Collapsible open={isSubjectsOpen} onOpenChange={setIsSubjectsOpen}>
-                    <CollapsibleTrigger asChild>
-                       <Button
-                          variant={pathname.startsWith('/dashboard/subjects') || pathname === '/dashboard' ? 'secondary' : 'ghost'}
-                          className="w-full justify-between text-lg rounded-full"
-                          asChild={false}
-                          onClick={() => router.push('/dashboard')}
-                        >
-                          <div className="flex items-center">
-                           <Home className="mr-4 h-5 w-5" />
-                            Fächer
-                          </div>
+                    <div
+                      className={cn(
+                        'flex items-center justify-between w-full rounded-full text-lg h-10 px-4',
+                        pathname.startsWith('/dashboard/subjects') || pathname === '/dashboard' ? 'bg-secondary' : 'bg-transparent'
+                      )}
+                    >
+                      <button
+                        className="flex items-center h-full"
+                        onClick={() => router.push('/dashboard')}
+                      >
+                        <Home className="mr-4 h-5 w-5" />
+                        Fächer
+                      </button>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
                           <ChevronDown className={cn("h-5 w-5 transition-transform", isSubjectsOpen && "rotate-180")} />
                         </Button>
-                    </CollapsibleTrigger>
+                      </CollapsibleTrigger>
+                    </div>
                     <CollapsibleContent>
                       <ul className="pl-8 pt-2 space-y-1">
                         {subjects && subjects.map(subject => (
