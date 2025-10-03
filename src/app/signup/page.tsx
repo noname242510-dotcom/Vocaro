@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import { useState }from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,41 +17,37 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-      console.error("Auth service is not available.");
-      toast({
-        variant: 'destructive',
-        title: 'Registrierung fehlgeschlagen',
-        description: 'Authentifizierungsdienst nicht verfügbar.',
-      });
-      return;
-    }
-    // Simple validation for case-insensitivity would be ideally checked against the DB
-    // This is a placeholder for more complex logic
-    if (username.toLowerCase() === 'existinguser') {
-         toast({
-            variant: 'destructive',
-            title: 'Benutzername bereits vergeben',
-            description: 'Bitte wählen Sie einen anderen Benutzernamen.',
-         });
-         return;
-    }
-
+    
     try {
+      const auth = getAuth();
       await createUserWithEmailAndPassword(auth, email, password);
       // You might want to update the user's profile with the username here
       router.push('/dashboard');
     } catch (error: any) {
+        let description = 'Ein unbekannter Fehler ist aufgetreten.';
+        switch (error.code) {
+            case 'auth/email-already-in-use':
+                description = 'Diese E-Mail-Adresse wird bereits verwendet.';
+                break;
+            case 'auth/invalid-email':
+                description = 'Die E-Mail-Adresse ist ungültig.';
+                break;
+            case 'auth/weak-password':
+                description = 'Das Passwort ist zu schwach. Es muss mindestens 6 Zeichen lang sein.';
+                break;
+            default:
+                description = 'Bitte versuchen Sie es später erneut.';
+                break;
+        }
       toast({
         variant: 'destructive',
         title: 'Registrierung fehlgeschlagen',
-        description: error.message,
+        description: description,
       });
     }
   };
@@ -109,7 +104,7 @@ export default function SignUpPage() {
                         className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
                         onClick={() => setShowPassword(!showPassword)}
                     >
-                        {showPassword ? <EyeOff /> : <Eye />}
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                 </div>
               </div>
