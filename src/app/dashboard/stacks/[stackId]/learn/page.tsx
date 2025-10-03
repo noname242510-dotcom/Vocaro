@@ -223,7 +223,6 @@ export default function LearnPage() {
             )}
           </div>
         </Card>
-        <div className="absolute inset-0 rounded-2xl shadow-lg -z-10" />
       </div>
       
        <div className="w-full max-w-2xl h-16 mt-8 flex items-center justify-center">
