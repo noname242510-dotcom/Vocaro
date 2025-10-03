@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
-import { X, Check, RotateCcw, Loader2 } from 'lucide-react';
+import { X, Check, RotateCcw, Loader2, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -239,14 +239,17 @@ export default function LearnPage() {
           onClick={() => setIsFlipped(!isFlipped)}
         >
           {/* Front of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6 rounded-2xl">
+          <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6 rounded-2xl bg-card">
             <p className="text-4xl font-bold text-center font-headline">{currentCard.term}</p>
           </div>
           {/* Back of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl">
+          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
             <p className="text-4xl font-bold text-center font-headline">{currentCard.definition}</p>
             {currentCard.notes && (
-                <p className="text-lg text-center text-muted-foreground mt-4">{currentCard.notes}</p>
+                <div className="flex items-center gap-2 text-lg text-center text-muted-foreground mt-4">
+                  <Lightbulb className="h-5 w-5" />
+                  <p>{currentCard.notes}</p>
+                </div>
             )}
           </div>
         </Card>
@@ -275,5 +278,3 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
-
-    
