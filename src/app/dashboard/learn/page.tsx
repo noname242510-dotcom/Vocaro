@@ -41,6 +41,7 @@ export default function LearnPage() {
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [isNewCard, setIsNewCard] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     if (!firestore || !user) return;
@@ -149,6 +150,14 @@ export default function LearnPage() {
     }
 
     if (remainingCards.length === 0) {
+        const incorrectCount = persistentlyIncorrectIds.size;
+        const correctCount = totalVocabCount - incorrectCount;
+        const finalScore = totalVocabCount > 0 ? Math.round((correctCount / totalVocabCount) * 100) : 0;
+        
+        const confettiEnabled = localStorage.getItem('enable-confetti') !== 'false';
+        if (finalScore >= 90 && confettiEnabled) {
+            setShowConfetti(true);
+        }
         setShowResults(true);
     } else {
         // If we removed the last item, the new index should be 0
@@ -166,6 +175,7 @@ export default function LearnPage() {
     setCurrentIndex(0);
     setIsFlipped(false);
     setShowResults(false);
+    setShowConfetti(false);
     setPersistentlyIncorrectIds(new Set());
     setIsNewCard(true);
   };
@@ -207,7 +217,7 @@ export default function LearnPage() {
     
     return (
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
-            <Confetti active={finalScore >= 90} />
+            <Confetti active={showConfetti} />
             <h1 className="text-4xl font-bold font-headline mb-4">Sitzung beendet!</h1>
             <p className="text-7xl font-bold mb-4">{finalScore}%</p>
             <div className="flex gap-8 text-lg mb-8">
@@ -282,9 +292,3 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
-
-    
-
-    
-
-    

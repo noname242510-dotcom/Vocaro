@@ -14,25 +14,30 @@ export default function SettingsPage() {
   const settings = mockSettings;
   const { user, isUserLoading } = useFirebase();
   const [font, setFont] = useState('font-body');
-  const [enableConfetti, setEnableConfetti] = useState(settings.quiz.enableConfetti);
+  const [enableConfetti, setEnableConfetti] = useState(true);
 
   useEffect(() => {
-    // On mount, set the initial font class
-    document.body.classList.add(font);
+    // Load persisted settings on mount
+    const persistedFont = localStorage.getItem('app-font') || 'font-body';
+    handleFontChange(persistedFont);
 
-    // Clean up function to remove the class when the component unmounts
-    return () => {
-      document.body.classList.remove(font);
-    };
-  }, []); // Run only on mount
+    const persistedConfetti = localStorage.getItem('enable-confetti');
+    setEnableConfetti(persistedConfetti === null ? true : persistedConfetti === 'true');
+
+  }, []);
 
   const handleFontChange = (newFont: string) => {
-    // Remove the old font class
-    document.body.classList.remove(font);
-    // Add the new font class
-    document.body.classList.add(newFont);
-    // Update the state
+    if (typeof window !== 'undefined') {
+        document.body.classList.remove(font);
+        document.body.classList.add(newFont);
+        localStorage.setItem('app-font', newFont);
+    }
     setFont(newFont);
+  };
+
+  const handleConfettiChange = (checked: boolean) => {
+    setEnableConfetti(checked);
+    localStorage.setItem('enable-confetti', String(checked));
   };
 
 
@@ -89,7 +94,7 @@ export default function SettingsPage() {
                   </span>
                 </Label>
                 <Select
-                  defaultValue={settings.appearance.font}
+                  value={font}
                   onValueChange={handleFontChange}
                 >
                   <SelectTrigger className="w-[180px]">
@@ -109,7 +114,7 @@ export default function SettingsPage() {
                     Aktiviere eine Konfetti-Animation für hohe Punktzahlen.
                   </span>
                 </Label>
-                <Switch id="confetti-mode" checked={enableConfetti} onCheckedChange={setEnableConfetti} />
+                <Switch id="confetti-mode" checked={enableConfetti} onCheckedChange={handleConfettiChange} />
               </div>
             </CardContent>
           </Card>
