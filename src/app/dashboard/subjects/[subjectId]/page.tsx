@@ -45,6 +45,7 @@ import { generateVocabularyFromExtractedText } from '@/ai/flows/generate-vocabul
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, addDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { StackItem } from './_components/stack-item';
 
 
 export default function SubjectDetailPage({ params }: { params: { subjectId: string } }) {
@@ -76,9 +77,6 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
   }, [firestore, user, params.subjectId]);
 
   const { data: stacks, isLoading: areStacksLoading } = useCollection<Stack>(stacksCollectionRef);
-
-  // This is a placeholder. In a real app you'd fetch vocab for each stack.
-  const vocabularyByStack: { [key: string]: VocabularyItem[] } = {};
 
 
   useEffect(() => {
@@ -298,33 +296,16 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
       ) : (
         <div className="space-y-4 max-w-4xl mx-auto">
         {stacks?.map((stack) => (
-          <Collapsible key={stack.id} defaultOpen className="border rounded-2xl">
-            <CollapsibleTrigger className="w-full p-4 flex items-center justify-between group">
-                <div className='flex items-center gap-4'>
-                    <Circle className="h-5 w-5 text-muted-foreground/50" />
-                    <h3 className="font-headline text-lg">{stack.name}</h3>
-                    <Badge variant="secondary">{stack.vocabCount || 0} Begriffe</Badge>
-                </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">{stack.lastStudied || 'Noch nicht gelernt'}</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100"><Pen className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
-                <ChevronDown className="h-5 w-5 transition-transform duration-300 group-data-[state=open]:rotate-180" />
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-                <div className="px-4 pb-4 space-y-2">
-                    {/* Vocabulary items would be rendered here */}
-                    {vocabularyByStack[stack.id]?.map(item => (
-                       <div key={item.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted">
-                           <Circle className="h-5 w-5 text-muted-foreground/50" />
-                           <span className="flex-1">{item.term}</span>
-                           <span className="flex-1 text-muted-foreground">{item.definition}</span>
-                       </div>
-                    )) || <p className="p-2 text-muted-foreground text-sm">Keine Vokabeln in diesem Stapel.</p>}
-                </div>
-            </CollapsibleContent>
-          </Collapsible>
+          <StackItem 
+            key={stack.id} 
+            stack={stack}
+            subjectId={params.subjectId}
+            onSelectionChange={(vocabId, isSelected) => {
+              setSelectedVocab(prev => 
+                isSelected ? [...prev, vocabId] : prev.filter(id => id !== vocabId)
+              )
+            }}
+          />
         ))}
         </div>
       )}
