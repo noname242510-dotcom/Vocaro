@@ -1,11 +1,28 @@
+'use client';
+
 import Link from 'next/link';
-import { Plus, MoreVertical, BookCopy, ListTree, Trash2, Edit, ArrowRight } from 'lucide-react';
+import { Plus, MoreVertical, BookCopy, ListTree, Trash2, Edit, ArrowRight, X } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { mockSubjects } from '@/lib/data';
+import { mockSubjects as initialSubjects } from '@/lib/data';
+import type { Subject } from '@/lib/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function DashboardPage() {
-  
+  const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
+  const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);
+
   const getEmojiForSubject = (subjectName: string) => {
     const name = subjectName.toLowerCase();
     if (name.includes('deutsch')) return '🇩🇪';
@@ -22,10 +39,17 @@ export default function DashboardPage() {
     return '🌐';
   };
 
+  const handleDeleteSubject = () => {
+    if (subjectToDelete) {
+      setSubjects(subjects.filter((s) => s.id !== subjectToDelete.id));
+      setSubjectToDelete(null);
+    }
+  };
+
   return (
     <div>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {mockSubjects.map((subject) => (
+        {subjects.map((subject) => (
           <Card key={subject.id} className="group relative hover:shadow-lg transition-shadow duration-300 flex flex-col">
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -46,9 +70,19 @@ export default function DashboardPage() {
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                         <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialogTrigger asChild>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSubjectToDelete(subject);
+                            }}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </AlertDialogTrigger>
                  </div>
               </div>
             </CardHeader>
@@ -68,6 +102,21 @@ export default function DashboardPage() {
           </Button>
         </Card>
       </div>
+
+      <AlertDialog open={!!subjectToDelete} onOpenChange={(isOpen) => !isOpen && setSubjectToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird das Fach und alle zugehörigen Stapel und Vokabeln dauerhaft gelöscht.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSubjectToDelete(null)}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSubject}>Löschen</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
