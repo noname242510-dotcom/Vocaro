@@ -524,7 +524,7 @@ export default function SubjectDetailPage() {
 
       {/* Floating Action Bar */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md mx-auto z-50">
-         <div className="glass-effect p-2 rounded-full flex items-center justify-between gap-2">
+         <div className="p-2 rounded-full flex items-center justify-between gap-2">
             <AlertDialog open={isDeleteVocabDialogOpen} onOpenChange={setIsDeleteVocabDialogOpen}>
               <AlertDialogTrigger asChild>
                 <Button 
