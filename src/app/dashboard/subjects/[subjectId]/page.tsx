@@ -281,12 +281,23 @@ export default function SubjectDetailPage() {
     }
     setIsAddingManually(true);
     try {
-        const stackRef = await addDoc(stacksCollectionRef!, {
-            name: newStackName,
-            createdAt: serverTimestamp(),
-            vocabCount: 1,
-            subjectId: subjectId,
-        });
+        let stackRef;
+        const existingStacks = stacks?.filter(s => s.name === newStackName);
+
+        if (existingStacks && existingStacks.length > 0) {
+            stackRef = doc(stacksCollectionRef!, existingStacks[0].id);
+            await updateDoc(stackRef, {
+                vocabCount: (existingStacks[0].vocabCount || 0) + 1
+            });
+        } else {
+            stackRef = await addDoc(stacksCollectionRef!, {
+                name: newStackName,
+                createdAt: serverTimestamp(),
+                vocabCount: 1,
+                subjectId: subjectId,
+            });
+        }
+
 
         await addDoc(collection(stackRef, 'vocabulary'), {
             term: manualTerm,
@@ -517,7 +528,7 @@ export default function SubjectDetailPage() {
                           <Label htmlFor="notes">Hinweise (optional)</Label>
                           <Textarea id="notes" placeholder="z.B., Begrüßung" value={manualNotes} onChange={e => setManualNotes(e.target.value)} />
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-2">
                           <Button variant="outline" onClick={handleAddMoreVocabulary} disabled={isAddingManually}>
                             Weitere Begriffe hinzufügen
                           </Button>
