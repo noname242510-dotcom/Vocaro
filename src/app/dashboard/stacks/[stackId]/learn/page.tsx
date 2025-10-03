@@ -200,17 +200,20 @@ export default function LearnPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-2xl perspective-1000">
+      <div className="w-full max-w-2xl [perspective:1000px]">
         <Card
-          className={cn("h-80 w-full transition-transform duration-700 preserve-3d", isFlipped && "rotate-y-180")}
+          className={cn(
+            "h-80 w-full transition-transform duration-700 [transform-style:preserve-3d]",
+            isFlipped && "[transform:rotateY(180deg)]"
+          )}
           onClick={() => setIsFlipped(!isFlipped)}
         >
           {/* Front of the card */}
-          <div className="absolute w-full h-full backface-hidden flex items-center justify-center p-6">
+          <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6">
             <p className="text-4xl font-bold text-center font-headline">{currentCard.term}</p>
           </div>
           {/* Back of the card */}
-          <div className="absolute w-full h-full backface-hidden rotate-y-180 flex items-center justify-center p-6 bg-card">
+          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center p-6 bg-card">
             <p className="text-xl text-center text-muted-foreground">{currentCard.definition}</p>
           </div>
         </Card>
@@ -218,7 +221,7 @@ export default function LearnPage() {
       
        <div className="h-16 mt-8 flex items-center">
           {!isFlipped && (
-            <Button size="lg" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+            <Button size="lg" className="w-80" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           )}
           <div className={cn("flex gap-4 transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
             <Button variant="destructive" size="lg" className="w-40 h-16 text-lg" onClick={() => handleAnswer(false)}>
@@ -229,13 +232,6 @@ export default function LearnPage() {
             </Button>
           </div>
        </div>
-      
-      <style jsx>{`
-        .perspective-1000 { perspective: 1000px; }
-        .preserve-3d { transform-style: preserve-3d; }
-        .rotate-y-180 { transform: rotateY(180deg); }
-        .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-      `}</style>
     </div>
   );
 }
