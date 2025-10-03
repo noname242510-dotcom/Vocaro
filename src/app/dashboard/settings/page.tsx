@@ -1,17 +1,58 @@
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { mockSettings } from "@/lib/data";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useFirebase } from "@/firebase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsPage() {
   const settings = mockSettings;
+  const { user, isUserLoading } = useFirebase();
+
+  const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
+    if (name) {
+      return name.charAt(0).toUpperCase();
+    }
+    if (email) {
+      return email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
 
   return (
     <div>
-      <div className="mb-6 text-center">
+      <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold font-headline">Einstellungen</h1>
         <p className="text-muted-foreground">Passe dein Vocaro-Erlebnis an.</p>
+      </div>
+
+      <div className="flex flex-col items-center mb-8">
+        {isUserLoading ? (
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[150px]" />
+              <Skeleton className="h-4 w-[200px]" />
+            </div>
+          </div>
+        ) : user ? (
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName ?? 'Benutzer'} />
+              <AvatarFallback className="text-2xl font-bold">
+                {getInitials(user.displayName, user.email)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-xl font-semibold">{user.displayName || 'Benutzer'}</p>
+              <p className="text-muted-foreground">{user.email}</p>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex justify-center">
