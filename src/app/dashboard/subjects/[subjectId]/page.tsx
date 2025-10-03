@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   MoreVertical,
@@ -37,23 +37,30 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Badge } from '@/components/ui/badge';
-import type { Stack } from '@/lib/types';
+import type { Stack, Subject } from '@/lib/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { suggestVocabularyFromImageContext } from '@/ai/flows/suggest-vocabulary-from-image-context';
 import { useToast } from '@/hooks/use-toast';
+import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
-// Mock data for demonstration until Firebase is fully integrated
-const subject = { id: '1', name: 'Spanisch', emoji: '🇪🇸' };
-const stacksData: Stack[] = []; // Start with no stacks
 
 export default function SubjectDetailPage({ params }: { params: { subjectId: string } }) {
-  const [stacks, setStacks] = useState<Stack[]>(stacksData);
+  const { firestore, user } = useFirebase();
+  const [stacks, setStacks] = useState<Stack[]>([]);
   const [selectedVocab, setSelectedVocab] = useState<string[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const { toast } = useToast();
+
+  const subjectDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid, 'subjects', params.subjectId);
+  }, [firestore, user, params.subjectId]);
+
+  const { data: subject, isLoading: isSubjectLoading } = useDoc<Subject>(subjectDocRef);
+
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -99,6 +106,14 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
     }
   };
 
+
+  if (isSubjectLoading) {
+    return (
+        <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    )
+  }
 
   if (!subject) {
     return (
@@ -261,7 +276,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
                             <Image src={previewImage} alt="Vorschau" layout="fill" objectFit="contain" className="rounded-md" />
                           </div>
                         )}
-                        <Button onClick={handleExtractVocabulary} disabled={isExtracting}>
+                        <Button onClick={handleExtractVocabulary} disabled={!isExtracting || !previewImage}>
                           {isExtracting ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           ) : (

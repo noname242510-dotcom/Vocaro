@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, MoreVertical, BookCopy, ListTree, Trash2, Edit, ArrowRight, X } from 'lucide-react';
-import { useState } from 'react';
+import { Plus, Edit, ArrowRight, Trash2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Subject } from '@/lib/types';
 import {
   AlertDialog,
@@ -28,12 +28,21 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, addDoc, deleteDoc, doc } from 'firebase/firestore';
 
 export default function DashboardPage() {
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const { firestore, user } = useFirebase();
   const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
+
+  const subjectsCollection = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'subjects');
+  }, [firestore, user]);
+
+  const { data: subjects, isLoading } = useCollection<Subject>(subjectsCollection);
 
   const getEmojiForSubject = (subjectName: string) => {
     const name = subjectName.toLowerCase();
@@ -51,23 +60,23 @@ export default function DashboardPage() {
     return '🌐';
   };
 
-  const handleDeleteSubject = () => {
-    if (subjectToDelete) {
-      setSubjects(subjects.filter((s) => s.id !== subjectToDelete.id));
+  const handleDeleteSubject = async () => {
+    if (subjectToDelete && user && firestore) {
+      const subjectDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectToDelete.id);
+      await deleteDoc(subjectDocRef);
       setSubjectToDelete(null);
     }
   };
 
-  const handleCreateSubject = () => {
-    if (newSubjectName.trim()) {
-      const newSubject: Subject = {
-        id: `sub-${Date.now()}`,
+  const handleCreateSubject = async () => {
+    if (newSubjectName.trim() && subjectsCollection) {
+      const newSubject = {
         name: newSubjectName.trim(),
         emoji: getEmojiForSubject(newSubjectName),
         stackCount: 0,
         vocabCount: 0,
       };
-      setSubjects([...subjects, newSubject]);
+      await addDoc(subjectsCollection, newSubject);
       setNewSubjectName('');
       setIsCreateDialogOpen(false);
     }
@@ -76,12 +85,12 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {subjects.map((subject) => (
+        {subjects && subjects.map((subject) => (
           <Card key={subject.id} className="group relative hover:shadow-lg transition-shadow duration-300 flex flex-col">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  <span className="text-4xl">{getEmojiForSubject(subject.name)}</span>
+                  <span className="text-4xl">{subject.emoji}</span>
                   <div>
                     <CardTitle className="font-headline hover:underline">
                       <Link href={`/dashboard/subjects/${subject.id}`}>{subject.name}</Link>
