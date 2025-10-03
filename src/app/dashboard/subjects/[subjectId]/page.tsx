@@ -569,7 +569,7 @@ export default function SubjectDetailPage() {
                   <DialogHeader>
                     <DialogTitle>Neue Vokabeln hinzufügen</DialogTitle>
                     <DialogDescription>
-                      Füge Begriffe manuell hinzu oder lade ein Bild hoch, um Text mit OCR zu extrahieren.
+                      Füge Begriffe manuell hinzu oder lade ein Bild hoch, um Text zu extrahieren.
                     </DialogDescription>
                   </DialogHeader>
                   <Tabs defaultValue="manual">
@@ -639,3 +639,5 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
+    
