@@ -14,7 +14,8 @@ const ConfettiPiece = ({ id, onComplete }: { id: number; onComplete: (id: number
     const randomDuration = 2 + Math.random() * 2;
     const randomRotationStart = Math.random() * 360;
     const randomRotationEnd = randomRotationStart + 720 + Math.random() * 720;
-    const colors = ['#A864FD', '#29CDFF', '#78FF44', '#FF718D', '#FDFF6A'];
+    const randomSize = 6 + Math.random() * 8;
+    const colors = ['#000']; // Only black
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
     setStyle({
@@ -25,6 +26,8 @@ const ConfettiPiece = ({ id, onComplete }: { id: number; onComplete: (id: number
       '--duration': `${randomDuration}s`,
       '--rotation-start': `${randomRotationStart}deg`,
       '--rotation-end': `${randomRotationEnd}deg`,
+      'width': `${randomSize}px`,
+      'height': `${randomSize}px`,
       'backgroundColor': randomColor,
       top: '-10px',
       left: `var(--x-start)`,
@@ -41,7 +44,7 @@ const ConfettiPiece = ({ id, onComplete }: { id: number; onComplete: (id: number
 
   return (
     <div
-      className="absolute w-2 h-4"
+      className="absolute rounded-full"
       style={style}
     >
       <style jsx>{`
