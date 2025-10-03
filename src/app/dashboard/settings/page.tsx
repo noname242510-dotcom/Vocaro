@@ -14,6 +14,7 @@ export default function SettingsPage() {
   const settings = mockSettings;
   const { user, isUserLoading } = useFirebase();
   const [font, setFont] = useState('font-body');
+  const [enableConfetti, setEnableConfetti] = useState(settings.quiz.enableConfetti);
 
   useEffect(() => {
     // On mount, set the initial font class
@@ -95,9 +96,9 @@ export default function SettingsPage() {
                     <SelectValue placeholder="Schriftart auswählen" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="font-body">PT Sans</SelectItem>
-                    <SelectItem value="font-creative">Merriweather</SelectItem>
-                    <SelectItem value="font-code">Inconsolata</SelectItem>
+                    <SelectItem value="font-body" className="font-body">PT Sans</SelectItem>
+                    <SelectItem value="font-creative" className="font-creative">Merriweather</SelectItem>
+                    <SelectItem value="font-code" className="font-code">Inconsolata</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -108,7 +109,7 @@ export default function SettingsPage() {
                     Aktiviere eine Konfetti-Animation für hohe Punktzahlen.
                   </span>
                 </Label>
-                <Switch id="confetti-mode" defaultChecked={settings.quiz.enableConfetti} />
+                <Switch id="confetti-mode" checked={enableConfetti} onCheckedChange={setEnableConfetti} />
               </div>
             </CardContent>
           </Card>
