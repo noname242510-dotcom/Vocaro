@@ -8,17 +8,17 @@ import { Logo } from "@/components/logo";
 export default function LoginPage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="mx-auto max-w-sm w-full">
+      <Card className="mx-auto max-w-sm w-full shadow-lg">
         <CardHeader className="text-center">
-          <Logo className="mx-auto mb-4" />
-          <CardTitle className="text-2xl font-headline">Willkommen bei Vocaro</CardTitle>
-          <CardDescription>Geben Sie Ihre E-Mail-Adresse unten ein, um sich bei Ihrem Konto anzumelden</CardDescription>
+          <Logo className="mx-auto mb-4 text-3xl" />
+          <CardTitle className="text-2xl font-headline">Willkommen zurück</CardTitle>
+          <CardDescription>Melden Sie sich bei Ihrem Konto an, um fortzufahren</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="m@example.com" required />
+              <Input id="email" type="email" placeholder="m@example.com" required className="rounded-full" />
             </div>
             <div className="grid gap-2">
               <div className="flex items-center">
@@ -27,13 +27,10 @@ export default function LoginPage() {
                   Passwort vergessen?
                 </Link>
               </div>
-              <Input id="password" type="password" required />
+              <Input id="password" type="password" required className="rounded-full" />
             </div>
             <Button type="submit" className="w-full">
               Anmelden
-            </Button>
-            <Button variant="outline" className="w-full">
-              Mit Google anmelden
             </Button>
           </div>
           <div className="mt-4 text-center text-sm">

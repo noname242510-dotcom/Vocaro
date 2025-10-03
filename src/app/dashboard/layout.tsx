@@ -1,87 +1,113 @@
-import { Home, Settings, Repeat, BookCopy, Plus, Search } from "lucide-react";
-import Link from "next/link";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarTrigger,
-  SidebarInset,
-} from "@/components/ui/sidebar";
-import { Logo } from "@/components/logo";
-import { UserNav } from "@/components/user-nav";
+import { Home, Settings, User, LogOut, Menu, Sun, Moon } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/logo';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
+
+  const toggleTheme = () => {
+    document.documentElement.classList.toggle('dark');
+    setIsDarkMode(!isDarkMode);
+  };
+  
+  const handleLogout = () => {
+    // Implement Firebase logout logic here
+    router.push('/');
+  };
+
+  const navItems = [
+    { href: '/dashboard', icon: Home, label: 'Fächer' },
+    { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
+  ];
+
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <Logo />
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Dashboard" isActive>
-                <Link href="/dashboard">
-                  <Home />
-                  <span>Dashboard</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Wiederholung">
-                <Link href="/dashboard/repetition">
-                  <Repeat />
-                  <span>Wiederholung</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Einstellungen">
-                <Link href="/dashboard/settings">
-                  <Settings />
-                  <span>Einstellungen</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter>
-          <Button className="w-full" asChild>
-            <Link href="/dashboard">
-              <Plus className="mr-2 h-4 w-4" /> Neues Fach
-            </Link>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-4 z-40 flex justify-between items-center h-16 px-4 md:px-6 m-2 md:m-4">
+        <div className="flex-1">
+          <Button variant="ghost" size="icon" onClick={toggleTheme} className="glass-effect">
+            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-          <SidebarTrigger className="sm:hidden" />
-          <div className="relative ml-auto flex-1 md:grow-0">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Suchen..."
-              className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
-            />
+        </div>
+        <div className="flex-1 text-center">
+          <Logo className="text-2xl" />
+        </div>
+        <div className="flex-1 flex justify-end">
+          <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)} className="glass-effect">
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
+      </header>
+
+      {/* Side Menu */}
+      <div className={`fixed top-0 right-0 h-full w-72 bg-card text-card-foreground shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex flex-col h-full p-6">
+          <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(false)} className="self-end mb-8">
+            <Menu className="h-5 w-5" />
+          </Button>
+          <nav className="flex-grow">
+            <ul>
+              {navItems.map(item => (
+                <li key={item.href} className="mb-4">
+                  <Link href={item.href} passHref>
+                    <Button
+                      variant={pathname === item.href ? 'secondary' : 'ghost'}
+                      className="w-full justify-start text-lg rounded-full"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <item.icon className="mr-4 h-5 w-5" />
+                      {item.label}
+                    </Button>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          {/* Account Section */}
+          <div className="mt-auto">
+             <div className="flex items-center p-2 rounded-full mb-4">
+                <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl mr-3">
+                  U
+                </div>
+                <div>
+                  <p className="font-semibold">Username</p>
+                  <p className="text-sm text-muted-foreground">user@example.com</p>
+                </div>
+             </div>
+            <Button variant="ghost" className="w-full justify-start text-lg rounded-full" onClick={handleLogout}>
+              <LogOut className="mr-4 h-5 w-5" />
+              Ausloggen
+            </Button>
           </div>
-          <div className="ml-4">
-            <UserNav />
-          </div>
-        </header>
-        <main className="p-4 sm:p-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
+        </div>
+      </div>
+      
+       {/* Overlay */}
+       {isMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/30 z-40" 
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
+
+      <main className="p-4 md:p-6">{children}</main>
+    </div>
   );
 }

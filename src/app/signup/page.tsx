@@ -31,8 +31,20 @@ export default function SignUpPage() {
       });
       return;
     }
+    // Simple validation for case-insensitivity would be ideally checked against the DB
+    // This is a placeholder for more complex logic
+    if (username.toLowerCase() === 'existinguser') {
+         toast({
+            variant: 'destructive',
+            title: 'Benutzername bereits vergeben',
+            description: 'Bitte wählen Sie einen anderen Benutzernamen.',
+         });
+         return;
+    }
+
     try {
       await createUserWithEmailAndPassword(auth, email, password);
+      // You might want to update the user's profile with the username here
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -45,9 +57,9 @@ export default function SignUpPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="mx-auto max-w-sm w-full">
+      <Card className="mx-auto max-w-sm w-full shadow-lg">
         <CardHeader className="text-center">
-          <Logo className="mx-auto mb-4" />
+          <Logo className="mx-auto mb-4 text-3xl" />
           <CardTitle className="text-2xl font-headline">Konto erstellen</CardTitle>
           <CardDescription>Geben Sie Ihre Informationen ein, um ein neues Konto zu erstellen</CardDescription>
         </CardHeader>
@@ -62,6 +74,7 @@ export default function SignUpPage() {
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  className="rounded-full"
                 />
               </div>
               <div className="grid gap-2">
@@ -73,6 +86,7 @@ export default function SignUpPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="rounded-full"
                 />
               </div>
               <div className="grid gap-2">
@@ -83,6 +97,7 @@ export default function SignUpPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="rounded-full"
                 />
               </div>
               <Button type="submit" className="w-full">
