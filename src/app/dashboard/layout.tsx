@@ -1,13 +1,17 @@
 'use client';
 
-import { Home, Settings, User, LogOut, Menu, Sun, Moon } from 'lucide-react';
+import { Home, Settings, LogOut, Menu, Sun, Moon, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { collection } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
-import { useFirebase } from '@/firebase';
+import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import type { Subject } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({
   children,
@@ -19,7 +23,17 @@ export default function DashboardLayout({
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isUserLoading } = useFirebase();
+  const { user, isUserLoading, firestore } = useFirebase();
+
+  const [isSubjectsOpen, setIsSubjectsOpen] = useState(true);
+
+  const subjectsCollection = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'subjects');
+  }, [firestore, user]);
+
+  const { data: subjects, isLoading: areSubjectsLoading } = useCollection<Subject>(subjectsCollection);
+
 
   useEffect(() => {
     setMounted(true);
@@ -40,7 +54,7 @@ export default function DashboardLayout({
   };
 
   const navItems = [
-    { href: '/dashboard', icon: Home, label: 'Fächer' },
+    // { href: '/dashboard', icon: Home, label: 'Fächer' },
     { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
   ];
 
@@ -82,6 +96,53 @@ export default function DashboardLayout({
           </Button>
           <nav className="flex-grow">
             <ul>
+                <li className="mb-4">
+                  <Collapsible open={isSubjectsOpen} onOpenChange={setIsSubjectsOpen}>
+                    <CollapsibleTrigger asChild>
+                       <Button
+                          variant={pathname.startsWith('/dashboard/subjects') || pathname === '/dashboard' ? 'secondary' : 'ghost'}
+                          className="w-full justify-between text-lg rounded-full"
+                          asChild={false}
+                        >
+                          <div className="flex items-center">
+                           <Home className="mr-4 h-5 w-5" />
+                            Fächer
+                          </div>
+                          <ChevronDown className={cn("h-5 w-5 transition-transform", isSubjectsOpen && "rotate-180")} />
+                        </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <ul className="pl-8 pt-2 space-y-1">
+                        {subjects && subjects.map(subject => (
+                          <li key={subject.id}>
+                             <Link href={`/dashboard/subjects/${subject.id}`} passHref>
+                                <Button
+                                  variant={pathname === `/dashboard/subjects/${subject.id}` ? 'secondary' : 'ghost'}
+                                  className="w-full justify-start text-base rounded-full"
+                                  onClick={() => setIsMenuOpen(false)}
+                                >
+                                  <span className="mr-4 text-lg">{subject.emoji}</span>
+                                  <span className="truncate">{subject.name}</span>
+                                </Button>
+                              </Link>
+                          </li>
+                        ))}
+                         <li>
+                             <Link href={`/dashboard`} passHref>
+                                <Button
+                                  variant={pathname === `/dashboard` ? 'secondary' : 'ghost'}
+                                  className="w-full justify-start text-base rounded-full"
+                                  onClick={() => setIsMenuOpen(false)}
+                                >
+                                  <span className="mr-4 text-lg"></span>
+                                  <span className="truncate text-muted-foreground">Alle Fächer</span>
+                                </Button>
+                              </Link>
+                          </li>
+                      </ul>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </li>
               {navItems.map(item => (
                 <li key={item.href} className="mb-4">
                   <Link href={item.href} passHref>
