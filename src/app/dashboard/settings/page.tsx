@@ -107,13 +107,14 @@ export default function SettingsPage() {
                 </Select>
               </div>
               <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="confetti-mode" className="flex flex-col space-y-1">
-                  <span>Konfetti bei Erfolg</span>
-                  <span className="font-normal leading-snug text-muted-foreground">
-                    Aktiviere eine Konfetti-Animation für hohe Punktzahlen.
-                  </span>
+                <Label htmlFor="confetti-mode">
+                  Konfetti bei Erfolg
                 </Label>
-                <Switch id="confetti-mode" checked={enableConfetti} onCheckedChange={handleConfettiChange} />
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">aus</span>
+                  <Switch id="confetti-mode" checked={enableConfetti} onCheckedChange={handleConfettiChange} />
+                  <span className="text-sm text-muted-foreground">an</span>
+                </div>
               </div>
             </CardContent>
           </Card>
