@@ -233,7 +233,7 @@ export default function LearnPage() {
         <Card
           className={cn(
             "h-80 w-full transition-transform duration-700 [transform-style:preserve-3d] shadow-lg",
-            isFlipped && "[transform:rotateY(180deg)]",
+            isFlipped && "[transform:rotateX(180deg)]",
             isNewCard && 'animate-pop-in'
           )}
           onClick={() => setIsFlipped(!isFlipped)}
@@ -243,7 +243,7 @@ export default function LearnPage() {
             <p className="text-4xl font-bold text-center font-headline">{currentCard.term}</p>
           </div>
           {/* Back of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
+          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
             <p className="text-4xl font-bold text-center font-headline">{currentCard.definition}</p>
             {currentCard.notes && (
                 <div className="flex items-center gap-2 text-lg text-center text-muted-foreground mt-4">
