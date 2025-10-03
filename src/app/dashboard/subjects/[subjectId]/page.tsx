@@ -78,7 +78,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
     return collection(firestore, 'users', user.uid, 'subjects', params.subjectId, 'stacks');
   }, [firestore, user, params.subjectId]);
 
-  const { data: stacks, isLoading: areStacksLoading } = useCollection<Stack>(stacksCollectionRef);
+  const { data: stacks, isLoading: areStacksLoading, forceUpdate } = useCollection<Stack>(stacksCollectionRef);
 
 
   useEffect(() => {
@@ -311,6 +311,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
             key={stack.id} 
             stack={stack}
             subjectId={params.subjectId}
+            onDelete={() => forceUpdate()}
             onSelectionChange={(vocabId, isSelected) => {
               setSelectedVocab(prev => 
                 isSelected ? [...prev, vocabId] : prev.filter(id => id !== vocabId)
@@ -435,7 +436,3 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
     </div>
   );
 }
-
-    
-
-    
