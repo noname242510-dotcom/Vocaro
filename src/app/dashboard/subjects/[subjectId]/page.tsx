@@ -47,7 +47,7 @@ import { suggestVocabularyFromImageContext } from '@/ai/flows/suggest-vocabulary
 import { generateVocabularyFromExtractedText } from '@/ai/flows/generate-vocabulary-from-extracted-text';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, addDoc, writeBatch, serverTimestamp, getDocs, updateDoc } from 'firebase/firestore';
+import { doc, collection, addDoc, writeBatch, serverTimestamp, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import { StackItem } from './_components/stack-item';
 import {
   AlertDialog,
@@ -60,6 +60,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { cn } from '@/lib/utils';
 
 
 export default function SubjectDetailPage() {

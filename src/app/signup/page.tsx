@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState }from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -25,9 +25,16 @@ export default function SignUpPage() {
     
     try {
       const auth = getAuth();
-      await createUserWithEmailAndPassword(auth, email, password);
-      // You might want to update the user's profile with the username here
-      router.push('/dashboard');
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, {
+          displayName: username,
+        });
+      }
+      
+      window.location.href = '/dashboard';
+
     } catch (error: any) {
         let description = 'Ein unbekannter Fehler ist aufgetreten.';
         switch (error.code) {

@@ -23,7 +23,7 @@ export default function DashboardLayout({
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isUserLoading, firestore } = useFirebase();
+  const { user, isUserLoading, firestore, auth } = useFirebase();
 
   const [isSubjectsOpen, setIsSubjectsOpen] = useState(true);
 
@@ -47,8 +47,8 @@ export default function DashboardLayout({
   };
   
   const handleLogout = () => {
-    if (user) {
-      user.auth.signOut();
+    if (auth) {
+      auth.signOut();
     }
     router.push('/');
   };
@@ -103,6 +103,7 @@ export default function DashboardLayout({
                           variant={pathname.startsWith('/dashboard/subjects') || pathname === '/dashboard' ? 'secondary' : 'ghost'}
                           className="w-full justify-between text-lg rounded-full"
                           asChild={false}
+                          onClick={() => router.push('/dashboard')}
                         >
                           <div className="flex items-center">
                            <Home className="mr-4 h-5 w-5" />
@@ -127,18 +128,6 @@ export default function DashboardLayout({
                               </Link>
                           </li>
                         ))}
-                         <li>
-                             <Link href={`/dashboard`} passHref>
-                                <Button
-                                  variant={pathname === `/dashboard` ? 'secondary' : 'ghost'}
-                                  className="w-full justify-start text-base rounded-full"
-                                  onClick={() => setIsMenuOpen(false)}
-                                >
-                                  <span className="mr-4 text-lg"></span>
-                                  <span className="truncate text-muted-foreground">Alle Fächer</span>
-                                </Button>
-                              </Link>
-                          </li>
                       </ul>
                     </CollapsibleContent>
                   </Collapsible>
