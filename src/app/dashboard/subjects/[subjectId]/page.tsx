@@ -284,7 +284,8 @@ export default function SubjectDetailPage() {
             key={stack.id} 
             stack={stack}
             subjectId={subjectId}
-            onDelete={() => forceUpdate()}
+            onDelete={forceUpdate}
+            onRename={forceUpdate}
             onSelectionChange={(vocabId, isSelected) => {
               setSelectedVocab(prev => 
                 isSelected ? [...prev, vocabId] : prev.filter(id => id !== vocabId)
@@ -391,5 +392,3 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
-
-    

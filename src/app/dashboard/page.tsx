@@ -15,7 +15,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
@@ -29,13 +28,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 
 export default function DashboardPage() {
   const { firestore, user } = useFirebase();
   const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
+  
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [subjectToRename, setSubjectToRename] = useState<Subject | null>(null);
+  const [renamedSubjectName, setRenamedSubjectName] = useState('');
 
   const subjectsCollection = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -82,6 +85,19 @@ export default function DashboardPage() {
     }
   };
 
+  const handleRenameSubject = async () => {
+    if (subjectToRename && renamedSubjectName.trim() && user && firestore) {
+      const subjectDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectToRename.id);
+      await updateDoc(subjectDocRef, {
+        name: renamedSubjectName.trim(),
+        emoji: getEmojiForSubject(renamedSubjectName),
+      });
+      setIsRenameDialogOpen(false);
+      setSubjectToRename(null);
+      setRenamedSubjectName('');
+    }
+  };
+
   return (
     <div>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -103,7 +119,16 @@ export default function DashboardPage() {
                   </div>
                 </div>
                  <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 rounded-full"
+                      onClick={() => {
+                        setSubjectToRename(subject);
+                        setRenamedSubjectName(subject.name);
+                        setIsRenameDialogOpen(true);
+                      }}
+                    >
                         <Edit className="h-4 w-4" />
                     </Button>
                     <AlertDialog>
@@ -182,6 +207,35 @@ export default function DashboardPage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Fach umbenennen</DialogTitle>
+            <DialogDescription>
+              Geben Sie einen neuen Namen für das Fach &quot;{subjectToRename?.name}&quot; ein.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="rename-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="rename-name"
+                value={renamedSubjectName}
+                onChange={(e) => setRenamedSubjectName(e.target.value)}
+                className="col-span-3"
+                onKeyDown={(e) => e.key === 'Enter' && handleRenameSubject()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>Abbrechen</Button>
+            <Button type="submit" onClick={handleRenameSubject}>Speichern</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!subjectToDelete} onOpenChange={(isOpen) => !isOpen && setSubjectToDelete(null)}>
         <AlertDialogContent>

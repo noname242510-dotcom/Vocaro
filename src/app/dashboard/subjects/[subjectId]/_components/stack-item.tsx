@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { collection, doc, writeBatch, getDocs, deleteDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs, deleteDoc, updateDoc } from 'firebase/firestore';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import type { Stack, VocabularyItem } from '@/lib/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -22,6 +22,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -31,13 +41,16 @@ interface StackItemProps {
   subjectId: string;
   onSelectionChange: (vocabId: string, isSelected: boolean) => void;
   onDelete: () => void;
+  onRename: () => void;
 }
 
-export function StackItem({ stack, subjectId, onSelectionChange, onDelete }: StackItemProps) {
+export function StackItem({ stack, subjectId, onSelectionChange, onDelete, onRename }: StackItemProps) {
   const { firestore, user } = useFirebase();
   const [isOpen, setIsOpen] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [newStackName, setNewStackName] = useState(stack.name);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -54,7 +67,9 @@ export function StackItem({ stack, subjectId, onSelectionChange, onDelete }: Sta
   const handleSelectAll = (checked: boolean) => {
     vocabulary?.forEach(v => {
         onSelectionChange(v.id, checked);
-        v.isSelected = checked;
+        if (v) {
+          v.isSelected = checked;
+        }
     });
   }
 
@@ -89,26 +104,73 @@ export function StackItem({ stack, subjectId, onSelectionChange, onDelete }: Sta
     }
   };
 
+  const handleRenameStack = async () => {
+    if (!firestore || !user || !newStackName.trim()) {
+        toast({ variant: 'destructive', title: 'Fehler', description: 'Der Stapelname darf nicht leer sein.' });
+        return;
+    }
+    const stackDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stack.id);
+    try {
+        await updateDoc(stackDocRef, { name: newStackName });
+        toast({ title: 'Erfolg', description: 'Stapel wurde umbenannt.'});
+        setIsRenameDialogOpen(false);
+        onRename();
+    } catch (error) {
+        console.error("Error renaming stack: ", error);
+        toast({ variant: 'destructive', title: 'Fehler beim Umbenennen', description: 'Der Stapel konnte nicht umbenannt werden.' });
+    }
+  };
+
+
   return (
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-2xl">
         <div className="w-full p-4 flex items-center justify-between group">
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center gap-4 cursor-pointer">
-               <div onClick={(e) => e.stopPropagation()}>
-                 <Checkbox 
-                    checked={allVisibleInStackSelected}
-                    onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
-                  />
-               </div>
-              <h3 className="font-headline text-lg">{stack.name}</h3>
-              <Badge variant="secondary">{stack.vocabCount || 0} Begriffe</Badge>
-            </div>
-          </CollapsibleTrigger>
+           <div className="flex items-center gap-4 flex-1" onClick={() => setIsOpen(!isOpen)}>
+             <div onClick={(e) => e.stopPropagation()}>
+               <Checkbox 
+                  checked={allVisibleInStackSelected}
+                  onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
+                />
+             </div>
+            <h3 className="font-headline text-lg">{stack.name}</h3>
+            <Badge variant="secondary">{stack.vocabCount || 0} Begriffe</Badge>
+          </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100">
-              <Pen className="h-4 w-4" />
-            </Button>
+            <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100">
+                  <Pen className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Stapel umbenennen</DialogTitle>
+                  <DialogDescription>
+                    Geben Sie einen neuen Namen für den Stapel ein.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="stack-name" className="text-right">
+                      Name
+                    </Label>
+                    <Input
+                      id="stack-name"
+                      value={newStackName}
+                      onChange={(e) => setNewStackName(e.target.value)}
+                      className="col-span-3"
+                      onKeyDown={(e) => e.key === 'Enter' && handleRenameStack()}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>Abbrechen</Button>
+                  <Button onClick={handleRenameStack}>Speichern</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <AlertDialogTrigger asChild>
                   <Button
@@ -134,11 +196,9 @@ export function StackItem({ stack, subjectId, onSelectionChange, onDelete }: Sta
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-             <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                    <ChevronDown className={cn('h-5 w-5 transition-transform duration-300', isOpen && 'rotate-180')} />
-                </Button>
-            </CollapsibleTrigger>
+             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsOpen(!isOpen)}>
+                <ChevronDown className={cn('h-5 w-5 transition-transform duration-300', isOpen && 'rotate-180')} />
+            </Button>
           </div>
         </div>
         <CollapsibleContent>
