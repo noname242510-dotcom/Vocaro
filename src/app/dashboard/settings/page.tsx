@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,7 +55,7 @@ export default function SettingsPage() {
         <div className="grid gap-8 max-w-2xl w-full">
           <Card>
             <CardHeader>
-              <CardTitle>Quiz</CardTitle>
+              <CardTitle>Wiederholung</CardTitle>
               <CardDescription>Verwalte deine Lern- und Wiederholungseinstellungen.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
