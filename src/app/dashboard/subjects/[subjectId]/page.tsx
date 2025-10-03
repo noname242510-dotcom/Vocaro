@@ -2,6 +2,7 @@
 
 import { useState, useMemo, ChangeEvent, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   MoreVertical,
   Plus,
@@ -50,6 +51,7 @@ import { StackItem } from './_components/stack-item';
 
 export default function SubjectDetailPage({ params }: { params: { subjectId: string } }) {
   const { firestore, user } = useFirebase();
+  const router = useRouter();
   const [selectedVocab, setSelectedVocab] = useState<string[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
@@ -166,7 +168,6 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
             createdAt: serverTimestamp(),
             vocabCount: 1,
             subjectId: params.subjectId,
-            lastStudied: null,
         });
 
         await addDoc(collection(stackRef, 'vocabulary'), {
@@ -204,7 +205,6 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
         createdAt: serverTimestamp(),
         vocabCount: generatedVocab.length,
         subjectId: params.subjectId,
-        lastStudied: null,
       });
 
       // Batch write all vocabulary items
@@ -234,6 +234,17 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
       toast({ variant: 'destructive', title: 'Fehler beim Speichern', description: 'Die Vokabeln konnten nicht gespeichert werden.' });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleStartLearning = () => {
+    if (selectedVocab.length > 0) {
+      // We need a way to pass selected vocab to the learn page.
+      // The learn page is generic and doesn't belong to a single stack.
+      // We will use sessionStorage to pass the vocab IDs.
+      sessionStorage.setItem('learn-session-vocab', JSON.stringify(selectedVocab));
+      sessionStorage.setItem('learn-session-subject', params.subjectId);
+      router.push(`/dashboard/learn`);
     }
   };
 
@@ -326,6 +337,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
             <Button 
                 className="flex-1 rounded-full text-base" 
                 disabled={!isAnyVocabSelected}
+                onClick={handleStartLearning}
             >
                 <Zap className="mr-2 h-5 w-5" /> 
                 Lernen ({selectedVocab.length})
@@ -385,7 +397,7 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
                         </div>
                         {previewImage && !isExtracting && !isGenerating && generatedVocab.length === 0 && (
                           <div className="relative w-full h-64 rounded-md border border-dashed flex items-center justify-center bg-muted/40">
-                            <Image src={previewImage} alt="Vorschau" layout="fill" objectFit="contain" className="rounded-md" />
+                            <Image src={previewImage} alt="Vorschau" fill={true} objectFit="contain" className="rounded-md" />
                           </div>
                         )}
                         {(isExtracting || isGenerating) && (
@@ -432,3 +444,5 @@ export default function SubjectDetailPage({ params }: { params: { subjectId: str
     </div>
   );
 }
+
+    
