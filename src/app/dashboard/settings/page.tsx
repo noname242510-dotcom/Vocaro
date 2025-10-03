@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -109,7 +110,7 @@ export default function SettingsPage() {
               </div>
               <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="confetti-mode" className="flex flex-col space-y-1">
-                  <span>Sieges-Konfetti</span>
+                  <span>Konfetti</span>
                   <span className="font-normal leading-snug text-muted-foreground">
                     Aktiviere eine Konfetti-Animation für hohe Punktzahlen.
                   </span>
