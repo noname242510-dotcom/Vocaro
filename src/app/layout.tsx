@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Vocaro",
-  description: "Learn vocabulary with ease.",
+  description: "Foto hochladen. Vokabeln lernen.",
 };
 
 const ptSans = PT_Sans({
