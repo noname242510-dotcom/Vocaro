@@ -85,7 +85,7 @@ export default function SettingsPage() {
 
   return (
     <div className="relative">
-      <div className="absolute top-0 left-0 z-30">
+      <div className="sticky top-4 left-4 z-20">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
           <span className="sr-only">Zurück</span>
