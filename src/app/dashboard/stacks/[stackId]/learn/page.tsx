@@ -237,7 +237,7 @@ export default function LearnPage() {
         </Card>
       </div>
       
-       <div className="mt-8 w-full flex items-center justify-center">
+       <div className="mt-8 w-full max-w-2xl flex items-center justify-center">
           {!isFlipped ? (
             <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           ) : (
