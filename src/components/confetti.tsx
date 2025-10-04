@@ -32,7 +32,7 @@ const ConfettiPiece = ({ id, onComplete }: { id: number; onComplete: (id: number
       'width': `${randomSize}px`,
       'height': `${randomSize}px`,
       'backgroundColor': randomColor,
-      top: '-10px',
+      top: '-100px',
       left: `var(--x-start)`,
       animation: `fall var(--duration) linear var(--delay) forwards`,
       transform: `rotate3d(1, 1, 1, var(--rotation-start))`,
@@ -54,7 +54,6 @@ const ConfettiPiece = ({ id, onComplete }: { id: number; onComplete: (id: number
         @keyframes fall {
           to {
             transform: translateY(var(--y-end)) translateX(calc(var(--x-end) - var(--x-start))) rotate3d(1, 1, 1, var(--rotation-end));
-            opacity: 0;
           }
         }
       `}</style>
@@ -78,7 +77,7 @@ export const Confetti = ({ active }: { active: boolean }) => {
     if (!active && pieces.length === 0) return null;
   
     return (
-      <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
+      <div className="pointer-events-none fixed inset-0 z-49 overflow-hidden">
         {pieces.map((id) => (
           <ConfettiPiece key={id} id={id} onComplete={handleComplete} />
         ))}
