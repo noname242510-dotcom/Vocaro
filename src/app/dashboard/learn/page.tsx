@@ -280,10 +280,10 @@ export default function LearnPage() {
             <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           ) : (
           <div className={cn("flex gap-2 transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
-            <Button variant="outline" size="lg" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
+            <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
               <X className="mr-2 h-4 w-4" /> Wusste ich nicht
             </Button>
-            <Button variant="default" size="lg" className="flex-1 h-12 text-base" onClick={() => handleAnswer(true)}>
+            <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(true)}>
               <Check className="mr-2 h-4 w-4" /> Wusste ich
             </Button>
           </div>
@@ -298,6 +298,8 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
+
+    
 
     
 
