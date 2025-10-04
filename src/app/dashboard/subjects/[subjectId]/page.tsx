@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, ChangeEvent, useEffect } from 'react';
@@ -110,7 +111,11 @@ export default function SubjectDetailPage() {
       for (const stack of stacks) {
         const vocabCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stack.id, 'vocabulary');
         const vocabSnapshot = await getDocs(vocabCollectionRef);
-        vocabData[stack.id] = vocabSnapshot.docs.map(d => ({ ...d.data(), id: d.id, isSelected: currentSelection.has(d.id) } as VocabularyItem));
+        const vocabs = vocabSnapshot.docs.map(d => ({ ...d.data(), id: d.id, isSelected: currentSelection.has(d.id) } as VocabularyItem));
+        
+        vocabs.sort((a, b) => a.term.localeCompare(b.term));
+
+        vocabData[stack.id] = vocabs;
       }
       setAllVocabulary(vocabData);
     }
@@ -636,3 +641,4 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
