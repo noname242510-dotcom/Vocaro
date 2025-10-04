@@ -228,8 +228,8 @@ export default function LearnPage() {
           <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
             <p className="text-4xl font-bold text-center font-headline">{currentCard.definition}</p>
             {currentCard.notes && (
-                <div className="flex items-center gap-2 text-lg text-center text-muted-foreground mt-4">
-                  <Lightbulb className="h-5 w-5" />
+                <div className="flex items-start gap-2 text-base text-center text-muted-foreground mt-4">
+                  <Lightbulb className="h-5 w-5 flex-shrink-0" />
                   <p>{currentCard.notes}</p>
                 </div>
             )}
@@ -237,11 +237,11 @@ export default function LearnPage() {
         </Card>
       </div>
       
-       <div className={cn("w-full max-w-2xl h-16 mt-8 flex items-center justify-center", "md:w-full")}>
+       <div className={cn("mt-8 flex items-center justify-center", "md:w-full")}>
           {!isFlipped ? (
             <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           ) : (
-            <div className={cn("flex gap-2 transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none', "md:w-full")}>
+            <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none', "md:w-full")}>
                 <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
                 <X className="mr-2 h-4 w-4" /> Wusste ich nicht
                 </Button>
