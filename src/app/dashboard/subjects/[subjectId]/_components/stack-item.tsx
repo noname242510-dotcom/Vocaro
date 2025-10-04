@@ -48,7 +48,7 @@ interface StackItemProps {
 
 export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onDelete, onRename }: StackItemProps) {
   const { firestore, user } = useFirebase();
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
