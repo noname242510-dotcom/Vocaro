@@ -279,7 +279,7 @@ export default function LearnPage() {
           {!isFlipped ? (
             <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           ) : (
-          <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
+          <div className={cn("flex gap-2 transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
             <Button variant="outline" size="lg" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
               <X className="mr-2 h-4 w-4" /> Wusste ich nicht
             </Button>
@@ -298,5 +298,7 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
+
+    
 
     
