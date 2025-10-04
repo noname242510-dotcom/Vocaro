@@ -71,7 +71,7 @@ export default function SignUpPage() {
           <form onSubmit={handleSignUp}>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="username">Benutzername</Label>
+                <Label htmlFor="username">Dein Benutzername</Label>
                 <Input
                   id="username"
                   placeholder="Dein Benutzername"
@@ -86,7 +86,7 @@ export default function SignUpPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="your@mail.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

@@ -64,7 +64,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="your@mail.com"
                   required
                   className="rounded-full"
                   value={email}
