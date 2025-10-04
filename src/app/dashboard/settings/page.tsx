@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { user, isUserLoading } = useFirebase();
+  const router = useRouter();
   const [font, setFont] = useState('font-body');
   const [enableConfetti, setEnableConfetti] = useState(true);
   const [queryDirectionOverview, setQueryDirectionOverview] = useState(false); // false: term first, true: definition first
@@ -82,7 +84,14 @@ export default function SettingsPage() {
   };
 
   return (
-    <div>
+    <div className="relative">
+      <div className="absolute top-0 left-0 z-30">
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+          <ArrowLeft className="h-5 w-5" />
+          <span className="sr-only">Zurück</span>
+        </Button>
+      </div>
+
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold font-headline">Einstellungen</h1>
       </div>
