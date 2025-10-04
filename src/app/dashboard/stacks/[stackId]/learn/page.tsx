@@ -148,6 +148,14 @@ export default function LearnPage() {
     }
   };
 
+  const getMotivationMessage = (score: number) => {
+    if (score >= 90) return "Exzellente Leistung. Halte das Niveau.";
+    if (score >= 70) return "Gut gemacht. Ein paar Lücken gibt es noch, die du schließen kannst.";
+    if (score >= 50) return "Halb geschafft – konzentriere dich beim nächsten Durchgang auf die Fehler.";
+    if (score >= 30) return "Kein Grund zur Sorge. Lerne gezielt die Fehler, dann kommst du schnell voran.";
+    return "Das Fundament fehlt noch – wiederhole regelmäßig, um Fortschritt zu sehen.";
+  };
+
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin" /></div>;
@@ -174,11 +182,12 @@ export default function LearnPage() {
     const incorrectCount = persistentlyIncorrectIds.size;
     const correctCount = totalVocabCount - incorrectCount;
     const score = totalVocabCount > 0 ? Math.round((correctCount / totalVocabCount) * 100) : 0;
+    const motivationMessage = getMotivationMessage(score);
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
             <Confetti active={score >= 90} />
-            <h1 className="text-4xl font-bold font-headline mb-4">Sitzung beendet!</h1>
+            <h1 className="text-2xl font-semibold font-headline mb-4 max-w-md">{motivationMessage}</h1>
             <p className="text-7xl font-bold mb-4">{score}%</p>
             <div className="flex gap-8 text-lg mb-8">
                 <p><span className="font-bold">{correctCount}</span> Richtig</p>
@@ -245,9 +254,3 @@ export default function LearnPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
