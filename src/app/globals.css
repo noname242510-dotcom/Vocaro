@@ -77,6 +77,11 @@
       transform: scale(1);
     }
   }
+  @keyframes fall {
+    to {
+      transform: translateY(var(--y-end)) translateX(calc(var(--x-end) - var(--x-start))) rotate3d(1, 1, 1, var(--rotation-end));
+    }
+  }
 }
 
 @layer components {
