@@ -525,9 +525,9 @@ export default function SubjectDetailPage() {
             <AlertDialog open={isDeleteVocabDialogOpen} onOpenChange={setIsDeleteVocabDialogOpen}>
               <AlertDialogTrigger asChild>
                 <Button 
-                    variant="ghost" 
+                    variant="secondary" 
                     size="icon" 
-                    className="transition-opacity duration-300 rounded-full"
+                    className="h-11 w-11 transition-opacity duration-300 rounded-full"
                     disabled={!isAnyVocabSelected}
                 >
                     <Trash2 className={cn("h-5 w-5", !isAnyVocabSelected && "text-muted-foreground")} />
