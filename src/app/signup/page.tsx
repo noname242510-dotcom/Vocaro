@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -14,7 +15,6 @@ import { Eye, EyeOff } from 'lucide-react';
 
 export default function SignUpPage() {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
@@ -23,26 +23,30 @@ export default function SignUpPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Create a dummy email from the username
+    const email = `${username.trim()}@vocaro.app`;
+
     try {
       const auth = getAuth();
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
       if (userCredential.user) {
         await updateProfile(userCredential.user, {
-          displayName: username,
+          displayName: username.trim(),
         });
       }
       
-      window.location.href = '/dashboard';
+      // Use router.push for client-side navigation
+      router.push('/dashboard');
 
     } catch (error: any) {
         let description = 'Ein unbekannter Fehler ist aufgetreten.';
         switch (error.code) {
             case 'auth/email-already-in-use':
-                description = 'Diese E-Mail-Adresse wird bereits verwendet.';
+                description = 'Dieser Benutzername ist bereits vergeben.';
                 break;
             case 'auth/invalid-email':
-                description = 'Die E-Mail-Adresse ist ungültig.';
+                description = 'Der Benutzername ist ungültig. Bitte vermeide Sonderzeichen.';
                 break;
             case 'auth/weak-password':
                 description = 'Das Passwort ist zu schwach. Es muss mindestens 6 Zeichen lang sein.';
@@ -71,7 +75,7 @@ export default function SignUpPage() {
           <form onSubmit={handleSignUp}>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="username">Dein Benutzername</Label>
+                <Label htmlFor="username">Benutzername</Label>
                 <Input
                   id="username"
                   placeholder="Dein Benutzername"
@@ -79,18 +83,8 @@ export default function SignUpPage() {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="rounded-full"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@mail.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="rounded-full"
+                  autoCapitalize="none"
+                  autoCorrect="off"
                 />
               </div>
               <div className="grid gap-2">

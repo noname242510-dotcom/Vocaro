@@ -59,12 +59,9 @@ export default function DashboardLayout({
     { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
   ];
 
-  const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
+  const getInitials = (name: string | null | undefined) => {
     if (name) {
       return name.charAt(0).toUpperCase();
-    }
-    if (email) {
-      return email.charAt(0).toUpperCase();
     }
     return 'U';
   };
@@ -161,11 +158,10 @@ export default function DashboardLayout({
           <div className="mt-auto">
              <div className="flex items-center p-2 rounded-full mb-4">
                 <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl mr-3">
-                  {isUserLoading ? '' : getInitials(user?.displayName, user?.email)}
+                  {isUserLoading ? '' : getInitials(user?.displayName)}
                 </div>
                 <div>
                   <p className="font-semibold">{isUserLoading ? 'Laden...' : (user?.displayName || 'Benutzer')}</p>
-                  <p className="text-sm text-muted-foreground">{isUserLoading ? '' : user?.email}</p>
                 </div>
              </div>
             <Button variant="ghost" className="w-full justify-start text-lg rounded-full" onClick={handleLogout}>

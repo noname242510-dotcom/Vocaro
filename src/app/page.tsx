@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -13,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
@@ -21,6 +22,10 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Create a dummy email from the username
+    const email = `${username.trim()}@vocaro.app`;
+
     try {
       const auth = getAuth();
       await signInWithEmailAndPassword(auth, email, password);
@@ -31,10 +36,10 @@ export default function LoginPage() {
         case 'auth/user-not-found':
         case 'auth/wrong-password':
         case 'auth/invalid-credential':
-          description = 'E-Mail oder Passwort ist falsch.';
+          description = 'Benutzername oder Passwort ist falsch.';
           break;
         case 'auth/invalid-email':
-          description = 'Die E-Mail-Adresse ist ungültig.';
+          description = 'Der Benutzername ist ungültig.';
           break;
         default:
           description = 'Bitte versuche es später erneut.';
@@ -60,15 +65,17 @@ export default function LoginPage() {
           <form onSubmit={handleLogin}>
             <div className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="username">Benutzername</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@mail.com"
+                  id="username"
+                  type="text"
+                  placeholder="Dein Benutzername"
                   required
                   className="rounded-full"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoCapitalize="none"
+                  autoCorrect="off"
                 />
               </div>
               <div className="grid gap-2">
