@@ -230,9 +230,9 @@ export default function LearnPage() {
                 <p><span className="font-bold">{correctCount}</span> Richtig</p>
                 <p><span className="font-bold">{incorrectCount}</span> Falsch</p>
             </div>
-            <div className="flex gap-4">
-                <Button onClick={resetSession} size="lg"><RotateCcw className="mr-2 h-4 w-4" /> Nochmal versuchen</Button>
-                <Button variant="outline" size="lg" onClick={handleBackToSelection}>
+            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs sm:max-w-sm">
+                <Button onClick={resetSession} size="lg" className="w-full"><RotateCcw className="mr-2 h-4 w-4" /> Nochmal versuchen</Button>
+                <Button variant="outline" size="lg" className="w-full" onClick={handleBackToSelection}>
                     Zur Vokabelauswahl
                 </Button>
             </div>
@@ -279,7 +279,7 @@ export default function LearnPage() {
           {!isFlipped ? (
             <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           ) : (
-          <div className={cn("flex gap-4 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
+          <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
             <Button variant="outline" size="lg" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
               <X className="mr-2 h-4 w-4" /> Wusste ich nicht
             </Button>
@@ -298,3 +298,5 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
+
+    
