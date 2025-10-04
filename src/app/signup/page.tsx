@@ -74,7 +74,7 @@ export default function SignUpPage() {
                 <Label htmlFor="username">Benutzername</Label>
                 <Input
                   id="username"
-                  placeholder="Ihr Name"
+                  placeholder="Dein Benutzername"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
