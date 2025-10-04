@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -7,6 +8,8 @@ const ConfettiPiece = ({ id, onComplete }: { id: number; onComplete: (id: number
   const [style, setStyle] = useState({});
 
   useEffect(() => {
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    
     const randomXStart = Math.random() * 100;
     const randomXEnd = randomXStart - 20 + Math.random() * 40;
     const randomYEnd = 120; // Land below the screen
@@ -15,7 +18,7 @@ const ConfettiPiece = ({ id, onComplete }: { id: number; onComplete: (id: number
     const randomRotationStart = Math.random() * 360;
     const randomRotationEnd = randomRotationStart + 720 + Math.random() * 720;
     const randomSize = 6 + Math.random() * 8;
-    const colors = ['#000']; // Only black
+    const colors = [isDarkMode ? '#fff' : '#000'];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
     setStyle({
