@@ -84,17 +84,15 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="relative">
-      <div className="sticky top-4 left-4 z-20">
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
           <span className="sr-only">Zurück</span>
         </Button>
-      </div>
-
-      <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold font-headline">Einstellungen</h1>
       </div>
+
 
       <div className="flex flex-col items-center mb-8">
         {isUserLoading ? (
