@@ -213,7 +213,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                       checked={!!item.isSelected}
                       onCheckedChange={(checked) => onSelectionChange(item.id, Boolean(checked))}
                   />
-                  <label htmlFor={`vocab-${item.id}`} className="flex-1 grid grid-cols-2 gap-4 cursor-pointer">
+                  <label htmlFor={`vocab-${item.id}`} className="flex-1 grid grid-cols-2 items-center gap-4 cursor-pointer">
                     <span className="font-medium break-words hyphens-auto">{isTermFirst ? item.term : item.definition}</span>
                     <span className="text-muted-foreground break-words hyphens-auto">{isTermFirst ? item.definition : item.term}</span>
                   </label>
