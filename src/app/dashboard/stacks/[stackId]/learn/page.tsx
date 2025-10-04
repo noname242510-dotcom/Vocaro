@@ -128,7 +128,7 @@ export default function LearnPage() {
         const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
         setVocabulary(remainingCards);
         setCurrentIndex(newIndex);
-        setIsFlipped(false);
+        setTimeout(() => setIsFlipped(false), 0);
     }
   };
 
@@ -237,11 +237,11 @@ export default function LearnPage() {
         </Card>
       </div>
       
-       <div className="w-full max-w-2xl h-16 mt-8 flex items-center justify-center">
+       <div className={cn("w-full max-w-2xl h-16 mt-8 flex items-center justify-center", "md:w-full")}>
           {!isFlipped ? (
             <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           ) : (
-            <div className={cn("flex gap-2 transition-opacity duration-300 md:w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
+            <div className={cn("flex gap-2 transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none', "md:w-full")}>
                 <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
                 <X className="mr-2 h-4 w-4" /> Wusste ich nicht
                 </Button>
