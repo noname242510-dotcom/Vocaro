@@ -146,7 +146,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                 <DialogHeader>
                   <DialogTitle>Stapel umbenennen</DialogTitle>
                   <DialogDescription>
-                    Geben Sie einen neuen Namen für den Stapel ein.
+                    Gib einen neuen Namen für den Stapel ein.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">

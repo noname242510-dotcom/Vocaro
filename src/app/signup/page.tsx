@@ -48,7 +48,7 @@ export default function SignUpPage() {
                 description = 'Das Passwort ist zu schwach. Es muss mindestens 6 Zeichen lang sein.';
                 break;
             default:
-                description = 'Bitte versuchen Sie es später erneut.';
+                description = 'Bitte versuche es später erneut.';
                 break;
         }
       toast({
@@ -65,7 +65,7 @@ export default function SignUpPage() {
         <CardHeader className="text-center">
           <Logo className="mx-auto mb-4 text-3xl" />
           <CardTitle className="text-2xl font-headline">Konto erstellen</CardTitle>
-          <CardDescription>Geben Sie Ihre Informationen ein, um ein neues Konto zu erstellen</CardDescription>
+          <CardDescription>Gib deine Informationen ein, um ein neues Konto zu erstellen</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>
@@ -121,7 +121,7 @@ export default function SignUpPage() {
             </div>
           </form>
           <div className="mt-4 text-center text-sm">
-            Haben Sie bereits ein Konto?{' '}
+            Hast du bereits ein Konto?{' '}
             <Link href="/" className="underline">
               Anmelden
             </Link>

@@ -97,7 +97,7 @@ export default function DashboardPage() {
             <DialogHeader>
               <DialogTitle>Neues Fach erstellen</DialogTitle>
               <DialogDescription>
-                Geben Sie einen Namen für Ihr neues Fach ein.
+                Gib einen Namen für dein neues Fach ein.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">

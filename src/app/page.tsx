@@ -37,7 +37,7 @@ export default function LoginPage() {
           description = 'Die E-Mail-Adresse ist ungültig.';
           break;
         default:
-          description = 'Bitte versuchen Sie es später erneut.';
+          description = 'Bitte versuche es später erneut.';
           break;
       }
       toast({
@@ -54,7 +54,7 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <Logo className="mx-auto mb-4 text-3xl" />
           <CardTitle className="text-2xl font-headline">Willkommen zurück</CardTitle>
-          <CardDescription>Melden Sie sich bei Ihrem Konto an, um fortzufahren</CardDescription>
+          <CardDescription>Melde dich bei deinem Konto an, um fortzufahren</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin}>
@@ -101,7 +101,7 @@ export default function LoginPage() {
             </div>
           </form>
           <div className="mt-4 text-center text-sm">
-            Sie haben noch kein Konto?{" "}
+            Du hast noch kein Konto?{" "}
             <Link href="/signup" className="underline">
               Registrieren
             </Link>

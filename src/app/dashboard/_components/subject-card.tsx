@@ -192,7 +192,7 @@ export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed }: Sub
           <DialogHeader>
             <DialogTitle>Fach umbenennen</DialogTitle>
             <DialogDescription>
-              Geben Sie einen neuen Namen für das Fach &quot;{subject?.name}&quot; ein.
+              Gib einen neuen Namen für das Fach &quot;{subject?.name}&quot; ein.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

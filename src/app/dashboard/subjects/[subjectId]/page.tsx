@@ -198,7 +198,7 @@ export default function SubjectDetailPage() {
       toast({
         variant: "destructive",
         title: "Kein Bild ausgewählt",
-        description: "Bitte wählen Sie zuerst ein Bild aus.",
+        description: "Bitte wähle zuerst ein Bild aus.",
       });
       return;
     }
@@ -206,7 +206,7 @@ export default function SubjectDetailPage() {
       toast({
         variant: "destructive",
         title: "Kein Stapelname",
-        description: "Bitte geben Sie einen Namen für den neuen Stapel an.",
+        description: "Bitte gib einen Namen für den neuen Stapel an.",
       });
       return;
     }
@@ -265,7 +265,7 @@ export default function SubjectDetailPage() {
       toast({
         variant: "destructive",
         title: "Fehler beim Verarbeiten",
-        description: error.message || "Der Vorgang konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.",
+        description: error.message || "Der Vorgang konnte nicht abgeschlossen werden. Bitte versuche es erneut.",
       });
     } finally {
       setIsProcessingOcr(false);
@@ -275,7 +275,7 @@ export default function SubjectDetailPage() {
 
   const handleAddManualVocabulary = async (closeOnFinish = true) => {
     if (!manualTerm || !manualDefinition || !newStackName || !user || !firestore || !stacksCollectionRef) {
-        toast({ variant: 'destructive', title: 'Fehlende Informationen', description: 'Bitte füllen Sie Stapelname, Begriff und Definition aus.' });
+        toast({ variant: 'destructive', title: 'Fehlende Informationen', description: 'Bitte fülle Stapelname, Begriff und Definition aus.' });
         return;
     }
     setIsAddingManually(true);
@@ -448,7 +448,7 @@ export default function SubjectDetailPage() {
                 <DialogHeader>
                   <DialogTitle>Fach umbenennen</DialogTitle>
                   <DialogDescription>
-                    Geben Sie einen neuen Namen für das Fach &quot;{subject?.name}&quot; ein.
+                    Gib einen neuen Namen für das Fach &quot;{subject?.name}&quot; ein.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
