@@ -85,12 +85,13 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
           <span className="sr-only">Zurück</span>
         </Button>
         <h1 className="text-3xl font-bold font-headline">Einstellungen</h1>
+        <div className="w-10"></div> {/* Placeholder to balance the flex layout */}
       </div>
 
 
