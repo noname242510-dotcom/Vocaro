@@ -214,8 +214,8 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                       onCheckedChange={(checked) => onSelectionChange(item.id, Boolean(checked))}
                   />
                   <label htmlFor={`vocab-${item.id}`} className="flex-1 grid grid-cols-2 gap-4 cursor-pointer">
-                    <span className="font-medium">{isTermFirst ? item.term : item.definition}</span>
-                    <span className="text-muted-foreground">{isTermFirst ? item.definition : item.term}</span>
+                    <span className="font-medium break-words hyphens-auto">{isTermFirst ? item.term : item.definition}</span>
+                    <span className="text-muted-foreground break-words hyphens-auto">{isTermFirst ? item.definition : item.term}</span>
                   </label>
                 </Card>
               ))
