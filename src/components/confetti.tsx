@@ -77,7 +77,7 @@ export const Confetti = ({ active }: { active: boolean }) => {
     if (!active && pieces.length === 0) return null;
   
     return (
-      <div className="pointer-events-none fixed inset-0 z-49 overflow-hidden">
+      <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
         {pieces.map((id) => (
           <ConfettiPiece key={id} id={id} onComplete={handleComplete} />
         ))}
