@@ -527,10 +527,10 @@ export default function SubjectDetailPage() {
                 <Button 
                     variant="ghost" 
                     size="icon" 
-                    className={`transition-opacity duration-300 rounded-full ${isAnyVocabSelected ? 'opacity-100' : 'opacity-0'}`}
+                    className="transition-opacity duration-300 rounded-full"
                     disabled={!isAnyVocabSelected}
                 >
-                    <Trash2 className="h-5 w-5" />
+                    <Trash2 className={cn("h-5 w-5", !isAnyVocabSelected && "text-muted-foreground")} />
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
