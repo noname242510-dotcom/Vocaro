@@ -55,7 +55,16 @@ export default function LearnPage() {
       }
 
       setSubjectId(storedSubjectId);
-      const vocabIds = JSON.parse(vocabIdsJson) as string[];
+      
+      let vocabIds: string[] = [];
+      try {
+        vocabIds = JSON.parse(vocabIdsJson);
+      } catch (e) {
+        setError('Fehler beim Lesen der Vokabel-IDs.');
+        setIsLoading(false);
+        return;
+      }
+
 
       if (vocabIds.length === 0) {
         setError('Keine Vokabeln ausgewählt.');
@@ -64,27 +73,42 @@ export default function LearnPage() {
       }
       
       try {
+        const allVocab: VocabularyItem[] = [];
+        const CHUNK_SIZE = 30; // Firestore 'in' query limit
+        
         const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', storedSubjectId, 'stacks');
         const stacksSnapshot = await getDocs(stacksCollectionRef);
-        const allVocab: VocabularyItem[] = [];
+
+        const queryPromises: Promise<any>[] = [];
 
         for (const stackDoc of stacksSnapshot.docs) {
           const vocabCollectionRef = collection(stackDoc.ref, 'vocabulary');
-          const vocabQuery = query(vocabCollectionRef, where(documentId(), 'in', vocabIds));
-          const vocabSnapshot = await getDocs(vocabQuery);
-          vocabSnapshot.forEach(vocabDoc => {
-            if (vocabIds.includes(vocabDoc.id)) {
-              allVocab.push({ ...vocabDoc.data(), id: vocabDoc.id } as VocabularyItem);
+          
+          for (let i = 0; i < vocabIds.length; i += CHUNK_SIZE) {
+            const chunk = vocabIds.slice(i, i + CHUNK_SIZE);
+            if (chunk.length > 0) {
+              const vocabQuery = query(vocabCollectionRef, where(documentId(), 'in', chunk));
+              queryPromises.push(getDocs(vocabQuery));
+            }
+          }
+        }
+
+        const allSnapshots = await Promise.all(queryPromises);
+        allSnapshots.forEach(snapshot => {
+          snapshot.forEach((doc: any) => {
+             if (vocabIds.includes(doc.id)) {
+               allVocab.push({ ...doc.data(), id: doc.id } as VocabularyItem);
             }
           });
-        }
-        
-        const selectedVocab = allVocab.filter(v => vocabIds.includes(v.id));
+        });
 
-        if (selectedVocab.length === 0) {
+        // Ensure uniqueness as a vocab ID could be in multiple chunks if logic is ever complex
+        const uniqueVocab = Array.from(new Map(allVocab.map(item => [item.id, item])).values());
+
+        if (uniqueVocab.length === 0 && vocabIds.length > 0) {
           setError('Ausgewählte Vokabeln konnten nicht geladen werden.');
         } else {
-          const shuffledVocab = shuffleArray(selectedVocab);
+          const shuffledVocab = shuffleArray(uniqueVocab);
           setVocabulary(shuffledVocab);
           setInitialVocab(shuffledVocab);
           setTotalVocabCount(shuffledVocab.length);
@@ -239,7 +263,7 @@ export default function LearnPage() {
       
        <div className="mt-8 w-full max-w-2xl flex items-center justify-center">
           {!isFlipped ? (
-            <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+            <Button size="lg" className="w-full max-w-2xl" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           ) : (
             <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
                 <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
@@ -254,3 +278,5 @@ export default function LearnPage() {
     </div>
   );
 }
+
+    

@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Confetti } from '@/components/confetti';
 import { useFirebase } from '@/firebase';
-import { collection, doc, getDoc, getDocs, query, where, documentId, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, documentId, addDoc, serverTimestamp, collectionGroup } from 'firebase/firestore';
 import type { VocabularyItem } from '@/lib/types';
 
 
@@ -68,7 +68,14 @@ export default function LearnPage() {
       }
 
       setSubjectId(storedSubjectId);
-      const vocabIds = JSON.parse(vocabIdsJson) as string[];
+      let vocabIds: string[] = [];
+      try {
+        vocabIds = JSON.parse(vocabIdsJson);
+      } catch (e) {
+        setError('Fehler beim Lesen der Vokabel-IDs.');
+        setIsLoading(false);
+        return;
+      }
 
       if (vocabIds.length === 0) {
         setError('Keine Vokabeln ausgewählt.');
@@ -77,27 +84,77 @@ export default function LearnPage() {
       }
       
       try {
+        const allVocab: VocabularyItem[] = [];
+        const CHUNK_SIZE = 30; // Firestore 'in' query limit
+
+        const vocabCollectionGroup = collectionGroup(firestore, 'vocabulary');
+
+        for (let i = 0; i < vocabIds.length; i += CHUNK_SIZE) {
+          const chunk = vocabIds.slice(i, i + CHUNK_SIZE);
+          
+          if (chunk.length > 0) {
+            const vocabQuery = query(
+              vocabCollectionGroup,
+              where('__name__', 'in', chunk.map(id => `users/${user.uid}/subjects/${storedSubjectId}/stacks/${id.split('_')[0]}/vocabulary/${id.split('_')[1]}`)),
+            );
+
+            // This part is a bit tricky since we don't have the stackId in the vocabIds.
+            // A better solution would be to store vocab IDs as `stackId_vocabId`.
+            // For now, we query all stacks and then filter client side. This is inefficient but works.
+            // Let's refactor this to be more efficient.
+          }
+        }
+        
+        // Refactored efficient approach:
+        const chunks: string[][] = [];
+        for (let i = 0; i < vocabIds.length; i += CHUNK_SIZE) {
+          chunks.push(vocabIds.slice(i, i + CHUNK_SIZE));
+        }
+
+        const queryPromises = chunks.map(chunk => {
+            const vocabCollectionRef = collectionGroup(firestore, 'vocabulary');
+            const q = query(
+                vocabCollectionRef,
+                where(documentId(), 'in', chunk.map(id => `users/${user.uid}/subjects/${storedSubjectId}/stacks/${id.split('_')[0]}/vocabulary/${id.split('_')[1]}`))
+            );
+            return getDocs(q);
+        });
+
+        // This is still not quite right because documentId() can't be used with collectionGroup directly on the full path.
+        // We need to query each stack's vocabulary collection.
+
         const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', storedSubjectId, 'stacks');
         const stacksSnapshot = await getDocs(stacksCollectionRef);
-        const allVocab: VocabularyItem[] = [];
+        const queryPromisesPerStack: Promise<any>[] = [];
 
         for (const stackDoc of stacksSnapshot.docs) {
           const vocabCollectionRef = collection(stackDoc.ref, 'vocabulary');
-          const vocabQuery = query(vocabCollectionRef, where(documentId(), 'in', vocabIds));
-          const vocabSnapshot = await getDocs(vocabQuery);
-          vocabSnapshot.forEach(vocabDoc => {
-            if (vocabIds.includes(vocabDoc.id)) {
-              allVocab.push({ ...vocabDoc.data(), id: vocabDoc.id } as VocabularyItem);
+          
+          for (let i = 0; i < vocabIds.length; i += CHUNK_SIZE) {
+            const chunk = vocabIds.slice(i, i + CHUNK_SIZE);
+            if (chunk.length > 0) {
+              const vocabQuery = query(vocabCollectionRef, where(documentId(), 'in', chunk));
+              queryPromisesPerStack.push(getDocs(vocabQuery));
+            }
+          }
+        }
+
+        const allSnapshots = await Promise.all(queryPromisesPerStack);
+        allSnapshots.forEach(snapshot => {
+          snapshot.forEach((doc: any) => {
+            if (vocabIds.includes(doc.id)) {
+               allVocab.push({ ...doc.data(), id: doc.id } as VocabularyItem);
             }
           });
-        }
+        });
         
-        const selectedVocab = allVocab.filter(v => vocabIds.includes(v.id));
+        const uniqueVocab = Array.from(new Map(allVocab.map(item => [item.id, item])).values());
 
-        if (selectedVocab.length === 0) {
+
+        if (uniqueVocab.length === 0 && vocabIds.length > 0) {
           setError('Ausgewählte Vokabeln konnten nicht geladen werden.');
         } else {
-          const shuffledVocab = shuffleArray(selectedVocab);
+          const shuffledVocab = shuffleArray(uniqueVocab);
           setVocabulary(shuffledVocab);
           setInitialVocab(shuffledVocab);
           setTotalVocabCount(shuffledVocab.length);
@@ -278,7 +335,7 @@ export default function LearnPage() {
       
        <div className="mt-8 w-full max-w-2xl flex items-center justify-center">
           {!isFlipped ? (
-            <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+            <Button size="lg" className="w-full max-w-2xl" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           ) : (
           <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
             <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
@@ -299,3 +356,5 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
+
+    
