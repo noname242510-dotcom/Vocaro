@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
-import { X, Check, RotateCcw, Loader2, Lightbulb } from 'lucide-react';
+import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,17 @@ import { Confetti } from '@/components/confetti';
 import { useFirebase } from '@/firebase';
 import { collection, doc, getDoc, getDocs, query, where, documentId } from 'firebase/firestore';
 import type { VocabularyItem } from '@/lib/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 // Function to shuffle an array
@@ -229,8 +240,29 @@ export default function LearnPage() {
 
   return (
     <div className="flex flex-col items-center pt-8">
-      <div className="w-full max-w-2xl mb-8">
-        <Progress value={progress} className="h-2" />
+      <div className="w-full max-w-2xl mb-4">
+        <div className="relative flex items-center">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="absolute -left-12">
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Abfrage beenden?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Möchtest du die aktuelle Lernsitzung wirklich beenden und zum Fach zurückkehren? Dein Fortschritt geht verloren.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleBackToSelection}>Beenden</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          <Progress value={progress} className="h-2 w-full" />
+        </div>
         <p className="text-sm text-muted-foreground text-center mt-2">
             ({correctAnswersCount}/{totalVocabCount})
         </p>
@@ -263,9 +295,9 @@ export default function LearnPage() {
       
        <div className="mt-8 w-full max-w-2xl flex items-center justify-center">
           {!isFlipped ? (
-            <Button size="lg" className="w-full max-w-2xl" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+            <Button size="lg" className="w-full max-w-md" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           ) : (
-            <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
+            <div className={cn("flex gap-2 transition-opacity duration-300 w-full max-w-md", !isFlipped && 'opacity-0 pointer-events-none')}>
                 <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
                 <X className="mr-2 h-4 w-4" /> Wusste ich nicht
                 </Button>
@@ -278,5 +310,7 @@ export default function LearnPage() {
     </div>
   );
 }
+
+    
 
     
