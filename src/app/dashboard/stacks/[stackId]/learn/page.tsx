@@ -240,11 +240,11 @@ export default function LearnPage() {
 
   return (
     <div className="flex flex-col items-center pt-8">
-      <div className="w-full max-w-2xl mb-4">
-        <div className="relative flex items-center">
+      <div className="w-full max-w-2xl px-4 sm:px-0">
+        <div className="flex items-center justify-start mb-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="absolute -left-12">
+                <Button variant="ghost" size="icon">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               </AlertDialogTrigger>
@@ -261,14 +261,14 @@ export default function LearnPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          <Progress value={progress} className="h-2 w-full" />
         </div>
-        <p className="text-sm text-muted-foreground text-center mt-2">
+        <Progress value={progress} className="h-2 w-full mb-1" />
+        <p className="text-sm text-muted-foreground text-center">
             ({correctAnswersCount}/{totalVocabCount})
         </p>
       </div>
 
-      <div className="w-full max-w-2xl h-80 [perspective:1000px] relative">
+      <div className="w-full max-w-2xl h-80 [perspective:1000px] relative mt-4">
         <Card
           className={cn(
             "relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]",
@@ -293,7 +293,7 @@ export default function LearnPage() {
         </Card>
       </div>
       
-       <div className="mt-8 w-full max-w-2xl flex items-center justify-center">
+       <div className="mt-8 w-full max-w-2xl">
           {!isFlipped ? (
             <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
           ) : (
@@ -310,9 +310,5 @@ export default function LearnPage() {
     </div>
   );
 }
-
-    
-
-    
 
     
