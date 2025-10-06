@@ -310,7 +310,7 @@ export default function LearnPage() {
   }
 
   return (
-    <div className="flex flex-col items-center pt-8">
+    <div className="flex flex-col items-center">
       <div className="w-full max-w-2xl px-4 sm:px-0">
         <div className="flex items-center justify-start mb-2">
             <AlertDialog>
@@ -388,5 +388,7 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
+
+    
 
     
