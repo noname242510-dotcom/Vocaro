@@ -3,14 +3,12 @@
  * @fileOverview Generates verb conjugations and translations using AI.
  *
  * - generateVerbForms - A function that generates all forms for a given verb and language.
+ * - GenerateVerbFormsOutput - The return type for the generateVerbForms function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-
-const TenseSchema = z.record(z.string(), z.string()).describe('An object where keys are pronouns (e.g., "ich", "du", "er/sie/es") and values are the conjugated verb forms.');
-
-const VerbFormsSchema = z.record(z.string(), TenseSchema).describe('An object where keys are tense names (e.g., "Présent", "Simple Past") and values are objects containing the conjugations for that tense.');
+import type { GenerateVerbFormsOutput } from '@/lib/types';
 
 const GenerateVerbFormsInputSchema = z.object({
   verb: z.string().describe('The infinitive form of the verb to be conjugated.'),
@@ -18,11 +16,22 @@ const GenerateVerbFormsInputSchema = z.object({
 });
 type GenerateVerbFormsInput = z.infer<typeof GenerateVerbFormsInputSchema>;
 
+const GenerateVerbFormsPromptInputSchema = z.object({
+  verb: z.string(),
+  language: z.string(),
+  tenses: z.string(),
+  pronouns: z.string(),
+});
+
+const TenseSchema = z.record(z.string(), z.string()).describe('An object where keys are pronouns (e.g., "ich", "du", "er/sie/es") and values are the conjugated verb forms.');
+
+const VerbFormsSchema = z.record(z.string(), TenseSchema).describe('An object where keys are tense names (e.g., "Présent", "Simple Past") and values are objects containing the conjugations for that tense.');
+
 const GenerateVerbFormsOutputSchema = z.object({
   translation: z.string().describe('The German translation of the infinitive verb.'),
   forms: VerbFormsSchema,
 });
-export type GenerateVerbFormsOutput = z.infer<typeof GenerateVerbFormsOutputSchema>;
+
 
 const frenchTenses = `
 - Indicatif Présent
@@ -60,9 +69,12 @@ const englishTenses = `
 - Past Participle
 `;
 
+const frenchPronouns = `"je", "tu", "il/elle/on", "nous", "vous", "ils/elles"`;
+const englishPronouns = `"I", "you", "he/she/it", "we", "they"`;
+
 const prompt = ai.definePrompt({
   name: 'generateVerbFormsPrompt',
-  input: { schema: GenerateVerbFormsInputSchema },
+  input: { schema: GenerateVerbFormsPromptInputSchema },
   output: { schema: GenerateVerbFormsOutputSchema },
   prompt: `You are an expert linguist and conjugation specialist. Your task is to take a verb in a given language, provide its German translation, and generate all its conjugated forms for a standard set of tenses.
 
@@ -77,17 +89,10 @@ Follow these instructions precisely:
 Language: {{language}}
 Verb: {{verb}}
 
-{{#if (eq language "French")}}
 Tenses to generate:
-${frenchTenses}
-Pronouns to use: "je", "tu", "il/elle/on", "nous", "vous", "ils/elles"
-{{/if}}
+{{{tenses}}}
 
-{{#if (eq language "English")}}
-Tenses to generate:
-${englishTenses}
-Pronouns to use: "I", "you", "he/she/it", "we", "they"
-{{/if}}
+Pronouns to use: {{{pronouns}}}
 
 Produce ONLY the JSON output, nothing else.
 `,
@@ -100,7 +105,26 @@ const generateVerbFormsFlow = ai.defineFlow(
     outputSchema: GenerateVerbFormsOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    let tenses, pronouns;
+    if (input.language === 'French') {
+      tenses = frenchTenses;
+      pronouns = frenchPronouns;
+    } else if (input.language === 'English') {
+      tenses = englishTenses;
+      pronouns = englishPronouns;
+    } else {
+      // Default to English if language is not specified or recognized
+      tenses = englishTenses;
+      pronouns = englishPronouns;
+    }
+    
+    const { output } = await prompt({
+      verb: input.verb,
+      language: input.language,
+      tenses,
+      pronouns,
+    });
+
     if (!output) {
       throw new Error('AI failed to generate verb forms.');
     }
