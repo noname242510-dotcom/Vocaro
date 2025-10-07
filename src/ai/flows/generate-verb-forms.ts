@@ -3,8 +3,6 @@
  * @fileOverview Generates verb conjugations and translations using AI.
  *
  * - generateVerbForms - A function that generates all forms for a given verb and language.
- * - GenerateVerbFormsInput - The input type.
- * - GenerateVerbFormsOutput - The return type.
  */
 
 import { ai } from '@/ai/genkit';
@@ -14,21 +12,17 @@ const TenseSchema = z.record(z.string(), z.string()).describe('An object where k
 
 const VerbFormsSchema = z.record(z.string(), TenseSchema).describe('An object where keys are tense names (e.g., "Présent", "Simple Past") and values are objects containing the conjugations for that tense.');
 
-export const GenerateVerbFormsInputSchema = z.object({
+const GenerateVerbFormsInputSchema = z.object({
   verb: z.string().describe('The infinitive form of the verb to be conjugated.'),
   language: z.string().describe("The language of the verb, e.g., 'French', 'English'."),
 });
-export type GenerateVerbFormsInput = z.infer<typeof GenerateVerbFormsInputSchema>;
+type GenerateVerbFormsInput = z.infer<typeof GenerateVerbFormsInputSchema>;
 
-export const GenerateVerbFormsOutputSchema = z.object({
+const GenerateVerbFormsOutputSchema = z.object({
   translation: z.string().describe('The German translation of the infinitive verb.'),
   forms: VerbFormsSchema,
 });
 export type GenerateVerbFormsOutput = z.infer<typeof GenerateVerbFormsOutputSchema>;
-
-export async function generateVerbForms(input: GenerateVerbFormsInput): Promise<GenerateVerbFormsOutput> {
-  return generateVerbFormsFlow(input);
-}
 
 const frenchTenses = `
 - Indicatif Présent
@@ -113,3 +107,7 @@ const generateVerbFormsFlow = ai.defineFlow(
     return output;
   }
 );
+
+export async function generateVerbForms(input: GenerateVerbFormsInput): Promise<GenerateVerbFormsOutput> {
+  return generateVerbFormsFlow(input);
+}

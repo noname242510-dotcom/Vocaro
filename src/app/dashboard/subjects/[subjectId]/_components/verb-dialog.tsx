@@ -17,6 +17,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { generateVerbForms, type GenerateVerbFormsOutput } from '@/ai/flows/generate-verb-forms';
 import type { Verb, VerbTense } from '@/lib/types';
+import { z } from 'zod';
 
 interface VerbDialogProps {
   isOpen: boolean;
@@ -25,6 +26,13 @@ interface VerbDialogProps {
   onSave: (verbData: Omit<Verb, 'id' | 'subjectId' | 'language'>) => Promise<void>;
   existingVerb?: Verb | null;
 }
+
+const GenerateVerbFormsInputSchema = z.object({
+  verb: z.string().describe('The infinitive form of the verb to be conjugated.'),
+  language: z.string().describe("The language of the verb, e.g., 'French', 'English'."),
+});
+type GenerateVerbFormsInput = z.infer<typeof GenerateVerbFormsInputSchema>;
+
 
 export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVerb }: VerbDialogProps) {
   const [infinitive, setInfinitive] = useState(existingVerb?.infinitive || '');
