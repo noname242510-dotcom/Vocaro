@@ -533,7 +533,6 @@ export default function SubjectDetailPage() {
         </TabsContent>
         <TabsContent value="verbs" className="mt-6">
           <div className="p-4 border rounded-2xl bg-card">
-            <h2 className="text-2xl font-bold font-headline mb-4">Verb Sektion</h2>
              <div className="flex justify-between items-center mb-4 gap-4">
                 <div className="relative w-full max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
