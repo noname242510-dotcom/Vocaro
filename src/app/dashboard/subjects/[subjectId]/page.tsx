@@ -66,6 +66,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -816,5 +817,3 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
-
-
