@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Pen, Trash2, Loader2, ChevronDown } from 'lucide-react';
+import { Pen, Trash2, Loader2, ChevronDown, Languages } from 'lucide-react';
 import type { Verb } from '@/lib/types';
 import {
   AlertDialog,
@@ -138,7 +138,7 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
                 </div>
                 <label htmlFor={`verb-${verb.id}`} className="cursor-pointer">
                     <p className="font-bold font-headline">{verb.infinitive}</p>
-                    <p className="text-sm text-muted-foreground">{verb.translation}</p>
+                    <p className="text-sm text-muted-foreground">{verb.language}</p>
                 </label>
                 </div>
                 <div className="flex items-center gap-1">
@@ -177,6 +177,20 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
             </div>
             <CollapsibleContent>
                 <div className="px-4 pb-4 space-y-4">
+                  <Collapsible className="space-y-2">
+                    <CollapsibleTrigger className="flex justify-between items-center w-full group/tense rounded-md px-2 py-1 hover:bg-muted/50">
+                        <h5 className="font-semibold text-sm">Übersetzung</h5>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/tense:rotate-180" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                        <div className="pt-2 pl-6">
+                            <div className="bg-muted/50 p-2 rounded-md flex items-baseline gap-2">
+                                <Badge variant="secondary" className="text-xs">de</Badge>
+                                <p className="text-sm">{verb.translation}</p>
+                            </div>
+                        </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                   {Object.entries(groupedTenses).map(([groupName, tenses]) => (
                     <div key={groupName}>
                       <h4 className="font-bold text-sm text-muted-foreground mb-2">{groupName}</h4>
