@@ -1,190 +1,263 @@
 /**
- * @fileOverview Firestore Security Rules for Vocaro Application
+ * @file Vocaro Firestore Security Rules
  *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model. All data is nested under
- * the /users/{userId} collection, ensuring that only the authenticated user
- * can access their own data.
- *
- * Data Structure:
- * All data is nested under /users/{userId}, including subjects, stacks,
- * vocabulary words, verbs, user settings, and learning sessions. This
- * hierarchical structure simplifies security rules and ensures clear ownership.
- *
- * Key Security Decisions:
- * - User listing is disallowed to protect user privacy.
- * - All write operations are validated against the authenticated user's UID
- *   to prevent unauthorized data modification.
- * - Data consistency is enforced by matching the userId in the path with
- *   the userId in the document data on creation.
- *
- * Denormalization for Authorization:
- * The data structure denormalizes ownership by nesting all user-specific data
- * under the /users/{userId} path. This eliminates the need for complex `get()`
- * calls in security rules, improving performance and security.
+ * @core_philosophy This ruleset enforces a strict user-ownership model.  All data is nested under a user's document (`/users/{userId}`) and is only accessible to that user.
+ * @data_structure All data is nested under `/users/{userId}`, including subjects, stacks, vocabulary, verbs, user settings, and learning sessions.
+ * @key_security_decisions
+ *   - User listing is disallowed.
+ *   - Path-based ownership is used to ensure only the user can access their data.
+ *   - No reliance on `get()` calls for authorization, all authorization can be done using path and `request.auth.uid`.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Enforces that only the authenticated user can manage their own user document.
+     * @description Protects the root `/users` collection. Only allows creating a user document with the ID matching the authenticated user's ID.
      * @path /users/{userId}
      * @allow (create) - Authenticated user creates their own user document.
-     * @deny (create) - Unauthenticated user attempts to create a user document.
-     * @allow (get) - Authenticated user can get their own document.
-     * @allow (list) - Listing users is allowed.
-     * @deny (update) - Another user attempts to update this user's document.
-     * @deny (delete) - Another user attempts to delete this user's document.
-     * @principle Enforces document ownership for writes and reads, and requires authentication.
+     *   - auth.uid: "someUserId"
+     *   - resource.data.id: "someUserId"
+     * @deny (create) - Authenticated user attempts to create a user document for another user.
+     *   - auth.uid: "someUserId"
+     *   - resource.data.id: "anotherUserId"
+     * @deny (get, list, update, delete) - All other operations are denied.
+     * @principle Enforces user-ownership and prevents unauthorized access to user data.
      */
     match /users/{userId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-      allow get, list: if true;
+
+      allow get: if false;
+      allow list: if false;
       allow create: if isOwner(userId);
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Enforces that only the authenticated user can manage their own subjects.
+     * @description Manages subjects created by the user. Only the authenticated user owning the subject can create, read, update, or delete it.
      * @path /users/{userId}/subjects/{subjectId}
-     * @allow (create) - Authenticated user creates a subject under their user document.
-     * @deny (create) - Unauthenticated user attempts to create a subject under another user's document.
-     * @allow (get) - Authenticated user can get their own subject.
-     * @allow (list) - Authenticated user can list their own subjects.
-     * @deny (update) - Another user attempts to update this user's subject.
-     * @deny (delete) - Another user attempts to delete this user's subject.
-     * @principle Enforces document ownership for writes and reads, and requires authentication.
+     * @allow (create) - Authenticated user creates a subject under their user ID.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/newSubjectId
+     * @allow (get, list) - Authenticated user reads their own subjects.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/existingSubjectId
+     * @allow (update, delete) - Authenticated user updates or deletes their own subject.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/existingSubjectId
+     * @deny (create, get, list, update, delete) - Any operation by a different user is denied.
+     *   - auth.uid: "anotherUserId"
+     *   - path: /users/someUserId/subjects/anySubjectId
+     * @principle Enforces user-ownership for subjects, allowing only the owner to manage them.
      */
     match /users/{userId}/subjects/{subjectId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-      allow get, list: if isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update, delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Enforces that only the authenticated user can manage their own stacks.
+     * @description Manages vocabulary stacks within a subject. Only the authenticated user owning the stack can create, read, update, or delete it.
      * @path /users/{userId}/subjects/{subjectId}/stacks/{stackId}
      * @allow (create) - Authenticated user creates a stack under their subject.
-     * @deny (create) - Unauthenticated user attempts to create a stack under another user's subject.
-     * @allow (get) - Authenticated user can get their own stack.
-     * @allow (list) - Authenticated user can list their own stacks.
-     * @deny (update) - Another user attempts to update this user's stack.
-     * @deny (delete) - Another user attempts to delete this user's stack.
-     * @principle Enforces document ownership for writes and reads, and requires authentication.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/stacks/newStackId
+     * @allow (get, list) - Authenticated user reads their own stacks.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/stacks/existingStackId
+     * @allow (update, delete) - Authenticated user updates or deletes their own stack.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/stacks/existingStackId
+     * @deny (create, get, list, update, delete) - Any operation by a different user is denied.
+     *   - auth.uid: "anotherUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/stacks/anyStackId
+     * @principle Enforces user-ownership for vocabulary stacks, allowing only the owner to manage them.
      */
     match /users/{userId}/subjects/{subjectId}/stacks/{stackId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-      allow get, list: if isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update, delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Enforces that only the authenticated user can manage their own vocabulary.
+     * @description Manages vocabulary words within a stack. Only the authenticated user owning the vocabulary can create, read, update, or delete it.
      * @path /users/{userId}/subjects/{subjectId}/stacks/{stackId}/vocabulary/{vocabularyId}
      * @allow (create) - Authenticated user creates a vocabulary word under their stack.
-     * @deny (create) - Unauthenticated user attempts to create a vocabulary word under another user's stack.
-     * @allow (get) - Authenticated user can get their own vocabulary word.
-     * @allow (list) - Authenticated user can list their own vocabulary words.
-     * @deny (update) - Another user attempts to update this user's vocabulary word.
-     * @deny (delete) - Another user attempts to delete this user's vocabulary word.
-     * @principle Enforces document ownership for writes and reads, and requires authentication.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/stacks/someStackId/vocabulary/newVocabId
+     * @allow (get, list) - Authenticated user reads their own vocabulary words.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/stacks/someStackId/vocabulary/existingVocabId
+     * @allow (update, delete) - Authenticated user updates or deletes their own vocabulary word.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/stacks/someStackId/vocabulary/existingVocabId
+     * @deny (create, get, list, update, delete) - Any operation by a different user is denied.
+     *   - auth.uid: "anotherUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/stacks/someStackId/vocabulary/anyVocabId
+     * @principle Enforces user-ownership for vocabulary words, allowing only the owner to manage them.
      */
     match /users/{userId}/subjects/{subjectId}/stacks/{stackId}/vocabulary/{vocabularyId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-      allow get, list: if isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update, delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Enforces that only the authenticated user can manage their own verbs.
+     * @description Manages verbs for a subject. Only the authenticated user owning the verb can create, read, update, or delete it.
      * @path /users/{userId}/subjects/{subjectId}/verbs/{verbId}
      * @allow (create) - Authenticated user creates a verb under their subject.
-     * @deny (create) - Unauthenticated user attempts to create a verb under another user's subject.
-     * @allow (get) - Authenticated user can get their own verb.
-     * @allow (list) - Authenticated user can list their own verbs.
-     * @deny (update) - Another user attempts to update this user's verb.
-     * @deny (delete) - Another user attempts to delete this user's verb.
-     * @principle Enforces document ownership for writes and reads, and requires authentication.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/verbs/newVerbId
+     * @allow (get, list) - Authenticated user reads their own verbs.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/verbs/existingVerbId
+     * @allow (update, delete) - Authenticated user updates or deletes their own verb.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/verbs/existingVerbId
+     * @deny (create, get, list, update, delete) - Any operation by a different user is denied.
+     *   - auth.uid: "anotherUserId"
+     *   - path: /users/someUserId/subjects/someSubjectId/verbs/anyVerbId
+     * @principle Enforces user-ownership for verbs, allowing only the owner to manage them.
      */
     match /users/{userId}/subjects/{subjectId}/verbs/{verbId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-      allow get, list: if isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update, delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Enforces that only the authenticated user can manage their own settings.
+     * @description Manages user settings. Only the authenticated user can create, read, update, or delete their settings.
      * @path /users/{userId}/settings/{settingsId}
-     * @allow (create) - Authenticated user creates settings under their user document.
-     * @deny (create) - Unauthenticated user attempts to create settings under another user's document.
-     * @allow (get) - Authenticated user can get their own settings.
-     * @allow (list) - Authenticated user can list their own settings.
-     * @deny (update) - Another user attempts to update this user's settings.
-     * @deny (delete) - Another user attempts to delete this user's settings.
-     * @principle Enforces document ownership for writes and reads, and requires authentication.
+     * @allow (create) - Authenticated user creates their settings document.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/settings/newSettingsId
+     * @allow (get, list) - Authenticated user reads their own settings.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/settings/existingSettingsId
+     * @allow (update, delete) - Authenticated user updates or deletes their settings.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/settings/existingSettingsId
+     * @deny (create, get, list, update, delete) - Any operation by a different user is denied.
+     *   - auth.uid: "anotherUserId"
+     *   - path: /users/someUserId/settings/anySettingsId
+     * @principle Enforces user-ownership for settings, allowing only the owner to manage them.
      */
     match /users/{userId}/settings/{settingsId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-      allow get, list: if isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update, delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Enforces that only the authenticated user can manage their own learning sessions.
+     * @description Manages learning sessions for the user. Only the authenticated user can create, read, update, or delete their learning sessions.
      * @path /users/{userId}/learningSessions/{learningSessionId}
-     * @allow (create) - Authenticated user creates a learning session under their user document.
-     * @deny (create) - Unauthenticated user attempts to create a learning session under another user's document.
-     * @allow (get) - Authenticated user can get their own learning session.
-     * @allow (list) - Authenticated user can list their own learning sessions.
-     * @deny (update) - Another user attempts to update this user's learning session.
-     * @deny (delete) - Another user attempts to delete this user's learning session.
-     * @principle Enforces document ownership for writes and reads, and requires authentication.
+     * @allow (create) - Authenticated user creates a learning session under their user ID.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/learningSessions/newSessionId
+     * @allow (get, list) - Authenticated user reads their own learning sessions.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/learningSessions/existingSessionId
+     * @allow (update, delete) - Authenticated user updates or deletes their own learning session.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/learningSessions/existingSessionId
+     * @deny (create, get, list, update, delete) - Any operation by a different user is denied.
+     *   - auth.uid: "anotherUserId"
+     *   - path: /users/someUserId/learningSessions/anySessionId
+     * @principle Enforces user-ownership for learning sessions, allowing only the owner to manage them.
      */
     match /users/{userId}/learningSessions/{learningSessionId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-      allow get, list: if isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update, delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Enforces that only the authenticated user can manage vocabulary within their own learning sessions.
+     * @description Manages vocabulary learned in learning sessions. Only the authenticated user can create, read, update, or delete vocabulary within their learning sessions.
      * @path /users/{userId}/learningSessions/{learningSessionId}/vocabulary/{vocabularyId}
-     * @allow (create) - Authenticated user creates vocabulary within their learning session.
-     * @deny (create) - Unauthenticated user attempts to create vocabulary within another user's learning session.
-     * @allow (get) - Authenticated user can get their own vocabulary within the learning session.
-     * @allow (list) - Authenticated user can list their own vocabulary within the learning session.
-     * @deny (update) - Another user attempts to update this user's vocabulary within the learning session.
-     * @deny (delete) - Another user attempts to delete this user's vocabulary within the learning session.
-     * @principle Enforces document ownership for writes and reads, and requires authentication.
+     * @allow (create) - Authenticated user creates a learning session vocabulary under their learning session.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/learningSessions/someSessionId/vocabulary/newVocabId
+     * @allow (get, list) - Authenticated user reads their own learning session vocabulary.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/learningSessions/someSessionId/vocabulary/existingVocabId
+     * @allow (update, delete) - Authenticated user updates or deletes their own learning session vocabulary.
+     *   - auth.uid: "someUserId"
+     *   - path: /users/someUserId/learningSessions/someSessionId/vocabulary/existingVocabId
+     * @deny (create, get, list, update, delete) - Any operation by a different user is denied.
+     *   - auth.uid: "anotherUserId"
+     *   - path: /users/someUserId/learningSessions/someSessionId/vocabulary/anyVocabId
+     * @principle Enforces user-ownership for learning session vocabulary, allowing only the owner to manage them.
      */
     match /users/{userId}/learningSessions/{learningSessionId}/vocabulary/{vocabularyId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-      allow get, list: if isOwner(userId);
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
       allow create: if isOwner(userId);
-      allow update, delete: if isOwner(userId) && resource != null;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
   }
 }
