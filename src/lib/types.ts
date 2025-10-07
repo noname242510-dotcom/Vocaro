@@ -22,6 +22,21 @@ export type VocabularyItem = {
   isSelected?: boolean;
 };
 
+export type VerbTense = {
+  [pronoun: string]: string;
+};
+
+export type Verb = {
+  id: string;
+  subjectId: string;
+  infinitive: string;
+  language: string;
+  translation: string;
+  forms: {
+    [tense: string]: VerbTense;
+  };
+};
+
 export type QuizSettings = {
   repetitionTimeframe: '24h' | '7d' | '30d' | 'all';
   enableConfetti: boolean;

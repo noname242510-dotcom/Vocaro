@@ -18,6 +18,7 @@ import {
   Circle,
   Loader2,
   Search,
+  Settings2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
@@ -42,7 +46,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
-import type { Stack, Subject, VocabularyItem } from '@/lib/types';
+import type { Stack, Subject, VocabularyItem, Verb } from '@/lib/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { suggestVocabularyFromImageContext } from '@/ai/flows/suggest-vocabulary-from-image-context';
 import { generateVocabularyFromExtractedText } from '@/ai/flows/generate-vocabulary-from-extracted-text';
@@ -50,6 +54,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, addDoc, writeBatch, serverTimestamp, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import { StackItem } from './_components/stack-item';
+import { VerbCard } from './_components/verb-card';
+import { VerbDialog } from './_components/verb-dialog';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,6 +77,7 @@ export default function SubjectDetailPage() {
   const params = useParams();
   const subjectId = params.subjectId as string;
 
+  // Vocab state
   const [allVocabulary, setAllVocabulary] = useState<Record<string, VocabularyItem[]>>({});
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isProcessingOcr, setIsProcessingOcr] = useState(false);
@@ -79,10 +87,19 @@ export default function SubjectDetailPage() {
   const [manualNotes, setManualNotes] = useState('');
   const [isAddingManually, setIsAddingManually] = useState(false);
   const [isOcrDialogOpen, setIsOcrDialogOpen] = useState(false);
+  const [isDeleteVocabDialogOpen, setIsDeleteVocabDialogOpen] = useState(false);
+
+  // Subject state
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDeleteVocabDialogOpen, setIsDeleteVocabDialogOpen] = useState(false);
   const [renamedSubjectName, setRenamedSubjectName] = useState('');
+  
+  // Verb state
+  const [isVerbDialogOpen, setIsVerbDialogOpen] = useState(false);
+  const [editingVerb, setEditingVerb] = useState<Verb | null>(null);
+  const [verbSearchQuery, setVerbSearchQuery] = useState('');
+
+
   const { toast } = useToast();
 
   const subjectDocRef = useMemoFirebase(() => {
@@ -98,6 +115,14 @@ export default function SubjectDetailPage() {
   }, [firestore, user, subjectId]);
 
   const { data: stacks, isLoading: areStacksLoading, forceUpdate } = useCollection<Stack>(stacksCollectionRef);
+
+  const verbsCollectionRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'subjects', subjectId, 'verbs');
+  }, [firestore, user, subjectId]);
+
+  const { data: verbs, isLoading: areVerbsLoading, forceUpdate: forceVerbsUpdate } = useCollection<Verb>(verbsCollectionRef);
+
 
   useEffect(() => {
     if (subject) {
@@ -142,6 +167,15 @@ export default function SubjectDetailPage() {
     if (name.includes('mathe')) return '🔢';
     return '🌐';
   };
+  
+  const getLanguageFromSubject = (subjectName?: string) => {
+    if (!subjectName) return 'English';
+    const name = subjectName.toLowerCase();
+    if (name.includes('französisch')) return 'French';
+    if (name.includes('englisch')) return 'English';
+    if (name.includes('spanisch')) return 'Spanish';
+    return 'English';
+  }
 
   const handleRenameSubject = async () => {
     if (renamedSubjectName.trim() && user && firestore && subjectDocRef) {
@@ -411,8 +445,57 @@ export default function SubjectDetailPage() {
     }
   };
 
+  // Verb handlers
+  const handleSaveVerb = async (verbData: Omit<Verb, 'id'|'subjectId'|'language'>) => {
+    if (!verbsCollectionRef) return;
+  
+    if (editingVerb) {
+      // Update existing verb
+      const verbDocRef = doc(verbsCollectionRef, editingVerb.id);
+      await updateDoc(verbDocRef, verbData);
+      toast({ title: 'Erfolg', description: 'Verb aktualisiert.' });
+    } else {
+      // Add new verb
+      await addDoc(verbsCollectionRef, { 
+        ...verbData,
+        subjectId: subjectId,
+        language: getLanguageFromSubject(subject?.name),
+        createdAt: serverTimestamp()
+      });
+      toast({ title: 'Erfolg', description: 'Verb gespeichert.' });
+    }
+    forceVerbsUpdate();
+  };
 
-  if (isSubjectLoading || areStacksLoading) {
+  const handleEditVerb = (verb: Verb) => {
+    setEditingVerb(verb);
+    setIsVerbDialogOpen(true);
+  };
+  
+  const handleAddNewVerb = () => {
+    setEditingVerb(null);
+    setIsVerbDialogOpen(true);
+  };
+  
+  const handleDeleteVerb = async (verbId: string) => {
+    if (!verbsCollectionRef) return;
+    try {
+      const verbDocRef = doc(verbsCollectionRef, verbId);
+      await deleteDoc(verbDocRef);
+      toast({ title: 'Erfolg', description: 'Verb gelöscht.' });
+      forceVerbsUpdate();
+    } catch(e) {
+      console.error("Error deleting verb:", e);
+      toast({ variant: 'destructive', title: 'Fehler', description: 'Verb konnte nicht gelöscht werden.' });
+    }
+  };
+  
+  const filteredVerbs = useMemo(() => {
+    return verbs?.filter(verb => verb.infinitive.toLowerCase().includes(verbSearchQuery.toLowerCase())) || [];
+  }, [verbs, verbSearchQuery]);
+
+
+  if (isSubjectLoading || areStacksLoading || areVerbsLoading) {
     return (
         <div className="flex justify-center items-center h-64">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -432,7 +515,6 @@ export default function SubjectDetailPage() {
   }
 
   const isAnyVocabSelected = selectedVocab.length > 0;
-  const mockVerbs = ["aller", "avoir", "être"];
 
   return (
     <div className="pb-24">
@@ -535,18 +617,53 @@ export default function SubjectDetailPage() {
           <div className="flex justify-between items-center mb-4 gap-4">
               <div className="relative w-full max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Verben durchsuchen..." className="pl-10" />
+                  <Input 
+                    placeholder="Verben durchsuchen..." 
+                    className="pl-10" 
+                    value={verbSearchQuery}
+                    onChange={e => setVerbSearchQuery(e.target.value)}
+                  />
               </div>
-              <Button>
-                  <Plus className="mr-2 h-4 w-4" /> Verb hinzufügen
-              </Button>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline">
+                            <Settings2 className="mr-2 h-4 w-4" />
+                            Zeiten auswählen
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuLabel>Aktive Zeiten für Übungen</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {/* This part will be dynamic based on selected tenses */}
+                        <DropdownMenuCheckboxItem checked>Présent</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem>Imparfait</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem>Passé composé</DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Button onClick={handleAddNewVerb}>
+                    <Plus className="mr-2 h-4 w-4" /> Verb hinzufügen
+                </Button>
+              </div>
           </div>
           <div className="space-y-3">
-            {mockVerbs.map((verb, index) => (
-              <Card key={index} className="p-4 shadow-none border">
-                <p className="font-medium">{verb}</p>
-              </Card>
-            ))}
+             {filteredVerbs.length > 0 ? (
+                filteredVerbs.map((verb) => (
+                    <VerbCard 
+                        key={verb.id}
+                        verb={verb}
+                        onEdit={handleEditVerb}
+                        onDelete={handleDeleteVerb}
+                    />
+                ))
+            ) : (
+                <div className="text-center mt-20 text-muted-foreground">
+                    <BookCopy className="mx-auto h-12 w-12 mb-4" />
+                    <h3 className="text-lg font-semibold">Keine Verben gefunden</h3>
+                    <p className="text-sm">Füge ein neues Verb hinzu, um zu beginnen.</p>
+                </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
@@ -645,7 +762,7 @@ export default function SubjectDetailPage() {
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="picture">Bild</Label>
-                          <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" disabled={isProcessingOcr} multiple />
+                          <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" disabled={isProcessingOcr} />
                         </div>
 
                         {isProcessingOcr ? (
@@ -666,8 +783,15 @@ export default function SubjectDetailPage() {
             </Dialog>
          </div>
       </div>
+      
+      <VerbDialog
+        isOpen={isVerbDialogOpen}
+        onOpenChange={setIsVerbDialogOpen}
+        language={getLanguageFromSubject(subject?.name)}
+        onSave={handleSaveVerb}
+        existingVerb={editingVerb}
+      />
     </div>
   );
 }
-
 
