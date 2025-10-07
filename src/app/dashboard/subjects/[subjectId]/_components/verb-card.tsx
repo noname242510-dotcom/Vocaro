@@ -49,7 +49,7 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
     <Collapsible open={isOpen} onOpenChange={setIsOpen} asChild>
         <Card className="shadow-none border">
             <div className="p-4 flex justify-between items-center group">
-                <div className="flex items-center gap-4 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
+                <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => setIsOpen(!isOpen)}>
                 <div onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                         id={`verb-${verb.id}`}
@@ -97,19 +97,24 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
                 </div>
             </div>
             <CollapsibleContent>
-                <div className="px-4 pb-4 space-y-3">
+                <div className="px-4 pb-4 space-y-2">
                     {Object.entries(verb.forms).map(([tense, forms]) => (
-                        <div key={tense}>
-                            <h4 className="font-semibold text-sm mb-2 px-2">{tense}</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                {Object.entries(forms).map(([pronoun, form]) => (
-                                    <div key={pronoun} className="bg-muted/50 p-2 rounded-md flex items-baseline gap-2">
-                                        <Badge variant="secondary" className="text-xs">{pronoun}</Badge>
-                                        <p className="text-sm">{form}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        <Collapsible key={tense} className="space-y-2">
+                            <CollapsibleTrigger className="flex justify-between items-center w-full group/tense">
+                                <h4 className="font-semibold text-sm group-hover/tense:underline">{tense}</h4>
+                                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/tense:rotate-180" />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2 pl-4">
+                                    {Object.entries(forms).map(([pronoun, form]) => (
+                                        <div key={pronoun} className="bg-muted/50 p-2 rounded-md flex items-baseline gap-2">
+                                            <Badge variant="secondary" className="text-xs">{pronoun}</Badge>
+                                            <p className="text-sm">{form}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CollapsibleContent>
+                        </Collapsible>
                     ))}
                 </div>
             </CollapsibleContent>
