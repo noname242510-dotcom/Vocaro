@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Circle,
   Loader2,
+  Search,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -431,6 +432,7 @@ export default function SubjectDetailPage() {
   }
 
   const isAnyVocabSelected = selectedVocab.length > 0;
+  const mockVerbs = ["aller", "avoir", "être"];
 
   return (
     <div className="pb-24">
@@ -501,27 +503,56 @@ export default function SubjectDetailPage() {
         </div>
       </div>
 
-      {(stacks?.length ?? 0) === 0 ? (
-        <div className="text-center mt-20 text-muted-foreground">
-            <BookCopy className="mx-auto h-12 w-12 mb-4" />
-            <h3 className="text-lg font-semibold">Noch keine Stapel</h3>
-            <p className="text-sm">Füge Vokabeln hinzu, um deinen ersten Stapel zu erstellen.</p>
-        </div>
-      ) : (
-        <div className="space-y-4 max-w-4xl mx-auto">
-        {stacks?.map((stack) => (
-          <StackItem 
-            key={stack.id} 
-            stack={stack}
-            subjectId={subjectId}
-            vocabulary={allVocabulary[stack.id] || []}
-            onDelete={() => { forceUpdate(); fetchAllVocab(); }}
-            onRename={() => { forceUpdate(); fetchAllVocab(); }}
-            onSelectionChange={handleSelectionChange}
-          />
-        ))}
-        </div>
-      )}
+      <Tabs defaultValue="vocabulary" className="max-w-4xl mx-auto">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="vocabulary">Vokabeln</TabsTrigger>
+          <TabsTrigger value="verbs">Verben</TabsTrigger>
+        </TabsList>
+        <TabsContent value="vocabulary" className="mt-6">
+          {(stacks?.length ?? 0) === 0 ? (
+            <div className="text-center mt-20 text-muted-foreground">
+                <BookCopy className="mx-auto h-12 w-12 mb-4" />
+                <h3 className="text-lg font-semibold">Noch keine Stapel</h3>
+                <p className="text-sm">Füge Vokabeln hinzu, um deinen ersten Stapel zu erstellen.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {stacks?.map((stack) => (
+                <StackItem 
+                  key={stack.id} 
+                  stack={stack}
+                  subjectId={subjectId}
+                  vocabulary={allVocabulary[stack.id] || []}
+                  onDelete={() => { forceUpdate(); fetchAllVocab(); }}
+                  onRename={() => { forceUpdate(); fetchAllVocab(); }}
+                  onSelectionChange={handleSelectionChange}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="verbs" className="mt-6">
+          <div className="p-4 border rounded-2xl bg-card">
+            <h2 className="text-2xl font-bold font-headline mb-4">Verb Sektion</h2>
+             <div className="flex justify-between items-center mb-4 gap-4">
+                <div className="relative w-full max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Verben durchsuchen..." className="pl-10" />
+                </div>
+                <Button>
+                    <Plus className="mr-2 h-4 w-4" /> Verb hinzufügen
+                </Button>
+            </div>
+            <div className="space-y-3">
+              {mockVerbs.map((verb, index) => (
+                <Card key={index} className="p-4 shadow-none border">
+                  <p className="font-medium">{verb}</p>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
 
 
       {/* Floating Action Bar */}
