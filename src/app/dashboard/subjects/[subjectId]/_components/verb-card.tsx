@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -29,6 +30,82 @@ interface VerbCardProps {
   onSelectionChange: (verbId: string, selected: boolean) => void;
 }
 
+const tenseOrder: { [key: string]: string[] } = {
+  'Indicatif': [
+    'Indicatif Présent',
+    'Indicatif Imparfait',
+    'Indicatif Passé composé',
+    'Indicatif Plus-que-parfait',
+    'Indicatif Futur simple',
+    'Indicatif Futur antérieur'
+  ],
+  'Conditionnel': [
+    'Conditionnel Présent',
+    'Conditionnel Passé'
+  ],
+  'Subjonctif': [
+    'Subjonctif Présent',
+    'Subjonctif Passé'
+  ],
+  'Autres formes': [
+    'Impératif Présent',
+    'Infinitif Présent',
+    'Participe Présent',
+    'Participe Passé'
+  ],
+  'Present': [
+    'Simple Present',
+    'Present Progressive',
+    'Present Perfect',
+    'Present Perfect Progressive'
+  ],
+  'Past': [
+    'Simple Past',
+    'Past Progressive',
+    'Past Perfect',
+    'Past Perfect Progressive'
+  ],
+  'Future': [
+    'Simple Future',
+    'Future Progressive',
+    'Future Perfect',
+    'Future Perfect Progressive'
+  ],
+  'Other Forms': [
+    'Imperative',
+    'Infinitive',
+    'Present Participle',
+    'Past Participle'
+  ]
+};
+
+const getGroupedTenses = (forms: Verb['forms']) => {
+  const allTenses = Object.keys(forms);
+  const isFrench = allTenses.some(t => t.startsWith('Indicatif'));
+
+  const groups = isFrench 
+    ? ['Indicatif', 'Conditionnel', 'Subjonctif', 'Autres formes'] 
+    : ['Present', 'Past', 'Future', 'Other Forms'];
+    
+  const grouped: { [key: string]: string[] } = {};
+
+  for (const group of groups) {
+    const tensesInGroup = tenseOrder[group]?.filter(tense => allTenses.includes(tense));
+    if (tensesInGroup && tensesInGroup.length > 0) {
+      grouped[group] = tensesInGroup;
+    }
+  }
+
+  // Add any tenses not in the predefined groups
+  const ungroupedTenses = allTenses.filter(tense => !Object.values(tenseOrder).flat().includes(tense));
+  if (ungroupedTenses.length > 0) {
+    grouped['Uncategorized'] = ungroupedTenses;
+  }
+
+  return grouped;
+}
+
+
 export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -38,12 +115,14 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
     setIsDeleting(true);
     try {
       await onDelete(verb.id);
-      // The parent component will handle closing the dialog and refreshing the list
     } finally {
       setIsDeleting(false);
       setIsDeleteDialogOpen(false);
     }
   };
+
+  const groupedTenses = getGroupedTenses(verb.forms);
+
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} asChild>
@@ -97,16 +176,20 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
                 </div>
             </div>
             <CollapsibleContent>
-                <div className="px-4 pb-4 space-y-2">
-                    {Object.entries(verb.forms).map(([tense, forms]) => (
-                        <Collapsible key={tense} className="space-y-2">
-                            <CollapsibleTrigger className="flex justify-between items-center w-full group/tense">
-                                <h4 className="font-semibold text-sm group-hover/tense:underline">{tense}</h4>
+                <div className="px-4 pb-4 space-y-4">
+                  {Object.entries(groupedTenses).map(([groupName, tenses]) => (
+                    <div key={groupName}>
+                      <h4 className="font-bold text-sm text-muted-foreground mb-2">{groupName}</h4>
+                      <div className="space-y-2">
+                        {tenses.map((tense) => (
+                           <Collapsible key={tense} className="space-y-2">
+                            <CollapsibleTrigger className="flex justify-between items-center w-full group/tense rounded-md px-2 py-1 hover:bg-muted/50">
+                                <h5 className="font-semibold text-sm">{tense}</h5>
                                 <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/tense:rotate-180" />
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2 pl-4">
-                                    {Object.entries(forms).map(([pronoun, form]) => (
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2 pl-6">
+                                    {Object.entries(verb.forms[tense]).map(([pronoun, form]) => (
                                         <div key={pronoun} className="bg-muted/50 p-2 rounded-md flex items-baseline gap-2">
                                             <Badge variant="secondary" className="text-xs">{pronoun}</Badge>
                                             <p className="text-sm">{form}</p>
@@ -115,7 +198,10 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
                                 </div>
                             </CollapsibleContent>
                         </Collapsible>
-                    ))}
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
             </CollapsibleContent>
         </Card>
