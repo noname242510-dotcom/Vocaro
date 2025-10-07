@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -123,7 +124,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
 
   return (
     <>
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-2xl">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-2xl bg-card">
         <div className="w-full p-4 flex items-center justify-between group">
            <div className="flex items-center gap-4 flex-1 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
              <div onClick={(e) => e.stopPropagation()}>
