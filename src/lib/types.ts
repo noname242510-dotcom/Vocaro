@@ -35,6 +35,7 @@ export type Verb = {
   forms: {
     [tense: string]: VerbTense;
   };
+  isSelected?: boolean;
 };
 
 export type QuizSettings = {

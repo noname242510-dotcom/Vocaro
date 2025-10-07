@@ -66,9 +66,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 export default function SubjectDetailPage() {
@@ -489,10 +489,31 @@ export default function SubjectDetailPage() {
       toast({ variant: 'destructive', title: 'Fehler', description: 'Verb konnte nicht gelöscht werden.' });
     }
   };
+
+  const [localVerbs, setLocalVerbs] = useState<Verb[]>([]);
+
+  useEffect(() => {
+    if (verbs) {
+      // When verbs from Firestore are loaded, merge their state with local selection state
+      setLocalVerbs(currentLocalVerbs => {
+        const localVerbMap = new Map(currentLocalVerbs.map(v => [v.id, v]));
+        return verbs.map(v => ({
+          ...v,
+          isSelected: localVerbMap.get(v.id)?.isSelected || false
+        }));
+      });
+    }
+  }, [verbs]);
+
+  const handleVerbSelectionChange = (verbId: string, isSelected: boolean) => {
+    setLocalVerbs(currentVerbs =>
+      currentVerbs.map(v => (v.id === verbId ? { ...v, isSelected } : v))
+    );
+  };
   
   const filteredVerbs = useMemo(() => {
-    return verbs?.filter(verb => verb.infinitive.toLowerCase().includes(verbSearchQuery.toLowerCase())) || [];
-  }, [verbs, verbSearchQuery]);
+    return localVerbs?.filter(verb => verb.infinitive.toLowerCase().includes(verbSearchQuery.toLowerCase())) || [];
+  }, [localVerbs, verbSearchQuery]);
 
 
   if (isSubjectLoading || areStacksLoading || areVerbsLoading) {
@@ -655,6 +676,7 @@ export default function SubjectDetailPage() {
                         verb={verb}
                         onEdit={handleEditVerb}
                         onDelete={handleDeleteVerb}
+                        onSelectionChange={handleVerbSelectionChange}
                     />
                 ))
             ) : (
@@ -794,4 +816,5 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
 

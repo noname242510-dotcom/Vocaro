@@ -16,24 +16,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface VerbCardProps {
   verb: Verb;
   onEdit: (verb: Verb) => void;
   onDelete: (verbId: string) => Promise<void>;
+  onSelectionChange: (verbId: string, selected: boolean) => void;
 }
 
-export function VerbCard({ verb, onEdit, onDelete }: VerbCardProps) {
+export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-  const getLanguageEmoji = (language?: string) => {
-    const lang = language?.toLowerCase();
-    if (lang?.includes('french')) return '🇫🇷';
-    if (lang?.includes('englisch')) return '🇬🇧';
-    if (lang?.includes('spanisch')) return '🇪🇸';
-    return '🌐';
-  };
   
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -50,11 +44,15 @@ export function VerbCard({ verb, onEdit, onDelete }: VerbCardProps) {
     <>
       <Card className="p-4 shadow-none border flex justify-between items-center group">
         <div className="flex items-center gap-4">
-          <span className="text-xl">{getLanguageEmoji(verb.language)}</span>
-          <div>
+          <Checkbox
+            id={`verb-${verb.id}`}
+            checked={!!verb.isSelected}
+            onCheckedChange={(checked) => onSelectionChange(verb.id, Boolean(checked))}
+          />
+          <label htmlFor={`verb-${verb.id}`} className="cursor-pointer">
             <p className="font-bold font-headline">{verb.infinitive}</p>
             <p className="text-sm text-muted-foreground">{verb.translation}</p>
-          </div>
+          </label>
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onEdit(verb)}>
