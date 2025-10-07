@@ -16,20 +16,16 @@ const GenerateVerbFormsInputSchema = z.object({
 });
 type GenerateVerbFormsInput = z.infer<typeof GenerateVerbFormsInputSchema>;
 
-const GenerateVerbFormsPromptInputSchema = z.object({
-  verb: z.string(),
-  language: z.string(),
-  tenses: z.string(),
-  pronouns: z.string(),
+
+const FlatConjugationSchema = z.object({
+    tense: z.string().describe('The tense of the conjugation (e.g., "Présent", "Simple Past").'),
+    pronoun: z.string().describe('The pronoun for the conjugation (e.g., "je", "I", or "form" for participles).'),
+    form: z.string().describe('The conjugated verb form.'),
 });
 
-const TenseSchema = z.record(z.string(), z.string()).describe('An object where keys are pronouns (e.g., "ich", "du", "er/sie/es") and values are the conjugated verb forms.');
-
-const VerbFormsSchema = z.record(z.string(), TenseSchema).describe('An object where keys are tense names (e.g., "Présent", "Simple Past") and values are objects containing the conjugations for that tense.');
-
-const GenerateVerbFormsOutputSchema = z.object({
+const AISchema = z.object({
   translation: z.string().describe('The German translation of the infinitive verb.'),
-  forms: VerbFormsSchema,
+  conjugations: z.array(FlatConjugationSchema).describe('A flat array of all conjugated forms for the verb.'),
 });
 
 
@@ -74,16 +70,16 @@ const englishPronouns = `"I", "you", "he/she/it", "we", "they"`;
 
 const prompt = ai.definePrompt({
   name: 'generateVerbFormsPrompt',
-  input: { schema: GenerateVerbFormsPromptInputSchema },
-  output: { schema: GenerateVerbFormsOutputSchema },
-  prompt: `You are an expert linguist and conjugation specialist. Your task is to take a verb in a given language, provide its German translation, and generate all its conjugated forms for a standard set of tenses.
+  input: { schema: z.object({ verb: z.string(), language: z.string(), tenses: z.string(), pronouns: z.string() }) },
+  output: { schema: AISchema },
+  prompt: `You are an expert linguist. Your task is to take a verb, provide its German translation, and generate all its conjugated forms.
 
 Follow these instructions precisely:
-1.  Translate the infinitive verb "{{verb}}" from {{language}} into German. The translation should be a single, concise German infinitive.
-2.  Generate the conjugations for the verb "{{verb}}" in {{language}} for all the tenses listed below.
-3.  The output MUST be a valid JSON object that strictly follows the provided output schema.
-4.  For each tense, provide a JSON object where keys are the personal pronouns (e.g., "je", "tu", "I", "you", "he/she/it") and values are the corresponding conjugated verb forms.
-5.  For tenses like "Participe Passé" or "Infinitive" that don't have personal pronouns, use "form" as the key.
+1.  Translate the infinitive verb "{{verb}}" from {{language}} into German.
+2.  Generate the conjugations for the verb "{{verb}}" in {{language}} for ALL tenses listed below.
+3.  The output MUST be a valid JSON object.
+4.  The 'conjugations' field must be a FLAT array of objects. Each object must have three properties: "tense", "pronoun", and "form".
+5.  For tenses that don't use personal pronouns (like Participles or Infinitives), use "form" as the value for the "pronoun" property.
 6.  For the "Impératif Présent", use the pronouns "(tu)", "(nous)", "(vous)".
 
 Language: {{language}}
@@ -92,7 +88,7 @@ Verb: {{verb}}
 Tenses to generate:
 {{{tenses}}}
 
-Pronouns to use: {{{pronouns}}}
+Pronouns to use for conjugation: {{{pronouns}}}
 
 Produce ONLY the JSON output, nothing else.
 `,
@@ -102,7 +98,7 @@ const generateVerbFormsFlow = ai.defineFlow(
   {
     name: 'generateVerbFormsFlow',
     inputSchema: GenerateVerbFormsInputSchema,
-    outputSchema: GenerateVerbFormsOutputSchema,
+    outputSchema: z.custom<GenerateVerbFormsOutput>(),
   },
   async (input) => {
     let tenses, pronouns;
@@ -118,17 +114,31 @@ const generateVerbFormsFlow = ai.defineFlow(
       pronouns = englishPronouns;
     }
     
-    const { output } = await prompt({
+    const { output: aiResponse } = await prompt({
       verb: input.verb,
       language: input.language,
       tenses,
       pronouns,
     });
 
-    if (!output) {
+    if (!aiResponse) {
       throw new Error('AI failed to generate verb forms.');
     }
-    return output;
+
+    // Transform the flat array into the nested object structure the app expects
+    const structuredForms: GenerateVerbFormsOutput['forms'] = {};
+
+    for (const conjugation of aiResponse.conjugations) {
+      if (!structuredForms[conjugation.tense]) {
+        structuredForms[conjugation.tense] = {};
+      }
+      structuredForms[conjugation.tense][conjugation.pronoun] = conjugation.form;
+    }
+
+    return {
+      translation: aiResponse.translation,
+      forms: structuredForms,
+    };
   }
 );
 
