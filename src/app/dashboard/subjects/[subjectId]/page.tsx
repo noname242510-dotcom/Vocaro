@@ -697,7 +697,7 @@ export default function SubjectDetailPage() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" disabled={selectedVerbsCount === 0}>
                       <Settings2 className="mr-2 h-4 w-4" />
-                      Zeiten anwenden
+                      Zeiten auswählen
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
@@ -884,4 +884,5 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
 
