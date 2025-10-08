@@ -631,6 +631,16 @@ export default function SubjectDetailPage() {
     return localVerbs?.filter(verb => verb.infinitive.toLowerCase().includes(verbSearchQuery.toLowerCase())) || [];
   }, [localVerbs, verbSearchQuery]);
 
+  const allTempTensesSelected = tempSelectedTenses.size === allTenses.length;
+
+  const handleToggleAllTenses = () => {
+    if (allTempTensesSelected) {
+      setTempSelectedTenses(new Set());
+    } else {
+      setTempSelectedTenses(new Set(allTenses));
+    }
+  };
+
 
   if (isSubjectLoading || areStacksLoading || areVerbsLoading) {
     return (
@@ -777,6 +787,11 @@ export default function SubjectDetailPage() {
                         Wähle die Zeitformen, die auf alle {selectedVerbsCount} ausgewählten Verben angewendet werden sollen.
                       </DialogDescription>
                     </DialogHeader>
+                    <div className="flex justify-end -mt-2">
+                      <Button variant="link" onClick={handleToggleAllTenses} className="text-sm">
+                        {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
+                      </Button>
+                    </div>
                     <ScrollArea className="max-h-64">
                       <div className="p-4 space-y-4">
                         {Object.entries(
