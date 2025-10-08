@@ -787,8 +787,8 @@ export default function SubjectDetailPage() {
                         Wähle die Zeitformen, die auf alle {selectedVerbsCount} ausgewählten Verben angewendet werden sollen.
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="flex justify-end -mt-2">
-                      <Button variant="link" onClick={handleToggleAllTenses} className="text-sm">
+                    <div className="flex justify-end">
+                      <Button variant="link" onClick={handleToggleAllTenses} className="text-sm no-underline hover:no-underline">
                         {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
                       </Button>
                     </div>
