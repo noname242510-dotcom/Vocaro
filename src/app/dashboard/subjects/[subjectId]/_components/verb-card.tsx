@@ -179,27 +179,16 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
                 <div className="px-4 pb-4 space-y-4">
                   <div>
                       <h5 className="font-semibold text-sm mb-2">Übersetzung</h5>
-                      <div className="bg-muted/50 p-2 rounded-md flex items-baseline gap-2">
-                          <Badge variant="secondary" className="text-xs">de</Badge>
+                      <div className="bg-muted/50 p-2 rounded-md">
                           <p className="text-sm">{verb.translation}</p>
                       </div>
                   </div>
                   {Object.entries(groupedTenses).map(([groupName, tenses]) => (
                     <div key={groupName}>
                       <h4 className="font-bold text-sm text-muted-foreground mb-2">{groupName}</h4>
-                      <div className="space-y-4">
+                      <div className="flex flex-wrap gap-2">
                         {tenses.map((tense) => (
-                           <div key={tense}>
-                                <h5 className="font-semibold text-sm mb-2">{tense}</h5>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                    {Object.entries(verb.forms[tense]).map(([pronoun, form]) => (
-                                        <div key={pronoun} className="bg-muted/50 p-2 rounded-md flex items-baseline gap-2">
-                                            <Badge variant="secondary" className="text-xs">{pronoun}</Badge>
-                                            <p className="text-sm">{form}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                        </div>
+                           <Badge key={tense} variant="secondary" className="font-normal">{tense}</Badge>
                         ))}
                       </div>
                     </div>
