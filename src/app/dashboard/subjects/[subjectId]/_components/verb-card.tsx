@@ -15,6 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -203,3 +204,4 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange, onTenseSel
     </Collapsible>
   );
 }
+
