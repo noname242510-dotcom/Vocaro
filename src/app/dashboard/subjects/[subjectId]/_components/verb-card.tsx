@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Pen, Trash2, Loader2, ChevronDown, Languages } from 'lucide-react';
+import { Pen, Trash2, Loader2, ChevronDown } from 'lucide-react';
 import type { Verb } from '@/lib/types';
 import {
   AlertDialog,
@@ -15,7 +15,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -177,32 +176,21 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
             </div>
             <CollapsibleContent>
                 <div className="px-4 pb-4 space-y-4">
-                  <Collapsible className="space-y-2">
-                    <CollapsibleTrigger className="flex justify-between items-center w-full group/tense rounded-md px-2 py-1 hover:bg-muted/50">
-                        <h5 className="font-semibold text-sm">Übersetzung</h5>
-                        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/tense:rotate-180" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                        <div className="pt-2 pl-6">
-                            <div className="bg-muted/50 p-2 rounded-md flex items-baseline gap-2">
-                                <Badge variant="secondary" className="text-xs">de</Badge>
-                                <p className="text-sm">{verb.translation}</p>
-                            </div>
-                        </div>
-                    </CollapsibleContent>
-                  </Collapsible>
+                  <div>
+                      <h5 className="font-semibold text-sm mb-2">Übersetzung</h5>
+                      <div className="bg-muted/50 p-2 rounded-md flex items-baseline gap-2">
+                          <Badge variant="secondary" className="text-xs">de</Badge>
+                          <p className="text-sm">{verb.translation}</p>
+                      </div>
+                  </div>
                   {Object.entries(groupedTenses).map(([groupName, tenses]) => (
                     <div key={groupName}>
                       <h4 className="font-bold text-sm text-muted-foreground mb-2">{groupName}</h4>
-                      <div className="space-y-2">
+                      <div className="space-y-4">
                         {tenses.map((tense) => (
-                           <Collapsible key={tense} className="space-y-2">
-                            <CollapsibleTrigger className="flex justify-between items-center w-full group/tense rounded-md px-2 py-1 hover:bg-muted/50">
-                                <h5 className="font-semibold text-sm">{tense}</h5>
-                                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/tense:rotate-180" />
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2 pl-6">
+                           <div key={tense}>
+                                <h5 className="font-semibold text-sm mb-2">{tense}</h5>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                     {Object.entries(verb.forms[tense]).map(([pronoun, form]) => (
                                         <div key={pronoun} className="bg-muted/50 p-2 rounded-md flex items-baseline gap-2">
                                             <Badge variant="secondary" className="text-xs">{pronoun}</Badge>
@@ -210,8 +198,7 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
                                         </div>
                                     ))}
                                 </div>
-                            </CollapsibleContent>
-                        </Collapsible>
+                        </div>
                         ))}
                       </div>
                     </div>
