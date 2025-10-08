@@ -72,6 +72,25 @@ import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
+const tenseOrderConfig: { [key: string]: string[] } = {
+    'Indicatif': [
+        'Indicatif Présent', 'Indicatif Imparfait', 'Indicatif Passé composé', 
+        'Indicatif Plus-que-parfait', 'Indicatif Futur simple', 'Indicatif Futur antérieur'
+    ],
+    'Conditionnel': ['Conditionnel Présent', 'Conditionnel Passé'],
+    'Subjonctif': ['Subjonctif Présent', 'Subjonctif Passé'],
+    'Autres formes': ['Impératif Présent', 'Infinitif Présent', 'Participe Présent', 'Participe Passé'],
+    'Present': [
+        'Simple Present', 'Present Progressive', 'Present Perfect', 'Present Perfect Progressive'
+    ],
+    'Past': [
+        'Simple Past', 'Past Progressive', 'Past Perfect', 'Past Perfect Progressive'
+    ],
+    'Future': [
+        'Simple Future', 'Future Progressive', 'Future Perfect', 'Future Perfect Progressive'
+    ],
+    'Other Forms': ['Imperative', 'Infinitive', 'Present Participle', 'Past Participle']
+};
 
 export default function SubjectDetailPage() {
   const { firestore, user } = useFirebase();
@@ -459,8 +478,30 @@ export default function SubjectDetailPage() {
     verbs?.forEach(verb => {
       Object.keys(verb.forms).forEach(tense => tenses.add(tense));
     });
-    return Array.from(tenses).sort((a,b) => a.localeCompare(b));
+    return Array.from(tenses);
   }, [verbs]);
+
+  const sortedTensesForDialog = useMemo(() => {
+    if (!verbs) return [];
+    
+    const isFrench = allTenses.some(t => t.startsWith('Indicatif'));
+    const orderKeys = isFrench 
+      ? ['Indicatif', 'Conditionnel', 'Subjonctif', 'Autres formes']
+      : ['Present', 'Past', 'Future', 'Other Forms'];
+      
+    const orderedTenseList = orderKeys.flatMap(key => tenseOrderConfig[key] || []);
+    
+    const sorted = [...allTenses].sort((a, b) => {
+        const indexA = orderedTenseList.indexOf(a);
+        const indexB = orderedTenseList.indexOf(b);
+        if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+    });
+
+    return sorted;
+  }, [allTenses, verbs]);
   
   const handleApplyGlobalTenseSelection = () => {
     setLocalVerbs(currentVerbs =>
@@ -741,7 +782,7 @@ export default function SubjectDetailPage() {
                     </DialogHeader>
                     <ScrollArea className="max-h-64">
                         <div className="p-4 space-y-2">
-                            {allTenses.map(tense => (
+                            {sortedTensesForDialog.map(tense => (
                                 <div key={tense} className="flex items-center gap-3">
                                     <Checkbox
                                         id={`global-tense-${tense}`}
