@@ -786,13 +786,13 @@ export default function SubjectDetailPage() {
                       <DialogDescription>
                         Wähle die Zeitformen, die auf alle {selectedVerbsCount} ausgewählten Verben angewendet werden sollen.
                       </DialogDescription>
+                      <div className="flex justify-end pt-2">
+                        <Button variant="outline" onClick={handleToggleAllTenses} className="text-sm h-8">
+                          {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
+                        </Button>
+                      </div>
                     </DialogHeader>
-                    <div className="flex justify-end">
-                      <Button variant="link" onClick={handleToggleAllTenses} className="text-sm no-underline hover:no-underline">
-                        {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
-                      </Button>
-                    </div>
-                    <ScrollArea className="max-h-64">
+                    <ScrollArea className="max-h-64 -mt-2">
                       <div className="p-4 space-y-4">
                         {Object.entries(
                           sortedTensesForDialog.reduce((acc, tense) => {
