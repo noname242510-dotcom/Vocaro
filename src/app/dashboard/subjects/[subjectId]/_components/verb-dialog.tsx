@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,25 @@ const GenerateVerbFormsInputSchema = z.object({
 });
 type GenerateVerbFormsInput = z.infer<typeof GenerateVerbFormsInputSchema>;
 
+const tenseOrderConfig: { [key: string]: string[] } = {
+    'Indicatif': [
+        'Indicatif Présent', 'Indicatif Imparfait', 'Indicatif Passé composé', 
+        'Indicatif Plus-que-parfait', 'Indicatif Futur simple', 'Indicatif Futur antérieur'
+    ],
+    'Conditionnel': ['Conditionnel Présent', 'Conditionnel Passé'],
+    'Subjonctif': ['Subjonctif Présent', 'Subjonctif Passé'],
+    'Autres formes': ['Impératif Présent', 'Infinitif Présent', 'Participe Présent', 'Participe Passé'],
+    'Present': [
+        'Simple Present', 'Present Progressive', 'Present Perfect', 'Present Perfect Progressive'
+    ],
+    'Past': [
+        'Simple Past', 'Past Progressive', 'Past Perfect', 'Past Perfect Progressive'
+    ],
+    'Future': [
+        'Simple Future', 'Future Progressive', 'Future Perfect', 'Future Perfect Progressive'
+    ],
+    'Other Forms': ['Imperative', 'Infinitive', 'Present Participle', 'Past Participle']
+};
 
 export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVerb }: VerbDialogProps) {
   const [infinitive, setInfinitive] = useState(existingVerb?.infinitive || '');
@@ -102,8 +121,28 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     }, 300);
   };
 
-  // Determine order of tenses for display
-  const sortedTenses = Object.entries(generatedData?.forms || {}).sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
+  const sortedTenses = useMemo(() => {
+    if (!generatedData) return [];
+    
+    const allTenses = Object.keys(generatedData.forms);
+    const isFrench = allTenses.some(t => t.startsWith('Indicatif'));
+    const orderKeys = isFrench 
+      ? ['Indicatif', 'Conditionnel', 'Subjonctif', 'Autres formes']
+      : ['Present', 'Past', 'Future', 'Other Forms'];
+      
+    const orderedTenseList = orderKeys.flatMap(key => tenseOrderConfig[key] || []);
+    
+    const sorted = allTenses.sort((a, b) => {
+        const indexA = orderedTenseList.indexOf(a);
+        const indexB = orderedTenseList.indexOf(b);
+        if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+    });
+
+    return sorted.map(tense => [tense, generatedData.forms[tense]]);
+  }, [generatedData]);
 
 
   return (
@@ -175,8 +214,8 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                           </Label>
                           <Input
                             id={`${tense}-${pronoun}`}
-                            value={form}
-                            onChange={(e) => handleFormChange(tense, pronoun, e.target.value)}
+                            value={form as string}
+                            onChange={(e) => handleFormChange(tense as string, pronoun, e.target.value)}
                             className="col-span-3"
                           />
                         </div>
@@ -198,3 +237,5 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     </Dialog>
   );
 }
+
+    
