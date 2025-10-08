@@ -66,10 +66,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 export default function SubjectDetailPage() {
@@ -97,9 +97,11 @@ export default function SubjectDetailPage() {
   
   // Verb state
   const [isVerbDialogOpen, setIsVerbDialogOpen] = useState(false);
+  const [isTenseSelectionDialogOpen, setIsTenseSelectionDialogOpen] = useState(false);
   const [editingVerb, setEditingVerb] = useState<Verb | null>(null);
   const [verbSearchQuery, setVerbSearchQuery] = useState('');
   const [localVerbs, setLocalVerbs] = useState<Verb[]>([]);
+  const [tempSelectedTenses, setTempSelectedTenses] = useState<Set<string>>(new Set());
   
   // Tab state
   const [activeTab, setActiveTab] = useState('vocabulary');
@@ -453,28 +455,57 @@ export default function SubjectDetailPage() {
   // Verb handlers
   const allTenses = useMemo(() => {
     const tenses = new Set<string>();
-    localVerbs.forEach(verb => {
+    verbs?.forEach(verb => {
       Object.keys(verb.forms).forEach(tense => tenses.add(tense));
     });
-    return Array.from(tenses);
-  }, [localVerbs]);
-
-  const handleGlobalTenseSelection = (tense: string, isSelected: boolean) => {
-    setLocalVerbs(currentVerbs => {
-      return currentVerbs.map(verb => {
+    return Array.from(tenses).sort((a,b) => a.localeCompare(b));
+  }, [verbs]);
+  
+  const handleApplyGlobalTenseSelection = () => {
+    setLocalVerbs(currentVerbs =>
+      currentVerbs.map(verb => {
         if (verb.isSelected) {
-          const newSelectedTenses = new Set(verb.selectedTenses);
-          if (isSelected) {
-            newSelectedTenses.add(tense);
-          } else {
-            newSelectedTenses.delete(tense);
-          }
-          return { ...verb, selectedTenses: newSelectedTenses };
+          // Create a new Set to ensure re-render
+          return { ...verb, selectedTenses: new Set(tempSelectedTenses) };
         }
         return verb;
-      });
-    });
+      })
+    );
+    setIsTenseSelectionDialogOpen(false);
+    toast({
+        title: 'Zeiten angewendet',
+        description: `${tempSelectedTenses.size} Zeit(en) wurden für die ausgewählten Verben übernommen.`
+    })
   };
+
+
+  const handleOpenTenseDialog = () => {
+    const commonTenses = new Set<string>();
+    const selected = localVerbs.filter(v => v.isSelected);
+    if (selected.length > 0) {
+        // Find intersection of selected tenses of all selected verbs
+        const firstVerbTenses = selected[0].selectedTenses || new Set();
+        firstVerbTenses.forEach(tense => {
+            if (selected.every(v => v.selectedTenses?.has(tense))) {
+                commonTenses.add(tense);
+            }
+        });
+    }
+    setTempSelectedTenses(commonTenses);
+    setIsTenseSelectionDialogOpen(true);
+  }
+
+  const handleTempTenseSelection = (tense: string, checked: boolean) => {
+    setTempSelectedTenses(prev => {
+        const newSet = new Set(prev);
+        if (checked) {
+            newSet.add(tense);
+        } else {
+            newSet.delete(tense);
+        }
+        return newSet;
+    });
+  }
 
   const handleTenseSelectionChange = (verbId: string, tense: string, selected: boolean) => {
     setLocalVerbs(currentVerbs =>
@@ -693,26 +724,41 @@ export default function SubjectDetailPage() {
                   />
               </div>
               <div className="flex items-center gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" disabled={selectedVerbsCount === 0}>
+                <Dialog open={isTenseSelectionDialogOpen} onOpenChange={setIsTenseSelectionDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" disabled={selectedVerbsCount === 0} onClick={handleOpenTenseDialog}>
                       <Settings2 className="mr-2 h-4 w-4" />
                       Zeiten auswählen
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuLabel>Zeiten für ausgewählte Verben</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {allTenses.map(tense => (
-                      <DropdownMenuCheckboxItem
-                        key={tense}
-                        onCheckedChange={(checked) => handleGlobalTenseSelection(tense, checked)}
-                      >
-                        {tense}
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Zeiten global auswählen</DialogTitle>
+                      <DialogDescription>
+                        Wähle die Zeitformen, die auf alle {selectedVerbsCount} ausgewählten Verben angewendet werden sollen.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-64">
+                        <div className="p-4 space-y-2">
+                            {allTenses.map(tense => (
+                                <div key={tense} className="flex items-center gap-3">
+                                    <Checkbox
+                                        id={`global-tense-${tense}`}
+                                        checked={tempSelectedTenses.has(tense)}
+                                        onCheckedChange={(checked) => handleTempTenseSelection(tense, Boolean(checked))}
+                                    />
+                                    <Label htmlFor={`global-tense-${tense}`} className="cursor-pointer">{tense}</Label>
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                    <DialogFooter>
+                      <Button variant="ghost" onClick={() => setIsTenseSelectionDialogOpen(false)}>Abbrechen</Button>
+                      <Button onClick={handleApplyGlobalTenseSelection}>Anwenden</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
 
                 <Button onClick={handleAddNewVerb}>
                     <Plus className="mr-2 h-4 w-4" /> Verb hinzufügen
@@ -884,5 +930,3 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
-
-
