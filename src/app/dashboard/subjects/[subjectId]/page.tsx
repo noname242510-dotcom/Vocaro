@@ -38,7 +38,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -99,6 +98,7 @@ export default function SubjectDetailPage() {
   const [isVerbDialogOpen, setIsVerbDialogOpen] = useState(false);
   const [editingVerb, setEditingVerb] = useState<Verb | null>(null);
   const [verbSearchQuery, setVerbSearchQuery] = useState('');
+  const [localVerbs, setLocalVerbs] = useState<Verb[]>([]);
   
   // Tab state
   const [activeTab, setActiveTab] = useState('vocabulary');
@@ -450,6 +450,48 @@ export default function SubjectDetailPage() {
   };
 
   // Verb handlers
+  const allTenses = useMemo(() => {
+    const tenses = new Set<string>();
+    localVerbs.forEach(verb => {
+      Object.keys(verb.forms).forEach(tense => tenses.add(tense));
+    });
+    return Array.from(tenses);
+  }, [localVerbs]);
+
+  const handleGlobalTenseSelection = (tense: string, isSelected: boolean) => {
+    setLocalVerbs(currentVerbs => {
+      return currentVerbs.map(verb => {
+        if (verb.isSelected) {
+          const newSelectedTenses = new Set(verb.selectedTenses);
+          if (isSelected) {
+            newSelectedTenses.add(tense);
+          } else {
+            newSelectedTenses.delete(tense);
+          }
+          return { ...verb, selectedTenses: newSelectedTenses };
+        }
+        return verb;
+      });
+    });
+  };
+
+  const handleTenseSelectionChange = (verbId: string, tense: string, selected: boolean) => {
+    setLocalVerbs(currentVerbs =>
+      currentVerbs.map(verb => {
+        if (verb.id === verbId) {
+          const newSelectedTenses = new Set(verb.selectedTenses);
+          if (selected) {
+            newSelectedTenses.add(tense);
+          } else {
+            newSelectedTenses.delete(tense);
+          }
+          return { ...verb, selectedTenses: newSelectedTenses };
+        }
+        return verb;
+      })
+    );
+  };
+
   const handleSaveVerb = async (verbData: Omit<Verb, 'id'|'subjectId'|'language'>) => {
     if (!verbsCollectionRef) return;
   
@@ -469,6 +511,7 @@ export default function SubjectDetailPage() {
       toast({ title: 'Erfolg', description: 'Verb gespeichert.' });
     }
     forceVerbsUpdate();
+    setActiveTab('verbs');
   };
 
   const handleEditVerb = (verb: Verb) => {
@@ -494,16 +537,14 @@ export default function SubjectDetailPage() {
     }
   };
 
-  const [localVerbs, setLocalVerbs] = useState<Verb[]>([]);
-
   useEffect(() => {
     if (verbs) {
-      // When verbs from Firestore are loaded, merge their state with local selection state
       setLocalVerbs(currentLocalVerbs => {
         const localVerbMap = new Map(currentLocalVerbs.map(v => [v.id, v]));
         return verbs.map(v => ({
           ...v,
-          isSelected: localVerbMap.get(v.id)?.isSelected || false
+          isSelected: localVerbMap.get(v.id)?.isSelected || false,
+          selectedTenses: localVerbMap.get(v.id)?.selectedTenses || new Set<string>()
         }));
       });
     }
@@ -540,6 +581,7 @@ export default function SubjectDetailPage() {
   }
 
   const isAnyVocabSelected = selectedVocab.length > 0;
+  const selectedVerbsCount = localVerbs.filter(v => v.isSelected).length;
 
   return (
     <div className="pb-24">
@@ -651,20 +693,24 @@ export default function SubjectDetailPage() {
               </div>
               <div className="flex items-center gap-2">
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline">
-                            <Settings2 className="mr-2 h-4 w-4" />
-                            Zeiten auswählen
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuLabel>Aktive Zeiten für Übungen</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {/* This part will be dynamic based on selected tenses */}
-                        <DropdownMenuCheckboxItem checked>Présent</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem>Imparfait</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem>Passé composé</DropdownMenuCheckboxItem>
-                    </DropdownMenuContent>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" disabled={selectedVerbsCount === 0}>
+                      <Settings2 className="mr-2 h-4 w-4" />
+                      Zeiten anwenden
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuLabel>Zeiten für ausgewählte Verben</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {allTenses.map(tense => (
+                      <DropdownMenuCheckboxItem
+                        key={tense}
+                        onCheckedChange={(checked) => handleGlobalTenseSelection(tense, checked)}
+                      >
+                        {tense}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
                 </DropdownMenu>
 
                 <Button onClick={handleAddNewVerb}>
@@ -681,6 +727,7 @@ export default function SubjectDetailPage() {
                         onEdit={handleEditVerb}
                         onDelete={handleDeleteVerb}
                         onSelectionChange={handleVerbSelectionChange}
+                        onTenseSelectionChange={handleTenseSelectionChange}
                     />
                 ))
             ) : (
@@ -698,115 +745,131 @@ export default function SubjectDetailPage() {
       {/* Floating Action Bar */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
          <div className="p-2 flex items-center justify-between gap-2">
-            <AlertDialog open={isDeleteVocabDialogOpen} onOpenChange={setIsDeleteVocabDialogOpen}>
-              <AlertDialogTrigger asChild>
-                <Button 
-                    variant="secondary" 
-                    size="icon" 
-                    className="h-11 w-11 transition-opacity duration-300 rounded-full"
-                    disabled={!isAnyVocabSelected}
-                >
-                    <Trash2 className={cn("h-5 w-5", !isAnyVocabSelected && "text-muted-foreground")} />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Diese Aktion kann nicht rückgängig gemacht werden. Es werden {selectedVocab.length} Vokabel(n) dauerhaft gelöscht.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteSelectedVocabulary}>Löschen</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            
-            <Button 
-                className="rounded-full text-base px-8" 
-                disabled={!isAnyVocabSelected}
-                onClick={handleStartLearning}
-            >
-                Lernen
-                <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-
-            <Dialog open={isOcrDialogOpen} onOpenChange={setIsOcrDialogOpen}>
-                <DialogTrigger asChild>
-                    <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full">
-                        <Plus className="h-6 w-6" />
+            {activeTab === 'vocabulary' && (
+              <>
+                <AlertDialog open={isDeleteVocabDialogOpen} onOpenChange={setIsDeleteVocabDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                        variant="secondary" 
+                        size="icon" 
+                        className="h-11 w-11 transition-opacity duration-300 rounded-full"
+                        disabled={!isAnyVocabSelected}
+                    >
+                        <Trash2 className={cn("h-5 w-5", !isAnyVocabSelected && "text-muted-foreground")} />
                     </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[625px]">
-                  <DialogHeader>
-                    <DialogTitle>Neue Vokabeln hinzufügen</DialogTitle>
-                    <DialogDescription>
-                      Füge Begriffe manuell hinzu oder lade ein Bild hoch, um Text zu extrahieren.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Tabs defaultValue="manual">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="manual"><Pen className="mr-2 h-4 w-4" />Manuell</TabsTrigger>
-                      <TabsTrigger value="ocr"><Upload className="mr-2 h-4 w-4" />aus Bild</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="manual" className="pt-4">
-                      <div className="grid gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="stack-name">Stapelname</Label>
-                            <Input id="stack-name" placeholder="z.B. Kapitel 1" value={newStackName} onChange={e => setNewStackName(e.target.value)} />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="term">Fremdwort</Label>
-                          <Input id="term" placeholder="z.B., Hola" value={manualTerm} onChange={e => setManualTerm(e.target.value)} />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="definition">Deutsches Wort</Label>
-                          <Input id="definition" placeholder="z.B., Hallo" value={manualDefinition} onChange={e => setManualDefinition(e.target.value)} />
-                        </div>
-                         <div className="grid gap-2">
-                          <Label htmlFor="notes">Hinweise (optional)</Label>
-                          <Textarea id="notes" placeholder="z.B., Begrüßung" value={manualNotes} onChange={e => setManualNotes(e.target.value)} />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                           <Button variant="outline" onClick={handleAddMoreVocabulary} disabled={isAddingManually}>
-                            {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Weitere Begriffe hinzufügen
-                          </Button>
-                          <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually}>
-                              {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                              Begriff hinzufügen
-                          </Button>
-                        </div>
-                      </div>
-                    </TabsContent>
-                    <TabsContent value="ocr" className="pt-4">
-                      <div className="grid gap-4">
-                         <div className="grid gap-2">
-                            <Label htmlFor="stack-name-ocr">Stapelname</Label>
-                            <Input id="stack-name-ocr" placeholder="z.B. Aus meinem Notizbuch" value={newStackName} onChange={e => setNewStackName(e.target.value)} />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="picture">Bild</Label>
-                          <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" disabled={isProcessingOcr} />
-                        </div>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Diese Aktion kann nicht rückgängig gemacht werden. Es werden {selectedVocab.length} Vokabel(n) dauerhaft gelöscht.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteSelectedVocabulary}>Löschen</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                
+                <Button 
+                    className="rounded-full text-base px-8" 
+                    disabled={!isAnyVocabSelected}
+                    onClick={handleStartLearning}
+                >
+                    Lernen
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
 
-                        {isProcessingOcr ? (
-                            <Button disabled>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Verarbeite und speichere...
-                            </Button>
-                        ) : (
-                             <Button onClick={handleExtractAndSaveVocabulary} disabled={!previewImage || !newStackName}>
-                              <Upload className="mr-2 h-4 w-4" />
-                              Extrahieren und Speichern
-                            </Button>
-                        )}
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </DialogContent>
-            </Dialog>
+                <Dialog open={isOcrDialogOpen} onOpenChange={setIsOcrDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full">
+                            <Plus className="h-6 w-6" />
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[625px]">
+                      <DialogHeader>
+                        <DialogTitle>Neue Vokabeln hinzufügen</DialogTitle>
+                        <DialogDescription>
+                          Füge Begriffe manuell hinzu oder lade ein Bild hoch, um Text zu extrahieren.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <Tabs defaultValue="manual">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="manual"><Pen className="mr-2 h-4 w-4" />Manuell</TabsTrigger>
+                          <TabsTrigger value="ocr"><Upload className="mr-2 h-4 w-4" />aus Bild</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="manual" className="pt-4">
+                          <div className="grid gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="stack-name">Stapelname</Label>
+                                <Input id="stack-name" placeholder="z.B. Kapitel 1" value={newStackName} onChange={e => setNewStackName(e.target.value)} />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="term">Fremdwort</Label>
+                              <Input id="term" placeholder="z.B., Hola" value={manualTerm} onChange={e => setManualTerm(e.target.value)} />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="definition">Deutsches Wort</Label>
+                              <Input id="definition" placeholder="z.B., Hallo" value={manualDefinition} onChange={e => setManualDefinition(e.target.value)} />
+                            </div>
+                             <div className="grid gap-2">
+                              <Label htmlFor="notes">Hinweise (optional)</Label>
+                              <Textarea id="notes" placeholder="z.B., Begrüßung" value={manualNotes} onChange={e => setManualNotes(e.target.value)} />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                               <Button variant="outline" onClick={handleAddMoreVocabulary} disabled={isAddingManually}>
+                                {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Weitere Begriffe hinzufügen
+                              </Button>
+                              <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually}>
+                                  {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  Begriff hinzufügen
+                              </Button>
+                            </div>
+                          </div>
+                        </TabsContent>
+                        <TabsContent value="ocr" className="pt-4">
+                          <div className="grid gap-4">
+                             <div className="grid gap-2">
+                                <Label htmlFor="stack-name-ocr">Stapelname</Label>
+                                <Input id="stack-name-ocr" placeholder="z.B. Aus meinem Notizbuch" value={newStackName} onChange={e => setNewStackName(e.target.value)} />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="picture">Bild</Label>
+                              <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" disabled={isProcessingOcr} />
+                            </div>
+
+                            {isProcessingOcr ? (
+                                <Button disabled>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Verarbeite und speichere...
+                                </Button>
+                            ) : (
+                                 <Button onClick={handleExtractAndSaveVocabulary} disabled={!previewImage || !newStackName}>
+                                  <Upload className="mr-2 h-4 w-4" />
+                                  Extrahieren und Speichern
+                                </Button>
+                            )}
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </DialogContent>
+                </Dialog>
+              </>
+            )}
+            {activeTab === 'verbs' && (
+              <>
+                {/* Action bar for verbs tab */}
+                <Button 
+                    className="rounded-full text-base px-8" 
+                    disabled={selectedVerbsCount === 0}
+                >
+                    Konjugationen üben
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </>
+            )}
          </div>
       </div>
       

@@ -15,7 +15,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -28,6 +27,7 @@ interface VerbCardProps {
   onEdit: (verb: Verb) => void;
   onDelete: (verbId: string) => Promise<void>;
   onSelectionChange: (verbId: string, selected: boolean) => void;
+  onTenseSelectionChange: (verbId: string, tense: string, selected: boolean) => void;
 }
 
 const tenseOrder: { [key: string]: string[] } = {
@@ -106,7 +106,7 @@ const getGroupedTenses = (forms: Verb['forms']) => {
 }
 
 
-export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCardProps) {
+export function VerbCard({ verb, onEdit, onDelete, onSelectionChange, onTenseSelectionChange }: VerbCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -138,7 +138,7 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
                 </div>
                 <label htmlFor={`verb-${verb.id}`} className="cursor-pointer">
                     <p className="font-bold font-headline">{verb.infinitive}</p>
-                    <p className="text-sm text-muted-foreground">{verb.language}</p>
+                    <p className="text-sm text-muted-foreground">{verb.translation}</p>
                 </label>
                 </div>
                 <div className="flex items-center gap-1">
@@ -177,19 +177,18 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
             </div>
             <CollapsibleContent>
                 <div className="px-4 pb-4 space-y-4">
-                  <div>
-                      <h5 className="font-semibold text-sm mb-2 text-muted-foreground">Übersetzung</h5>
-                      <div className="bg-muted/50 p-3 rounded-md">
-                          <p className="text-sm">{verb.translation}</p>
-                      </div>
-                  </div>
                   {Object.entries(groupedTenses).map(([groupName, tenses]) => (
                     <div key={groupName}>
                       <h4 className="font-semibold text-sm text-muted-foreground mb-2">{groupName}</h4>
                       <div className="space-y-2 pl-2">
                         {tenses.map((tense) => (
                            <div key={tense} className="flex items-center gap-3">
-                             <Checkbox id={`${verb.id}-${tense}`} className="rounded-full" />
+                             <Checkbox 
+                                id={`${verb.id}-${tense}`} 
+                                className="rounded-full"
+                                checked={verb.selectedTenses?.has(tense)}
+                                onCheckedChange={(checked) => onTenseSelectionChange(verb.id, tense, !!checked)}
+                              />
                              <label htmlFor={`${verb.id}-${tense}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                {tense}
                              </label>

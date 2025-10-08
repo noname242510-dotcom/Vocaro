@@ -1,3 +1,4 @@
+
 export type Subject = {
   id: string;
   name: string;
@@ -36,6 +37,7 @@ export type Verb = {
     [tense: string]: VerbTense;
   };
   isSelected?: boolean;
+  selectedTenses?: Set<string>;
 };
 
 export type QuizSettings = {
