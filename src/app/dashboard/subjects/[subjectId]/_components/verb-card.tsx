@@ -178,17 +178,22 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange }: VerbCard
             <CollapsibleContent>
                 <div className="px-4 pb-4 space-y-4">
                   <div>
-                      <h5 className="font-semibold text-sm mb-2">Übersetzung</h5>
-                      <div className="bg-muted/50 p-2 rounded-md">
+                      <h5 className="font-semibold text-sm mb-2 text-muted-foreground">Übersetzung</h5>
+                      <div className="bg-muted/50 p-3 rounded-md">
                           <p className="text-sm">{verb.translation}</p>
                       </div>
                   </div>
                   {Object.entries(groupedTenses).map(([groupName, tenses]) => (
                     <div key={groupName}>
-                      <h4 className="font-bold text-sm text-muted-foreground mb-2">{groupName}</h4>
-                      <div className="flex flex-wrap gap-2">
+                      <h4 className="font-semibold text-sm text-muted-foreground mb-2">{groupName}</h4>
+                      <div className="space-y-2 pl-2">
                         {tenses.map((tense) => (
-                           <Badge key={tense} variant="secondary" className="font-normal">{tense}</Badge>
+                           <div key={tense} className="flex items-center gap-3">
+                             <Checkbox id={`${verb.id}-${tense}`} className="rounded-full" />
+                             <label htmlFor={`${verb.id}-${tense}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                               {tense}
+                             </label>
+                           </div>
                         ))}
                       </div>
                     </div>
