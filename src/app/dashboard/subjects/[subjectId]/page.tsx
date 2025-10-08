@@ -522,18 +522,15 @@ export default function SubjectDetailPage() {
 
 
   const handleOpenTenseDialog = () => {
-    const commonTenses = new Set<string>();
     const selected = localVerbs.filter(v => v.isSelected);
     if (selected.length > 0) {
-        // Find intersection of selected tenses of all selected verbs
-        const firstVerbTenses = selected[0].selectedTenses || new Set();
-        firstVerbTenses.forEach(tense => {
-            if (selected.every(v => v.selectedTenses?.has(tense))) {
-                commonTenses.add(tense);
-            }
-        });
+        // Use the tenses from the *first* selected verb as the initial state for the dialog.
+        const firstSelectedVerbTenses = selected[0].selectedTenses || new Set<string>();
+        setTempSelectedTenses(new Set(firstSelectedVerbTenses));
+    } else {
+        // If no verbs are selected, open the dialog with no tenses selected.
+        setTempSelectedTenses(new Set<string>());
     }
-    setTempSelectedTenses(commonTenses);
     setIsTenseSelectionDialogOpen(true);
   }
 
@@ -781,18 +778,34 @@ export default function SubjectDetailPage() {
                       </DialogDescription>
                     </DialogHeader>
                     <ScrollArea className="max-h-64">
-                        <div className="p-4 space-y-2">
-                            {sortedTensesForDialog.map(tense => (
+                      <div className="p-4 space-y-4">
+                        {Object.entries(
+                          sortedTensesForDialog.reduce((acc, tense) => {
+                            const group = Object.keys(tenseOrderConfig).find(key => tenseOrderConfig[key].includes(tense)) || 'Uncategorized';
+                            if (!acc[group]) {
+                              acc[group] = [];
+                            }
+                            acc[group].push(tense);
+                            return acc;
+                          }, {} as Record<string, string[]>)
+                        ).map(([groupName, tenses]) => (
+                          <div key={groupName}>
+                            <h4 className="font-semibold text-sm text-muted-foreground mb-2">{groupName}</h4>
+                            <div className="space-y-2 pl-2">
+                              {tenses.map(tense => (
                                 <div key={tense} className="flex items-center gap-3">
-                                    <Checkbox
-                                        id={`global-tense-${tense}`}
-                                        checked={tempSelectedTenses.has(tense)}
-                                        onCheckedChange={(checked) => handleTempTenseSelection(tense, Boolean(checked))}
-                                    />
-                                    <Label htmlFor={`global-tense-${tense}`} className="cursor-pointer">{tense}</Label>
+                                  <Checkbox
+                                    id={`global-tense-${tense}`}
+                                    checked={tempSelectedTenses.has(tense)}
+                                    onCheckedChange={(checked) => handleTempTenseSelection(tense, Boolean(checked))}
+                                  />
+                                  <Label htmlFor={`global-tense-${tense}`} className="cursor-pointer">{tense}</Label>
                                 </div>
-                            ))}
-                        </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </ScrollArea>
                     <DialogFooter>
                       <Button variant="ghost" onClick={() => setIsTenseSelectionDialogOpen(false)}>Abbrechen</Button>
