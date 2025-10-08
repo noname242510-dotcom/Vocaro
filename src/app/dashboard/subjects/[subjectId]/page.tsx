@@ -782,18 +782,18 @@ export default function SubjectDetailPage() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Zeiten global auswählen</DialogTitle>
-                      <DialogDescription>
-                        Wähle die Zeitformen, die auf alle {selectedVerbsCount} ausgewählten Verben angewendet werden sollen.
-                      </DialogDescription>
-                      <div className="flex justify-end pt-2">
+                      <div className="flex justify-between items-center">
+                        <DialogTitle>Zeiten global auswählen</DialogTitle>
                         <Button variant="outline" onClick={handleToggleAllTenses} className="text-sm h-8">
                           {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
                         </Button>
                       </div>
+                      <DialogDescription>
+                        Wähle die Zeitformen, die auf alle {selectedVerbsCount} ausgewählten Verben angewendet werden sollen.
+                      </DialogDescription>
                     </DialogHeader>
-                    <ScrollArea className="max-h-64 -mt-2">
-                      <div className="p-4 space-y-4">
+                    <ScrollArea className="max-h-64">
+                      <div className="p-1 space-y-4">
                         {Object.entries(
                           sortedTensesForDialog.reduce((acc, tense) => {
                             const group = Object.keys(tenseOrderConfig).find(key => tenseOrderConfig[key].includes(tense)) || 'Uncategorized';
@@ -805,7 +805,7 @@ export default function SubjectDetailPage() {
                           }, {} as Record<string, string[]>)
                         ).map(([groupName, tenses]) => (
                           <div key={groupName}>
-                            <h4 className="font-semibold text-sm text-muted-foreground mb-2">{groupName}</h4>
+                            <h4 className="font-semibold text-sm text-muted-foreground mb-2 px-3">{groupName}</h4>
                             <div className="space-y-2 pl-2">
                               {tenses.map(tense => (
                                 <div key={tense} className="flex items-center gap-3">
@@ -814,7 +814,7 @@ export default function SubjectDetailPage() {
                                     checked={tempSelectedTenses.has(tense)}
                                     onCheckedChange={(checked) => handleTempTenseSelection(tense, Boolean(checked))}
                                   />
-                                  <Label htmlFor={`global-tense-${tense}`} className="cursor-pointer">{tense}</Label>
+                                  <Label htmlFor={`global-tense-${tense}`} className="cursor-pointer font-normal">{tense}</Label>
                                 </div>
                               ))}
                             </div>
