@@ -99,6 +99,9 @@ export default function SubjectDetailPage() {
   const [isVerbDialogOpen, setIsVerbDialogOpen] = useState(false);
   const [editingVerb, setEditingVerb] = useState<Verb | null>(null);
   const [verbSearchQuery, setVerbSearchQuery] = useState('');
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState('vocabulary');
 
 
   const { toast } = useToast();
@@ -607,7 +610,7 @@ export default function SubjectDetailPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="vocabulary" className="max-w-4xl mx-auto">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-4xl mx-auto">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="vocabulary">Vokabeln</TabsTrigger>
           <TabsTrigger value="verbs">Verben</TabsTrigger>
