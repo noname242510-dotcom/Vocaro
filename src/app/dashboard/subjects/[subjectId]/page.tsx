@@ -640,6 +640,20 @@ export default function SubjectDetailPage() {
       setTempSelectedTenses(new Set(allTenses));
     }
   };
+  
+  const handleStartVerbPractice = () => {
+    const selectedVerbs = localVerbs.filter(v => v.isSelected);
+    if (selectedVerbs.length > 0) {
+      const practiceData = selectedVerbs.map(v => ({
+        ...v,
+        // Convert Set to Array for JSON serialization
+        selectedTenses: Array.from(v.selectedTenses || []),
+      }));
+      sessionStorage.setItem('verb-practice-session', JSON.stringify(practiceData));
+      sessionStorage.setItem('verb-practice-subject-id', subjectId);
+      router.push('/dashboard/learn/verbs');
+    }
+  };
 
 
   if (isSubjectLoading || areStacksLoading || areVerbsLoading) {
@@ -981,6 +995,7 @@ export default function SubjectDetailPage() {
                 <Button 
                     className="rounded-full text-base px-8" 
                     disabled={selectedVerbsCount === 0}
+                    onClick={handleStartVerbPractice}
                 >
                     Konjugationen üben
                     <ArrowRight className="ml-2 h-5 w-5" />
