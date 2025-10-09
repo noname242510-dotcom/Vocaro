@@ -248,7 +248,7 @@ export default function LearnPage() {
   
   const handleBackToSelection = () => {
     if (subjectId) {
-        router.push(`/dashboard/subjects/${subjectId}`);
+        router.push(`/dashboard/subjects/${subjectId}?tab=vocabulary`);
     } else {
         router.push('/dashboard');
     }
@@ -302,7 +302,7 @@ export default function LearnPage() {
             <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs sm:max-w-sm">
                 <Button onClick={resetSession} size="lg" className="w-full"><RotateCcw className="mr-2 h-4 w-4" /> Nochmal versuchen</Button>
                 <Button variant="outline" size="lg" className="w-full" onClick={handleBackToSelection}>
-                    Zur Vokabelauswahl
+                    Zurück zur Vokabelübersicht
                 </Button>
             </div>
         </div>
@@ -388,7 +388,5 @@ declare module '@/lib/types' {
         stackId?: string;
     }
 }
-
-    
 
     

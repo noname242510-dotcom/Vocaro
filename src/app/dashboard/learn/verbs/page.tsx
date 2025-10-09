@@ -188,7 +188,7 @@ export default function VerbPracticePage() {
 
     const handleBackToSubject = () => {
         if (subjectId) {
-            router.push(`/dashboard/subjects/${subjectId}`);
+            router.push(`/dashboard/subjects/${subjectId}?tab=verbs`);
         } else {
             router.push('/dashboard');
         }
@@ -240,7 +240,7 @@ export default function VerbPracticePage() {
                 <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs sm:max-w-sm">
                     <Button onClick={resetSession} size="lg" className="w-full"><RotateCcw className="mr-2 h-4 w-4" /> Nochmal versuchen</Button>
                     <Button variant="outline" size="lg" className="w-full" onClick={handleBackToSubject}>
-                        Zurück zum Fach
+                        Zurück zur Verbübersicht
                     </Button>
                 </div>
             </div>
@@ -315,3 +315,5 @@ export default function VerbPracticePage() {
         </div>
     );
 }
+
+    

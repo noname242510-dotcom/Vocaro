@@ -3,7 +3,7 @@
 
 import { useState, useMemo, ChangeEvent, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import {
   MoreVertical,
   Plus,
@@ -96,6 +96,7 @@ export default function SubjectDetailPage() {
   const { firestore, user } = useFirebase();
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const subjectId = params.subjectId as string;
 
   // Vocab state
@@ -124,7 +125,8 @@ export default function SubjectDetailPage() {
   const [tempSelectedTenses, setTempSelectedTenses] = useState<Set<string>>(new Set());
   
   // Tab state
-  const [activeTab, setActiveTab] = useState('vocabulary');
+  const defaultTab = searchParams.get('tab') || 'vocabulary';
+  const [activeTab, setActiveTab] = useState(defaultTab);
 
 
   const { toast } = useToast();
@@ -1015,3 +1017,5 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
+    
