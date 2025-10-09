@@ -4,8 +4,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Pen, Trash2, Loader2, ChevronDown } from 'lucide-react';
-import type { Verb } from '@/lib/types';
+import { Pen, Trash2, Loader2, ChevronDown, Info } from 'lucide-react';
+import type { Verb, VerbTense } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +20,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 
 interface VerbCardProps {
@@ -80,6 +80,13 @@ const tenseOrder: { [key: string]: string[] } = {
   ]
 };
 
+// Define the classical order of pronouns for different languages
+const pronounOrder: { [key: string]: string[] } = {
+  french: ["je", "tu", "il/elle/on", "nous", "vous", "ils/elles", "(tu)", "(nous)", "(vous)", "form"],
+  english: ["I", "you", "he/she/it", "we", "they", "form"],
+  default: ["form"]
+};
+
 const getGroupedTenses = (forms: Verb['forms']) => {
   const allTenses = Object.keys(forms);
   const isFrench = allTenses.some(t => t.startsWith('Indicatif'));
@@ -123,6 +130,18 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange, onTenseSel
   };
 
   const groupedTenses = getGroupedTenses(verb.forms);
+  const pronounOrderKey = verb.language.toLowerCase() as keyof typeof pronounOrder;
+  const currentPronounOrder = pronounOrder[pronounOrderKey] || pronounOrder.default;
+  
+  const getSortedPronouns = (tenseForms: VerbTense) => {
+    return Object.keys(tenseForms).sort((a, b) => {
+        const indexA = currentPronounOrder.indexOf(a);
+        const indexB = currentPronounOrder.indexOf(b);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+    });
+  };
 
 
   return (
@@ -193,6 +212,26 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange, onTenseSel
                              <label htmlFor={`${verb.id}-${tense}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                {tense}
                              </label>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground">
+                                    <Info className="h-4 w-4" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                    <div className="space-y-2">
+                                        <h4 className="font-medium leading-none">{tense}</h4>
+                                        <div className="text-sm text-muted-foreground">
+                                            {getSortedPronouns(verb.forms[tense]).map(pronoun => (
+                                                <div key={pronoun} className="grid grid-cols-2 gap-2">
+                                                    <span>{pronoun}</span>
+                                                    <span>{verb.forms[tense][pronoun]}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                            </div>
                         ))}
                       </div>
@@ -204,4 +243,3 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange, onTenseSel
     </Collapsible>
   );
 }
-
