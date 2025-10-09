@@ -134,7 +134,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                />
              </div>
             <h3 className="font-headline text-lg">{stack.name}</h3>
-            <Badge variant="secondary">{vocabulary.length || 0} Begriffe</Badge>
+            <Badge variant="secondary">{vocabulary.length || 0} Vokabeln</Badge>
           </div>
           <div className="flex items-center gap-2">
             <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>

@@ -797,16 +797,16 @@ export default function SubjectDetailPage() {
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
-                    <DialogHeader>
-                      <div className="flex justify-between items-center">
+                    <DialogHeader className="flex flex-row justify-between items-center -mb-2">
+                      <div className="space-y-1">
                         <DialogTitle>Zeiten global auswählen</DialogTitle>
-                        <Button variant="outline" onClick={handleToggleAllTenses} className="text-sm h-8">
-                          {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
-                        </Button>
+                        <DialogDescription>
+                          Wähle Zeiten für {selectedVerbsCount} ausgewählte Verben.
+                        </DialogDescription>
                       </div>
-                      <DialogDescription>
-                        Wähle die Zeitformen, die auf alle {selectedVerbsCount} ausgewählten Verben angewendet werden sollen.
-                      </DialogDescription>
+                      <Button variant="outline" onClick={handleToggleAllTenses} className="text-sm h-8">
+                        {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
+                      </Button>
                     </DialogHeader>
                     <ScrollArea className="max-h-64">
                       <div className="p-1 space-y-4">
@@ -924,7 +924,7 @@ export default function SubjectDetailPage() {
                       <DialogHeader>
                         <DialogTitle>Neue Vokabeln hinzufügen</DialogTitle>
                         <DialogDescription>
-                          Füge Begriffe manuell hinzu oder lade ein Bild hoch, um Text zu extrahieren.
+                          Füge Vokabeln manuell hinzu oder lade ein Bild hoch, um Text zu extrahieren.
                         </DialogDescription>
                       </DialogHeader>
                       <Tabs defaultValue="manual">
@@ -953,11 +953,11 @@ export default function SubjectDetailPage() {
                             <div className="flex flex-col gap-2">
                                <Button variant="outline" onClick={handleAddMoreVocabulary} disabled={isAddingManually}>
                                 {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Weitere Begriffe hinzufügen
+                                Weitere Vokabeln hinzufügen
                               </Button>
                               <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually}>
                                   {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                  Begriff hinzufügen
+                                  Vokabel hinzufügen
                               </Button>
                             </div>
                           </div>
@@ -1017,5 +1017,3 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
-
-    

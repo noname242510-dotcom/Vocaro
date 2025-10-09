@@ -137,7 +137,7 @@ export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed }: Sub
                 <Link href={`/dashboard/subjects/${subject.id}`}>{subject.name}</Link>
               </CardTitle>
               <div className="flex items-center justify-center gap-1 mt-1">
-                <span className="text-muted-foreground text-sm">{totalVocabCount} Begriffe</span>
+                <span className="text-muted-foreground text-sm">{totalVocabCount} Vokabeln</span>
                 <span className="text-muted-foreground text-sm font-black">·</span>
                 <span className="text-muted-foreground text-sm">{verbs?.length ?? 0} Verben</span>
               </div>
