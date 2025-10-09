@@ -134,9 +134,17 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange, onTenseSel
   const currentPronounOrder = pronounOrder[pronounOrderKey] || pronounOrder.default;
   
   const getSortedPronouns = (tenseForms: VerbTense) => {
+    // Special handling for French "j'" apostrophe
+    const getSortIndex = (pronoun: string) => {
+        if (pronoun.toLowerCase().startsWith("j'")) {
+            return currentPronounOrder.indexOf("je");
+        }
+        return currentPronounOrder.indexOf(pronoun);
+    };
+
     return Object.keys(tenseForms).sort((a, b) => {
-        const indexA = currentPronounOrder.indexOf(a);
-        const indexB = currentPronounOrder.indexOf(b);
+        const indexA = getSortIndex(a);
+        const indexB = getSortIndex(b);
         if (indexA === -1) return 1;
         if (indexB === -1) return -1;
         return indexA - indexB;
