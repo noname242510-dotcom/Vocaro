@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Edit, Trash2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Stack, Subject } from '@/lib/types';
+import type { Stack, Subject, Verb } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,7 +49,13 @@ export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed }: Sub
     return collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks');
   }, [firestore, user, subject.id]);
 
+  const verbsCollectionRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return collection(firestore, 'users', user.uid, 'subjects', subject.id, 'verbs');
+  }, [firestore, user, subject.id]);
+
   const { data: stacks } = useCollection<Stack>(stacksCollectionRef);
+  const { data: verbs } = useCollection<Verb>(verbsCollectionRef);
 
   useEffect(() => {
     if (stacks && firestore && user) {
@@ -131,9 +137,9 @@ export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed }: Sub
                 <Link href={`/dashboard/subjects/${subject.id}`}>{subject.name}</Link>
               </CardTitle>
               <div className="flex items-center justify-center gap-1 mt-1">
-                <span className="text-muted-foreground text-sm">{stacks?.length ?? 0} Stapel</span>
-                <span className="text-muted-foreground text-sm font-black">·</span>
                 <span className="text-muted-foreground text-sm">{totalVocabCount} Begriffe</span>
+                <span className="text-muted-foreground text-sm font-black">·</span>
+                <span className="text-muted-foreground text-sm">{verbs?.length ?? 0} Verben</span>
               </div>
             </div>
           </div>
