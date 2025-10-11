@@ -56,8 +56,12 @@ export default function VerbPracticePage() {
     const [showResults, setShowResults] = useState(false);
     const [isNewCard, setIsNewCard] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
+    const [isTermFirst, setIsTermFirst] = useState(true);
 
     useEffect(() => {
+        const termFirstSetting = localStorage.getItem('query-direction-flashcards') !== 'true';
+        setIsTermFirst(termFirstSetting);
+
         const sessionData = sessionStorage.getItem('verb-practice-session');
         const subjectIdData = sessionStorage.getItem('verb-practice-subject-id');
 
@@ -79,8 +83,8 @@ export default function VerbPracticePage() {
                     items.push({
                         id: `${verb.id}-infinitive`,
                         verbInfinitive: verb.infinitive,
-                        front: verb.infinitive,
-                        back: verb.translation,
+                        front: termFirstSetting ? verb.infinitive : verb.translation,
+                        back: termFirstSetting ? verb.translation : verb.infinitive,
                         isConjugation: false,
                     });
                 } else {

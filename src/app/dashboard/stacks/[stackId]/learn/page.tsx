@@ -51,8 +51,12 @@ export default function LearnPage() {
   const [persistentlyIncorrectIds, setPersistentlyIncorrectIds] = useState<Set<string>>(new Set());
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
+  const [isTermFirst, setIsTermFirst] = useState(true);
 
   useEffect(() => {
+    const termFirstSetting = localStorage.getItem('query-direction-flashcards') !== 'true';
+    setIsTermFirst(termFirstSetting);
+
     if (!firestore || !user) return;
 
     const fetchVocab = async () => {
@@ -278,11 +282,11 @@ export default function LearnPage() {
         >
           {/* Front of the card */}
           <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6 rounded-2xl bg-card">
-            <p className="text-4xl font-bold text-center font-headline">{currentCard.term}</p>
+            <p className="text-4xl font-bold text-center font-headline">{isTermFirst ? currentCard.term : currentCard.definition}</p>
           </div>
           {/* Back of the card */}
           <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
-            <p className="text-4xl font-bold text-center font-headline">{currentCard.definition}</p>
+            <p className="text-4xl font-bold text-center font-headline">{isTermFirst ? currentCard.definition : currentCard.term}</p>
             {currentCard.notes && (
                 <div className="flex items-start gap-2 text-base text-center text-muted-foreground mt-4">
                   <Lightbulb className="h-5 w-5 flex-shrink-0" />
@@ -310,7 +314,5 @@ export default function LearnPage() {
     </div>
   );
 }
-
-    
 
     
