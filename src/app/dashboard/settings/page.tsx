@@ -19,9 +19,15 @@ export default function SettingsPage() {
   const router = useRouter();
   const [font, setFont] = useState('font-body');
   const [enableConfetti, setEnableConfetti] = useState(true);
-  const [queryDirectionOverview, setQueryDirectionOverview] = useState(false); // false: term first, true: definition first
-  const [queryDirectionFlashcards, setQueryDirectionFlashcards] = useState(false); // false: term first, true: definition first
-  const [showHints, setShowHints] = useState(true);
+  
+  // Vocab settings
+  const [queryDirectionOverview, setQueryDirectionOverview] = useState(false);
+  const [showVocabHints, setShowVocabHints] = useState(true);
+
+  // Verb settings
+  const [queryDirectionVerbs, setQueryDirectionVerbs] = useState(false);
+  const [showVerbHints, setShowVerbHints] = useState(true);
+
 
   useEffect(() => {
     // Load persisted settings on mount
@@ -31,14 +37,19 @@ export default function SettingsPage() {
     const persistedConfetti = localStorage.getItem('enable-confetti');
     setEnableConfetti(persistedConfetti === null ? true : persistedConfetti === 'true');
     
+    // Vocab settings
     const persistedQueryDirectionOverview = localStorage.getItem('query-direction-overview');
     setQueryDirectionOverview(persistedQueryDirectionOverview === 'true');
 
-    const persistedQueryDirectionFlashcards = localStorage.getItem('query-direction-flashcards');
-    setQueryDirectionFlashcards(persistedQueryDirectionFlashcards === 'true');
+    const persistedShowVocabHints = localStorage.getItem('show-vocab-hints');
+    setShowVocabHints(persistedShowVocabHints === null ? true : persistedShowVocabHints === 'true');
 
-    const persistedShowHints = localStorage.getItem('show-hints');
-    setShowHints(persistedShowHints === null ? true : persistedShowHints === 'true');
+    // Verb settings
+    const persistedQueryDirectionVerbs = localStorage.getItem('query-direction-verbs');
+    setQueryDirectionVerbs(persistedQueryDirectionVerbs === 'true');
+    
+    const persistedShowVerbHints = localStorage.getItem('show-verb-hints');
+    setShowVerbHints(persistedShowVerbHints === null ? true : persistedShowVerbHints === 'true');
 
 
   }, []);
@@ -61,15 +72,20 @@ export default function SettingsPage() {
     setQueryDirectionOverview(checked);
     localStorage.setItem('query-direction-overview', String(checked));
   };
-
-  const handleQueryDirectionFlashcardsChange = (checked: boolean) => {
-    setQueryDirectionFlashcards(checked);
-    localStorage.setItem('query-direction-flashcards', String(checked));
+  
+  const handleShowVocabHintsChange = (checked: boolean) => {
+    setShowVocabHints(checked);
+    localStorage.setItem('show-vocab-hints', String(checked));
   };
   
-  const handleShowHintsChange = (checked: boolean) => {
-    setShowHints(checked);
-    localStorage.setItem('show-hints', String(checked));
+  const handleQueryDirectionVerbsChange = (checked: boolean) => {
+    setQueryDirectionVerbs(checked);
+    localStorage.setItem('query-direction-verbs', String(checked));
+  };
+
+  const handleShowVerbHintsChange = (checked: boolean) => {
+    setShowVerbHints(checked);
+    localStorage.setItem('show-verb-hints', String(checked));
   };
 
 
@@ -187,8 +203,8 @@ export default function SettingsPage() {
                   <span className="text-sm text-muted-foreground">ausblenden</span>
                   <Switch 
                     id="show-hints"
-                    checked={showHints}
-                    onCheckedChange={handleShowHintsChange}
+                    checked={showVocabHints}
+                    onCheckedChange={handleShowVocabHintsChange}
                   />
                   <span className="text-sm text-muted-foreground">einblenden</span>
                 </div>
@@ -203,15 +219,29 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-6">
                <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="query-direction-flashcards">
+                <Label htmlFor="query-direction-verbs">
                   Abfragerichtung der Karteikarten
                 </Label>
                  <div className="flex items-center gap-4">
-                    <span className={cn("text-sm transition-colors", !queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsches Wort</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQueryDirectionFlashcardsChange(!queryDirectionFlashcards)}>
-                        {queryDirectionFlashcards ? <ArrowRight className="h-5 w-5"/> : <ArrowLeft className="h-5 w-5"/>}
+                    <span className={cn("text-sm transition-colors", !queryDirectionVerbs ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsches Wort</span>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQueryDirectionVerbsChange(!queryDirectionVerbs)}>
+                        {queryDirectionVerbs ? <ArrowRight className="h-5 w-5"/> : <ArrowLeft className="h-5 w-5"/>}
                     </Button>
-                    <span className={cn("text-sm transition-colors", queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort</span>
+                    <span className={cn("text-sm transition-colors", queryDirectionVerbs ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="show-verb-hints">
+                  <span>Infinitiv als Hinweis</span>
+                </Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">ausblenden</span>
+                  <Switch 
+                    id="show-verb-hints"
+                    checked={showVerbHints}
+                    onCheckedChange={handleShowVerbHintsChange}
+                  />
+                  <span className="text-sm text-muted-foreground">einblenden</span>
                 </div>
               </div>
             </CardContent>

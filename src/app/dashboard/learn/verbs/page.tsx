@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Check, Loader2, RotateCcw, X } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, RotateCcw, X, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Verb, VerbTense } from '@/lib/types';
 import {
@@ -54,6 +54,7 @@ const germanPronounMap: Record<string, string> = {
     "we": "wir",
     "they": "sie",
     "je": "ich",
+    "j'": "ich",
     "tu": "du",
     "il/elle/on": "er/sie/es",
     "nous": "wir",
@@ -80,11 +81,16 @@ export default function VerbPracticePage() {
     const [showResults, setShowResults] = useState(false);
     const [isNewCard, setIsNewCard] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
+    
     const [isGermanFirst, setIsGermanFirst] = useState(false);
+    const [shouldShowHints, setShouldShowHints] = useState(true);
 
     useEffect(() => {
-        const germanFirstSetting = localStorage.getItem('query-direction-flashcards') === 'false';
+        const germanFirstSetting = localStorage.getItem('query-direction-verbs') === 'true';
         setIsGermanFirst(germanFirstSetting);
+
+        const showHintsSetting = localStorage.getItem('show-verb-hints') !== 'false';
+        setShouldShowHints(showHintsSetting);
 
         const sessionData = sessionStorage.getItem('verb-practice-session');
         const subjectIdData = sessionStorage.getItem('verb-practice-subject-id');
@@ -119,8 +125,9 @@ export default function VerbPracticePage() {
                         if (tenseForms) {
                             Object.entries(tenseForms).forEach(([pronoun, form]) => {
                                 let front, back;
+                                const germanPronoun = germanPronounMap[pronoun] || pronoun;
+
                                 if (germanFirstSetting && germanTenseForms) {
-                                    const germanPronoun = germanPronounMap[pronoun] || pronoun;
                                     const germanForm = germanTenseForms[germanPronoun];
                                     if(germanForm) {
                                         front = `${germanPronoun} ${germanForm}`;
@@ -132,7 +139,8 @@ export default function VerbPracticePage() {
                                     }
                                 } else { // Foreign language first
                                     front = `${pronoun}, ${tense}`;
-                                    back = form;
+                                    const germanForm = germanTenseForms ? germanTenseForms[germanPronoun] : '';
+                                    back = germanForm ? `${germanPronoun} ${germanForm}` : form;
                                 }
 
                                 items.push({
@@ -333,12 +341,12 @@ export default function VerbPracticePage() {
                 >
                     {/* Front of the card */}
                     <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
-                        {!currentCard.front.includes(',') && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
+                        {shouldShowHints && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
                         <p className="text-4xl font-bold text-center font-headline">{currentCard.front}</p>
                     </div>
                     {/* Back of the card */}
                     <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
-                        <p className="text-4xl font-bold text-center font-headline">{currentCard.back}</p>
+                         <p className="text-4xl font-bold text-center font-headline">{currentCard.back}</p>
                     </div>
                 </Card>
             </div>
