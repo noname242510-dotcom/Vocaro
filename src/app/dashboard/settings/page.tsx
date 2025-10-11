@@ -161,7 +161,7 @@ export default function SettingsPage() {
            <Card>
             <CardHeader>
               <CardTitle>Vokabelabfrage</CardTitle>
-              <CardDescription>Verwalte deine Lern- und Abfrageeinstellungen für Vokabeln und Verben.</CardDescription>
+              <CardDescription>Verwalte deine Lern- und Abfrageeinstellungen für Vokabeln.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between space-x-2">
@@ -179,18 +179,6 @@ export default function SettingsPage() {
                     <span className="text-sm text-muted-foreground">Fremdwort</span>
                 </div>
               </div>
-               <div className="flex items-center justify-between space-x-2">
-                <Label htmlFor="query-direction-flashcards">
-                  Abfragerichtung der Karteikarten
-                </Label>
-                 <div className="flex items-center gap-4">
-                    <span className={cn("text-sm transition-colors", !queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsches Wort</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQueryDirectionFlashcardsChange(!queryDirectionFlashcards)}>
-                        {queryDirectionFlashcards ? <ArrowRight className="h-5 w-5"/> : <ArrowLeft className="h-5 w-5"/>}
-                    </Button>
-                    <span className={cn("text-sm transition-colors", queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort</span>
-                </div>
-              </div>
               <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="show-hints">
                   <span>Hinweise auf der Rückseite</span>
@@ -203,6 +191,27 @@ export default function SettingsPage() {
                     onCheckedChange={handleShowHintsChange}
                   />
                   <span className="text-sm text-muted-foreground">einblenden</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Verbabfrage</CardTitle>
+              <CardDescription>Verwalte deine Lern- und Abfrageeinstellungen für Verben.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+               <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="query-direction-flashcards">
+                  Abfragerichtung der Karteikarten
+                </Label>
+                 <div className="flex items-center gap-4">
+                    <span className={cn("text-sm transition-colors", !queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsches Wort</span>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQueryDirectionFlashcardsChange(!queryDirectionFlashcards)}>
+                        {queryDirectionFlashcards ? <ArrowRight className="h-5 w-5"/> : <ArrowLeft className="h-5 w-5"/>}
+                    </Button>
+                    <span className={cn("text-sm transition-colors", queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort</span>
                 </div>
               </div>
             </CardContent>
