@@ -797,18 +797,20 @@ export default function SubjectDetailPage() {
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
-                    <DialogHeader className="flex flex-row justify-between items-center -mb-2">
-                      <div className="space-y-1">
-                        <DialogTitle>Zeiten global auswählen</DialogTitle>
-                        <DialogDescription>
-                          Wähle Zeiten für {selectedVerbsCount} ausgewählte Verben.
-                        </DialogDescription>
-                      </div>
-                      <Button variant="outline" onClick={handleToggleAllTenses} className="text-sm h-8">
-                        {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
-                      </Button>
+                    <DialogHeader>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <DialogTitle>Zeiten global auswählen</DialogTitle>
+                                <DialogDescription>
+                                Wähle Zeiten für {selectedVerbsCount} ausgewählte Verben.
+                                </DialogDescription>
+                            </div>
+                            <Button variant="outline" onClick={handleToggleAllTenses} className="text-sm h-8">
+                                {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
+                            </Button>
+                        </div>
                     </DialogHeader>
-                    <ScrollArea className="max-h-64">
+                    <ScrollArea className="max-h-64 -mx-6 px-6">
                       <div className="p-1 space-y-4">
                         {Object.entries(
                           sortedTensesForDialog.reduce((acc, tense) => {

@@ -29,7 +29,6 @@ interface PracticeItem {
     verbInfinitive: string;
     front: string;
     back: string;
-    isConjugation: boolean;
 }
 
 // Function to shuffle an array
@@ -41,6 +40,31 @@ function shuffleArray<T>(array: T[]): T[] {
   }
   return newArray;
 }
+
+const germanPronounMap: Record<string, string> = {
+    "ich": "ich",
+    "du": "du",
+    "er/sie/es": "er/sie/es",
+    "wir": "wir",
+    "ihr": "ihr",
+    "sie/Sie": "sie/Sie",
+    "I": "ich",
+    "you": "du", // or Sie, context is needed. Defaulting to 'du'
+    "he/she/it": "er/sie/es",
+    "we": "wir",
+    "they": "sie",
+    "je": "ich",
+    "tu": "du",
+    "il/elle/on": "er/sie/es",
+    "nous": "wir",
+    "vous": "ihr", // or Sie
+    "ils/elles": "sie",
+    "form": "form", // for participles etc.
+    "(tu)": "(du)",
+    "(nous)": "(wir)",
+    "(vous)": "(ihr)",
+};
+
 
 export default function VerbPracticePage() {
     const router = useRouter();
@@ -56,11 +80,11 @@ export default function VerbPracticePage() {
     const [showResults, setShowResults] = useState(false);
     const [isNewCard, setIsNewCard] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
-    const [isTermFirst, setIsTermFirst] = useState(true);
+    const [isGermanFirst, setIsGermanFirst] = useState(false);
 
     useEffect(() => {
-        const termFirstSetting = localStorage.getItem('query-direction-flashcards') !== 'true';
-        setIsTermFirst(termFirstSetting);
+        const germanFirstSetting = localStorage.getItem('query-direction-flashcards') === 'false';
+        setIsGermanFirst(germanFirstSetting);
 
         const sessionData = sessionStorage.getItem('verb-practice-session');
         const subjectIdData = sessionStorage.getItem('verb-practice-subject-id');
@@ -83,22 +107,39 @@ export default function VerbPracticePage() {
                     items.push({
                         id: `${verb.id}-infinitive`,
                         verbInfinitive: verb.infinitive,
-                        front: termFirstSetting ? verb.infinitive : verb.translation,
-                        back: termFirstSetting ? verb.translation : verb.infinitive,
-                        isConjugation: false,
+                        front: germanFirstSetting ? verb.translation : verb.infinitive,
+                        back: germanFirstSetting ? verb.infinitive : verb.translation,
                     });
                 } else {
                     // Practice selected tenses
                     verb.selectedTenses.forEach((tense) => {
                         const tenseForms = verb.forms[tense] as VerbTense;
+                        const germanTenseForms = verb.germanForms?.[tense] as VerbTense;
+                        
                         if (tenseForms) {
                             Object.entries(tenseForms).forEach(([pronoun, form]) => {
+                                let front, back;
+                                if (germanFirstSetting && germanTenseForms) {
+                                    const germanPronoun = germanPronounMap[pronoun] || pronoun;
+                                    const germanForm = germanTenseForms[germanPronoun];
+                                    if(germanForm) {
+                                        front = `${germanPronoun} ${germanForm}`;
+                                        back = `${pronoun} ${form}`;
+                                    } else {
+                                        // Fallback if no German form is found
+                                        front = `${pronoun}, ${tense}`;
+                                        back = form;
+                                    }
+                                } else { // Foreign language first
+                                    front = `${pronoun}, ${tense}`;
+                                    back = form;
+                                }
+
                                 items.push({
                                     id: `${verb.id}-${tense}-${pronoun}`,
                                     verbInfinitive: verb.infinitive,
-                                    front: `${pronoun}, ${tense}`,
-                                    back: form,
-                                    isConjugation: true,
+                                    front,
+                                    back,
                                 });
                             });
                         }
@@ -292,7 +333,7 @@ export default function VerbPracticePage() {
                 >
                     {/* Front of the card */}
                     <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
-                        {currentCard.isConjugation && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
+                        {!currentCard.front.includes(',') && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
                         <p className="text-4xl font-bold text-center font-headline">{currentCard.front}</p>
                     </div>
                     {/* Back of the card */}
@@ -319,5 +360,3 @@ export default function VerbPracticePage() {
         </div>
     );
 }
-
-    

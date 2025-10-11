@@ -28,12 +28,15 @@ export type VerbTense = {
 };
 
 export type Verb = {
-  id: string;
+  id:string;
   subjectId: string;
   infinitive: string;
   language: string;
   translation: string;
   forms: {
+    [tense: string]: VerbTense;
+  };
+  germanForms?: {
     [tense: string]: VerbTense;
   };
   isSelected?: boolean;
