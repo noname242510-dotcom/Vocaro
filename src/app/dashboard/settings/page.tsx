@@ -22,6 +22,7 @@ export default function SettingsPage() {
   
   // Vocab settings
   const [queryDirectionOverview, setQueryDirectionOverview] = useState(false);
+  const [queryDirectionFlashcards, setQueryDirectionFlashcards] = useState(false);
   const [showVocabHints, setShowVocabHints] = useState(true);
 
   // Verb settings
@@ -40,6 +41,9 @@ export default function SettingsPage() {
     // Vocab settings
     const persistedQueryDirectionOverview = localStorage.getItem('query-direction-overview');
     setQueryDirectionOverview(persistedQueryDirectionOverview === 'true');
+    
+    const persistedQueryDirectionFlashcards = localStorage.getItem('query-direction-flashcards');
+    setQueryDirectionFlashcards(persistedQueryDirectionFlashcards === 'true');
 
     const persistedShowVocabHints = localStorage.getItem('show-vocab-hints');
     setShowVocabHints(persistedShowVocabHints === null ? true : persistedShowVocabHints === 'true');
@@ -71,6 +75,11 @@ export default function SettingsPage() {
   const handleQueryDirectionOverviewChange = (checked: boolean) => {
     setQueryDirectionOverview(checked);
     localStorage.setItem('query-direction-overview', String(checked));
+  };
+  
+  const handleQueryDirectionFlashcardsChange = (checked: boolean) => {
+    setQueryDirectionFlashcards(checked);
+    localStorage.setItem('query-direction-flashcards', String(checked));
   };
   
   const handleShowVocabHintsChange = (checked: boolean) => {
@@ -193,6 +202,18 @@ export default function SettingsPage() {
                       onCheckedChange={handleQueryDirectionOverviewChange}
                     />
                     <span className="text-sm text-muted-foreground">Fremdwort</span>
+                </div>
+              </div>
+               <div className="flex items-center justify-between space-x-2">
+                <Label htmlFor="query-direction-flashcards">
+                  Abfragerichtung der Karteikarten
+                </Label>
+                 <div className="flex items-center gap-4">
+                    <span className={cn("text-sm transition-colors", !queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsches Wort</span>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQueryDirectionFlashcardsChange(!queryDirectionFlashcards)}>
+                        {queryDirectionFlashcards ? <ArrowRight className="h-5 w-5"/> : <ArrowLeft className="h-5 w-5"/>}
+                    </Button>
+                    <span className={cn("text-sm transition-colors", queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort</span>
                 </div>
               </div>
               <div className="flex items-center justify-between space-x-2">
