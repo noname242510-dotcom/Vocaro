@@ -160,13 +160,13 @@ export default function SettingsPage() {
           
            <Card>
             <CardHeader>
-              <CardTitle>Abfragen</CardTitle>
-              <CardDescription>Verwalte deine Lern- und Abfrageeinstellungen.</CardDescription>
+              <CardTitle>Vokabelabfrage</CardTitle>
+              <CardDescription>Verwalte deine Lern- und Abfrageeinstellungen für Vokabeln und Verben.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="query-direction-overview">
-                  Anzeige Vokabelübersicht
+                  Anzeige in der Übersicht
                 </Label>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Deutsches Wort</span>
@@ -181,7 +181,7 @@ export default function SettingsPage() {
               </div>
                <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="query-direction-flashcards">
-                  Abfragerichtung Karteikarten
+                  Abfragerichtung der Karteikarten
                 </Label>
                  <div className="flex items-center gap-4">
                     <span className={cn("text-sm transition-colors", !queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsches Wort</span>
