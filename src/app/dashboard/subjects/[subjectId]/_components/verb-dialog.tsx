@@ -57,6 +57,13 @@ const tenseOrderConfig: { [key: string]: string[] } = {
     'Other Forms': ['Imperative', 'Infinitive', 'Present Participle', 'Past Participle']
 };
 
+const languageDisplayNames: { [key: string]: string } = {
+    'French': 'Französisch',
+    'English': 'Englisch',
+    'Spanish': 'Spanisch',
+    'German': 'Deutsch',
+};
+
 export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVerb }: VerbDialogProps) {
   const [infinitive, setInfinitive] = useState('');
   const [generatedData, setGeneratedData] = useState<GenerateVerbFormsOutput | null>(null);
@@ -175,6 +182,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     return sorted.map(tense => [tense, generatedData.forms[tense]]);
   }, [generatedData]);
 
+  const displayLanguage = languageDisplayNames[language] || language;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -234,7 +242,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
             
             <Tabs defaultValue="foreign">
                 <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="foreign">{language}</TabsTrigger>
+                    <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
                     <TabsTrigger value="german">Deutsch</TabsTrigger>
                 </TabsList>
                  <ScrollArea className="max-h-[50vh]">
