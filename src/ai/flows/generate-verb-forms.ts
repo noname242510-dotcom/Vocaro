@@ -84,11 +84,12 @@ const prompt = ai.definePrompt({
 Follow these instructions precisely:
 1.  Translate the infinitive verb "{{verb}}" from {{language}} into German. Let's call this the "German Infinitive".
 2.  Generate the conjugations for the verb "{{verb}}" in {{language}} for ALL tenses listed below. Populate the 'conjugations' array.
-3.  Generate the corresponding German conjugations for the "German Infinitive" for ALL tenses listed below. Populate the 'germanConjugations' array. Use the German pronouns.
-4.  The output MUST be a valid JSON object.
-5.  Both 'conjugations' and 'germanConjugations' fields must be a FLAT array of objects. Each object must have three properties: "tense", "pronoun", and "form".
-6.  For tenses that don't use personal pronouns (like Participles or Infinitives), use "form" as the value for the "pronoun" property.
-7.  For the "Impératif Présent", use the pronouns "(tu)", "(nous)", "(vous)" for French, and the corresponding imperative forms for other languages.
+3.  For French verbs, pay close attention to elision. If the conjugated form for "je" starts with a vowel or a silent 'h', you MUST use "j'" as the pronoun (e.g., "j'ai", "j'habite").
+4.  Generate the corresponding German conjugations for the "German Infinitive" for ALL tenses listed below. Populate the 'germanConjugations' array. Use the German pronouns.
+5.  The output MUST be a valid JSON object.
+6.  Both 'conjugations' and 'germanConjugations' fields must be a FLAT array of objects. Each object must have three properties: "tense", "pronoun", and "form".
+7.  For tenses that don't use personal pronouns (like Participles or Infinitives), use "form" as the value for the "pronoun" property.
+8.  For the "Impératif Présent", use the pronouns "(tu)", "(nous)", "(vous)" for French, and the corresponding imperative forms for other languages.
 
 Language: {{language}}
 Verb: {{verb}}
