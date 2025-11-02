@@ -240,7 +240,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                 </div>
             </div>
             
-            <Tabs defaultValue="foreign" className="flex-grow min-h-0 flex flex-col">
+            <Tabs defaultValue="foreign" className="mt-2 flex-grow min-h-0 flex flex-col">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
                 <TabsTrigger value="german">Deutsch</TabsTrigger>
