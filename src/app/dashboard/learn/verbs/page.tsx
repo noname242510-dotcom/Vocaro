@@ -365,11 +365,11 @@ export default function VerbPracticePage() {
                     {/* Front of the card */}
                     <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
                         {shouldShowHints && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
-                        <p className="text-4xl font-bold text-center font-headline">{currentCard.front}</p>
+                        <p className="text-4xl font-bold text-center">{currentCard.front}</p>
                     </div>
                     {/* Back of the card */}
                     <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
-                         <p className="text-4xl font-bold text-center font-headline">{currentCard.back}</p>
+                         <p className="text-4xl font-bold text-center">{currentCard.back}</p>
                     </div>
                 </Card>
             </div>
@@ -396,5 +396,7 @@ export default function VerbPracticePage() {
         </div>
     );
 }
+
+    
 
     
