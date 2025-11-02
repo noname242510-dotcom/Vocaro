@@ -31,6 +31,12 @@ interface PracticeItem {
     back: string;
 }
 
+interface VerbLearnState {
+  practiceItems: PracticeItem[];
+  currentIndex: number;
+  incorrectlyAnsweredIds: Set<string>;
+}
+
 // Function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
   const newArray = [...array];
@@ -84,6 +90,8 @@ export default function VerbPracticePage() {
     
     const [isGermanFirst, setIsGermanFirst] = useState(false);
     const [shouldShowHints, setShouldShowHints] = useState(true);
+
+    const [history, setHistory] = useState<VerbLearnState[]>([]);
 
     useEffect(() => {
         const germanFirstSetting = localStorage.getItem('query-direction-verbs') === 'true';
@@ -186,9 +194,23 @@ export default function VerbPracticePage() {
     const correctAnswersCount = totalItemCount > 0 ? totalItemCount - practiceItems.length : 0;
     const progress = totalItemCount > 0 ? (correctAnswersCount / totalItemCount) * 100 : 0;
 
+    const handleGoBack = () => {
+        if (history.length > 0) {
+          const lastState = history[history.length - 1];
+          setPracticeItems(lastState.practiceItems);
+          setCurrentIndex(lastState.currentIndex);
+          setIncorrectlyAnsweredIds(lastState.incorrectlyAnsweredIds);
+          setHistory(prev => prev.slice(0, -1));
+          setIsFlipped(false);
+          setIsNewCard(true);
+        }
+    };
+
 
     const handleAnswer = (knewIt: boolean) => {
         if (!isFlipped) return;
+
+        setHistory(prev => [...prev, { practiceItems, currentIndex, incorrectlyAnsweredIds }]);
     
         const currentCard = practiceItems[currentIndex];
         let remainingCards = [...practiceItems];
@@ -236,6 +258,7 @@ export default function VerbPracticePage() {
         setShowResults(false);
         setShowConfetti(false);
         setIncorrectlyAnsweredIds(new Set());
+        setHistory([]);
         setIsNewCard(true);
     };
 
@@ -365,6 +388,13 @@ export default function VerbPracticePage() {
                     </div>
                 )}
             </div>
+            {history.length > 0 && isFlipped && (
+                <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
+                    Zurück
+                </Button>
+            )}
         </div>
     );
 }
+
+    

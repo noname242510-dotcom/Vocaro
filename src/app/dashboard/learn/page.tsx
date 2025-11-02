@@ -36,6 +36,12 @@ function shuffleArray<T>(array: T[]): T[] {
   return newArray;
 }
 
+interface LearnState {
+  vocabulary: VocabularyItem[];
+  currentIndex: number;
+  incorrectlyAnsweredIds: Set<string>;
+}
+
 export default function LearnPage() {
   const { firestore, user } = useFirebase();
   const router = useRouter();
@@ -56,6 +62,8 @@ export default function LearnPage() {
   
   const [isTermFirst, setIsTermFirst] = useState(true);
   const [shouldShowHints, setShouldShowHints] = useState(true);
+
+  const [history, setHistory] = useState<LearnState[]>([]);
 
   useEffect(() => {
     // Load settings from local storage
@@ -107,31 +115,13 @@ export default function LearnPage() {
               vocabCollectionGroup,
               where('__name__', 'in', chunk.map(id => `users/${user.uid}/subjects/${storedSubjectId}/stacks/${id.split('_')[0]}/vocabulary/${id.split('_')[1]}`)),
             );
-
-            // This part is a bit tricky since we don't have the stackId in the vocabIds.
-            // A better solution would be to store vocab IDs as `stackId_vocabId`.
-            // For now, we query all stacks and then filter client side. This is inefficient but works.
-            // Let's refactor this to be more efficient.
           }
         }
         
-        // Refactored efficient approach:
         const chunks: string[][] = [];
         for (let i = 0; i < vocabIds.length; i += CHUNK_SIZE) {
           chunks.push(vocabIds.slice(i, i + CHUNK_SIZE));
         }
-
-        const queryPromises = chunks.map(chunk => {
-            const vocabCollectionRef = collectionGroup(firestore, 'vocabulary');
-            const q = query(
-                vocabCollectionRef,
-                where(documentId(), 'in', chunk.map(id => `users/${user.uid}/subjects/${storedSubjectId}/stacks/${id.split('_')[0]}/vocabulary/${id.split('_')[1]}`))
-            );
-            return getDocs(q);
-        });
-
-        // This is still not quite right because documentId() can't be used with collectionGroup directly on the full path.
-        // We need to query each stack's vocabulary collection.
 
         const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', storedSubjectId, 'stacks');
         const stacksSnapshot = await getDocs(stacksCollectionRef);
@@ -192,24 +182,36 @@ export default function LearnPage() {
   const correctAnswersCount = totalVocabCount > 0 ? totalVocabCount - vocabulary.length : 0;
   const progress = totalVocabCount > 0 ? (correctAnswersCount / totalVocabCount) * 100 : 0;
 
+  const handleGoBack = () => {
+    if (history.length > 0) {
+      const lastState = history[history.length - 1];
+      setVocabulary(lastState.vocabulary);
+      setCurrentIndex(lastState.currentIndex);
+      setIncorrectlyAnsweredIds(lastState.incorrectlyAnsweredIds);
+      setHistory(prev => prev.slice(0, -1));
+      setIsFlipped(false);
+      setIsNewCard(true);
+    }
+  };
+
 
   const handleAnswer = (knewIt: boolean) => {
     if (!isFlipped || !user || !firestore) return;
+
+    // Save current state to history before changing it
+    setHistory(prev => [...prev, { vocabulary, currentIndex, incorrectlyAnsweredIds }]);
 
     const currentCard = vocabulary[currentIndex];
     let remainingCards = [...vocabulary];
 
     if (!knewIt) {
-        // Mark as incorrect for this session
         if (!incorrectlyAnsweredIds.has(currentCard.id)) {
             setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
         }
         
-        // Move card to the end of the queue for repetition
         const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
         remainingCards.push(cardToRepeat);
     } else {
-        // Correct answer: remove the card from this session's queue
         remainingCards.splice(currentIndex, 1);
     }
 
@@ -224,13 +226,11 @@ export default function LearnPage() {
         }
         setShowResults(true);
     } else {
-        // If we removed the last item, the new index should be 0
         const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
         
         setVocabulary(remainingCards);
         setCurrentIndex(newIndex);
         setIsNewCard(true);
-        // Delay flipping back the card to prevent animation clash
         setTimeout(() => setIsFlipped(false), 0);
     }
   };
@@ -242,6 +242,7 @@ export default function LearnPage() {
     setShowResults(false);
     setShowConfetti(false);
     setIncorrectlyAnsweredIds(new Set());
+    setHistory([]);
     setIsNewCard(true);
   };
   
@@ -378,6 +379,11 @@ export default function LearnPage() {
           </div>
           )}
        </div>
+       {history.length > 0 && isFlipped && (
+          <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
+            Zurück
+          </Button>
+       )}
     </div>
   );
 }
