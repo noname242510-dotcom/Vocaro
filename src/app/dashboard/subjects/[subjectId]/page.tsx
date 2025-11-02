@@ -945,7 +945,7 @@ export default function SubjectDetailPage() {
 
                 <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" onClick={() => openAddVocabDialog()}>
+                         <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" onClick={() => openAddVocabDialog()}>
                             <Plus className="h-6 w-6" />
                         </Button>
                     </DialogTrigger>
@@ -980,12 +980,12 @@ export default function SubjectDetailPage() {
                               <Textarea id="notes" placeholder="z.B., Begrüßung" value={manualNotes} onChange={e => setManualNotes(e.target.value)} />
                             </div>
                           </div>
-                           <DialogFooter className="pt-4">
-                               <Button variant="outline" onClick={() => handleAddManualVocabulary(false)} disabled={isAddingManually}>
+                           <DialogFooter className="pt-4 flex-col gap-2">
+                               <Button variant="outline" onClick={() => handleAddManualVocabulary(false)} disabled={isAddingManually} className="w-full">
                                 {isAddingManually ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
                                 Hinzufügen & Neu
                               </Button>
-                              <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually}>
+                              <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually} className="w-full">
                                   {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Hinzufügen
                               </Button>
@@ -1051,4 +1051,5 @@ export default function SubjectDetailPage() {
     
 
     
+
 
