@@ -20,7 +20,7 @@ import { generateVerbForms, type GenerateVerbFormsOutput } from '@/ai/flows/gene
 import type { Verb, VerbTense } from '@/lib/types';
 import { z } from 'zod';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 interface VerbDialogProps {
