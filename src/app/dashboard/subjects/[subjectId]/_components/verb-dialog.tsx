@@ -249,7 +249,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
       {Object.entries(groupedTenses).map(([group, tenses]) => (
         <div key={group}>
           <h4 className="font-semibold text-sm text-muted-foreground mb-2 px-1">{group}</h4>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-x-6 gap-y-3">
+          <div className="grid grid-cols-4 gap-x-6 gap-y-3">
             {tenses.map((tense) => (
               <div key={tense} className="flex items-center">
                 <span className="text-sm">{tense}</span>
@@ -346,21 +346,21 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                 </div>
             </div>
             
-            <Tabs defaultValue="foreign" className="mt-2 flex-grow min-h-0 flex flex-col">
+            <Tabs defaultValue="foreign" className="mt-2 flex-grow min-h-0">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
                 <TabsTrigger value="german">Deutsch</TabsTrigger>
               </TabsList>
-              <div className="flex-grow mt-4 min-h-0">
-                  <ScrollArea className="h-full">
-                    <TabsContent value="foreign" className="mt-0">
-                        <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
-                    </TabsContent>
-                    <TabsContent value="german" className="mt-0">
-                       <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
-                    </TabsContent>
-                  </ScrollArea>
-              </div>
+              <ScrollArea className="mt-2 flex-grow">
+                <div className="p-4">
+                  <TabsContent value="foreign" className="mt-0">
+                      <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
+                  </TabsContent>
+                  <TabsContent value="german" className="mt-0">
+                     <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
+                  </TabsContent>
+                </div>
+              </ScrollArea>
             </Tabs>
             
             <DialogFooter className="pt-6 mt-auto border-t">
