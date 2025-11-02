@@ -328,7 +328,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4 pb-4 border-b">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 pb-4 border-b flex-shrink-0">
                 <div>
                     <Label htmlFor="infinitive-display" className="text-sm font-medium text-muted-foreground">Infinitiv</Label>
                     <p id="infinitive-display" className="text-lg font-semibold">{generatedData.infinitive}</p>
@@ -345,23 +345,23 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
             </div>
             
             <div className="flex-grow min-h-0">
-                <ScrollArea className="h-full pr-6">
-                    <Tabs defaultValue="foreign" className="mt-2">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
-                            <TabsTrigger value="german">Deutsch</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="foreign" className="mt-4">
-                            <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
-                        </TabsContent>
-                        <TabsContent value="german" className="mt-4">
-                            <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
-                        </TabsContent>
-                    </Tabs>
-                </ScrollArea>
+              <ScrollArea className="h-full pr-6">
+                  <Tabs defaultValue="foreign" className="mt-2">
+                      <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
+                          <TabsTrigger value="german">Deutsch</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="foreign" className="mt-4">
+                          <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
+                      </TabsContent>
+                      <TabsContent value="german" className="mt-4">
+                          <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
+                      </TabsContent>
+                  </Tabs>
+              </ScrollArea>
             </div>
             
-            <div className="pt-4 mt-auto flex justify-end">
+            <div className="pt-4 flex-shrink-0 flex justify-end">
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Verb speichern
