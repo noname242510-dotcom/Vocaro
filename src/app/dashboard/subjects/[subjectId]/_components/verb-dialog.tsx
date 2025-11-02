@@ -20,7 +20,7 @@ import { generateVerbForms, type GenerateVerbFormsOutput } from '@/ai/flows/gene
 import type { Verb, VerbTense } from '@/lib/types';
 import { z } from 'zod';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 interface VerbDialogProps {
@@ -249,9 +249,9 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                 <div className="p-1">
                   <TabsContent value="foreign" className="mt-0">
                     {sortedTenses.map(([tense, forms]) => (
-                      <Collapsible key={tense} className="space-y-2 p-2">
+                      <Collapsible key={tense as string} className="space-y-2 p-2">
                         <CollapsibleTrigger className="font-semibold text-lg w-full text-left flex justify-between items-center">
-                          <span>{tense}</span>
+                          <span>{tense as string}</span>
                           <ChevronDown className="h-5 w-5 transition-transform-all [&[data-state=open]]:rotate-180" />
                         </CollapsibleTrigger>
                         <CollapsibleContent className="space-y-3 pl-4">
@@ -274,13 +274,13 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                   </TabsContent>
                   <TabsContent value="german" className="mt-0">
                     {generatedData.germanForms && sortedTenses.map(([tense]) => (
-                      <Collapsible key={`de-${tense}`} className="space-y-2 p-2">
+                      <Collapsible key={`de-${tense as string}`} className="space-y-2 p-2">
                         <CollapsibleTrigger className="font-semibold text-lg w-full text-left flex justify-between items-center">
-                          <span>{tense}</span>
+                          <span>{tense as string}</span>
                           <ChevronDown className="h-5 w-5 transition-transform-all [&[data-state=open]]:rotate-180" />
                         </CollapsibleTrigger>
                         <CollapsibleContent className="space-y-3 pl-4">
-                          {generatedData.germanForms?.[tense] && Object.entries(generatedData.germanForms[tense]).map(([pronoun, form]) => (
+                          {generatedData.germanForms?.[tense as string] && Object.entries(generatedData.germanForms[tense as string]).map(([pronoun, form]) => (
                             <div key={`de-${pronoun}`} className="grid grid-cols-4 items-center gap-4">
                               <Label htmlFor={`de-${tense}-${pronoun}`} className="text-right text-muted-foreground">
                                 {pronoun}
