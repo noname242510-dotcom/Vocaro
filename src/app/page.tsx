@@ -55,35 +55,44 @@ export default function LoginPage() {
   };
 
   const handlePasskeyLogin = async () => {
-    // Diese Funktion ist ein Platzhalter. Hier würden Sie die WebAuthn-Logik implementieren.
-    toast({
-        title: "Noch nicht implementiert",
-        description: "Die Passkey-Anmeldung muss noch eingerichtet werden."
-    });
+    if (!username.trim()) {
+        toast({ variant: 'destructive', title: 'Benutzername fehlt', description: 'Bitte gib zuerst deinen Benutzernamen ein.' });
+        return;
+    }
+    
+    try {
+        // Schritt 1: Anmelde-Optionen vom Server abrufen
+        const responseOptions = await fetch(`/api/passkey/generate-authentication-options?username=${encodeURIComponent(username)}`);
+        const options = await responseOptions.json();
+        if(responseOptions.status !== 200) throw new Error(options.error);
 
-    // Schritt 1: Anmelde-Optionen vom Server abrufen
-    // const responseOptions = await fetch('/api/passkey/generate-authentication-options');
-    // const options = await responseOptions.json();
+        // Schritt 2: Browser zur Authentifizierung auffordern
+        const authenticationResponse = await startAuthentication(options);
 
-    // Schritt 2: Browser zur Authentifizierung auffordern
-    // const authenticationResponse = await startAuthentication(options);
+        // Schritt 3: Antwort an den Server zur Verifizierung senden
+        const responseVerification = await fetch('/api/passkey/verify-authentication', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, ...authenticationResponse }),
+        });
+        const { verified, customToken, error } = await responseVerification.json();
+        if (responseVerification.status !== 200) throw new Error(error);
 
-    // Schritt 3: Antwort an den Server zur Verifizierung senden
-    // const responseVerification = await fetch('/api/passkey/verify-authentication', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(authenticationResponse),
-    // });
-    // const { verified, customToken } = await responseVerification.json();
-
-    // Schritt 4: Mit dem Custom Token bei Firebase anmelden
-    // if (verified && customToken) {
-    //     const auth = getAuth();
-    //     await signInWithCustomToken(auth, customToken);
-    //     router.push('/dashboard');
-    // } else {
-    //     // Fehlerbehandlung
-    // }
+        // Schritt 4: Mit dem Custom Token bei Firebase anmelden
+        if (verified && customToken) {
+            const auth = getAuth();
+            await signInWithCustomToken(auth, customToken);
+            router.push('/dashboard');
+        } else {
+            throw new Error('Anmelde-Verifizierung fehlgeschlagen.');
+        }
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Passkey-Anmeldung fehlgeschlagen',
+            description: error.message || 'Ein unbekannter Fehler ist aufgetreten.'
+        });
+    }
   };
 
   return (

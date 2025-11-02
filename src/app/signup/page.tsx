@@ -70,35 +70,41 @@ export default function SignUpPage() {
       toast({ variant: 'destructive', title: 'Benutzername fehlt', description: 'Bitte gib zuerst einen Benutzernamen ein.' });
       return;
     }
-    // Diese Funktion ist ein Platzhalter. Hier würden Sie die WebAuthn-Logik implementieren.
-    toast({
-        title: "Noch nicht implementiert",
-        description: "Die Passkey-Registrierung muss noch eingerichtet werden."
-    });
+    
+    try {
+        // Schritt 1: Registrierungs-Optionen vom Server abrufen
+        const responseOptions = await fetch(`/api/passkey/generate-registration-options?username=${encodeURIComponent(username)}`);
+        const options = await responseOptions.json();
+        if(responseOptions.status !== 200) throw new Error(options.error);
 
-    // Schritt 1: Registrierungs-Optionen vom Server abrufen
-    // const responseOptions = await fetch(`/api/passkey/generate-registration-options?username=${username}`);
-    // const options = await responseOptions.json();
+        // Schritt 2: Browser zur Erstellung eines Passkeys auffordern
+        const registrationResponse = await startRegistration(options);
 
-    // Schritt 2: Browser zur Erstellung eines Passkeys auffordern
-    // const registrationResponse = await startRegistration(options);
+        // Schritt 3: Antwort an den Server zur Verifizierung senden
+        const responseVerification = await fetch('/api/passkey/verify-registration', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, ...registrationResponse }),
+        });
+        const { verified, customToken, error } = await responseVerification.json();
 
-    // Schritt 3: Antwort an den Server zur Verifizierung senden
-    // const responseVerification = await fetch('/api/passkey/verify-registration', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ username, ...registrationResponse }),
-    // });
-    // const { verified, customToken } = await responseVerification.json();
+        if (responseVerification.status !== 200) throw new Error(error);
 
-    // Schritt 4: Mit dem Custom Token bei Firebase anmelden
-    // if (verified && customToken) {
-    //     const auth = getAuth();
-    //     await signInWithCustomToken(auth, customToken);
-    //     router.push('/dashboard');
-    // } else {
-    //     // Fehlerbehandlung
-    // }
+        // Schritt 4: Mit dem Custom Token bei Firebase anmelden
+        if (verified && customToken) {
+            const auth = getAuth();
+            await signInWithCustomToken(auth, customToken);
+            router.push('/dashboard');
+        } else {
+            throw new Error('Verifizierung fehlgeschlagen.');
+        }
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Passkey-Registrierung fehlgeschlagen',
+            description: error.message || 'Ein unbekannter Fehler ist aufgetreten.'
+        });
+    }
   }
 
   return (
