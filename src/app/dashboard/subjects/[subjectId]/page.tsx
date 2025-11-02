@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, ChangeEvent, useEffect } from 'react';
@@ -797,7 +798,7 @@ export default function SubjectDetailPage() {
                   onDelete={() => { forceUpdate(); fetchAllVocab(); }}
                   onRename={() => { forceUpdate(); fetchAllVocab(); }}
                   onSelectionChange={handleSelectionChange}
-                  onAddVocab={() => openAddVocabDialog(stack)}
+                  onAddVocab={openAddVocabDialog}
                 />
               ))}
             </div>
@@ -1046,5 +1047,7 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
+    
 
     

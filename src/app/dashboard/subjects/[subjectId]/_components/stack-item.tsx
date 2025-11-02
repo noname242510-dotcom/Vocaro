@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -139,7 +140,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
             <Badge variant="secondary">{vocabulary.length || 0} Vokabeln</Badge>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); onAddVocab(stack); }}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100" onClick={() => onAddVocab(stack)}>
                 <Plus className="h-4 w-4" />
             </Button>
 
@@ -242,5 +243,7 @@ declare module '@/lib/types' {
         isSelected?: boolean;
     }
 }
+
+    
 
     
