@@ -249,7 +249,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
       {Object.entries(groupedTenses).map(([group, tenses]) => (
         <div key={group}>
           <h4 className="font-semibold text-sm text-muted-foreground mb-2 px-1">{group}</h4>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+          <div className="grid grid-cols-3 gap-x-6 gap-y-3">
             {tenses.map((tense) => (
               <div key={tense} className="flex items-center">
                 <span className="text-sm">{tense}</span>
