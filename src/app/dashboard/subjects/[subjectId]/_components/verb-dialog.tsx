@@ -20,6 +20,8 @@ import { z } from 'zod';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+
 
 interface VerbDialogProps {
   isOpen: boolean;
@@ -243,13 +245,12 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
   const displayLanguage = languageDisplayNames[language] || language;
   const foreignPronounKey = language.toLowerCase() as keyof typeof pronounOrder;
 
-
   const TenseList = ({ groupedTenses, forms, formType, pronounKey }: { groupedTenses: Record<string, string[]>, forms?: Record<string, VerbTense>, formType: 'forms' | 'germanForms', pronounKey: keyof typeof pronounOrder }) => (
-    <div className="space-y-4">
+    <div style={{ columnCount: 3, columnGap: '2rem' }}>
       {Object.entries(groupedTenses).map(([group, tenses]) => (
-        <div key={group}>
+        <div key={group} className='mb-4' style={{ breakInside: 'avoid' }}>
           <h4 className="font-semibold text-sm text-muted-foreground mb-2 px-1">{group}</h4>
-          <div className="grid grid-cols-4 gap-x-6 gap-y-3">
+          <div className="flex flex-col gap-1">
             {tenses.map((tense) => (
               <div key={tense} className="flex items-center">
                 <span className="text-sm">{tense}</span>
@@ -346,7 +347,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                 </div>
             </div>
             
-            <Tabs defaultValue="foreign" className="mt-2 flex-grow min-h-0">
+            <Tabs defaultValue="foreign" className="mt-2 flex-grow min-h-0 flex flex-col">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
                 <TabsTrigger value="german">Deutsch</TabsTrigger>
@@ -363,7 +364,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
               </ScrollArea>
             </Tabs>
             
-            <DialogFooter className="pt-6 mt-auto border-t">
+            <DialogFooter className="pt-4 mt-auto border-t">
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Verb speichern
