@@ -805,8 +805,8 @@ export default function SubjectDetailPage() {
           )}
         </TabsContent>
         <TabsContent value="verbs" className="mt-6">
-          <div className="flex justify-between items-center mb-4 gap-4">
-              <div className="relative w-full max-w-sm">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-4">
+              <div className="relative w-full md:max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
                     placeholder="Verben durchsuchen..." 
@@ -815,7 +815,7 @@ export default function SubjectDetailPage() {
                     onChange={e => setVerbSearchQuery(e.target.value)}
                   />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 justify-end">
                 <Dialog open={isTenseSelectionDialogOpen} onOpenChange={setIsTenseSelectionDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" disabled={selectedVerbsCount === 0} onClick={handleOpenTenseDialog}>
@@ -875,7 +875,7 @@ export default function SubjectDetailPage() {
                 </Dialog>
 
 
-                <Button onClick={handleAddNewVerb} size="default" className="md:w-auto">
+                <Button onClick={handleAddNewVerb} size="default">
                     <Plus className="h-4 w-4 md:mr-2" />
                     <span className="hidden md:inline">Verb hinzufügen</span>
                 </Button>
@@ -1052,6 +1052,7 @@ export default function SubjectDetailPage() {
     
 
     
+
 
 
 
