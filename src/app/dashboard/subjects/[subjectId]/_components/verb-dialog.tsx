@@ -344,12 +344,12 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                 </div>
             </div>
             
-            <Tabs defaultValue="foreign" className="mt-2 flex-grow min-h-0">
+            <Tabs defaultValue="foreign" className="mt-2 flex-grow min-h-0 flex flex-col">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
                 <TabsTrigger value="german">Deutsch</TabsTrigger>
               </TabsList>
-              <ScrollArea className="mt-4 flex-grow" type="always">
+              <ScrollArea className="mt-2 flex-grow" type="always">
                 <TabsContent value="foreign" className="mt-0 pr-6">
                     <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
                 </TabsContent>
@@ -359,12 +359,12 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
               </ScrollArea>
             </Tabs>
             
-            <DialogFooter className="pt-4 mt-auto border-t">
+            <div className="pt-4 mt-auto border-t flex justify-end">
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Verb speichern
               </Button>
-            </DialogFooter>
+            </div>
           </>
         )}
       </DialogContent>
