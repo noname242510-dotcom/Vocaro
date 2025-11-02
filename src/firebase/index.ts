@@ -6,7 +6,7 @@ import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
-export function initializeFirebase() {
+export async function initializeFirebase() {
   if (!getApps().length) {
     // Important! initializeApp() is called without any arguments because Firebase App Hosting
     // integrates with the initializeApp() function to provide the environment variables needed to
@@ -25,16 +25,16 @@ export function initializeFirebase() {
       firebaseApp = initializeApp(firebaseConfig);
     }
 
-    return getSdks(firebaseApp);
+    return await getSdks(firebaseApp);
   }
 
   // If already initialized, return the SDKs with the already initialized App
-  return getSdks(getApp());
+  return await getSdks(getApp());
 }
 
-export function getSdks(firebaseApp: FirebaseApp) {
+export async function getSdks(firebaseApp: FirebaseApp) {
   const auth = getAuth(firebaseApp);
-  setPersistence(auth, browserLocalPersistence);
+  await setPersistence(auth, browserLocalPersistence);
   return {
     firebaseApp,
     auth: auth,
