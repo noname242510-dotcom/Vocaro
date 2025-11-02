@@ -379,7 +379,7 @@ export default function LearnPage() {
           </div>
           )}
        </div>
-       {history.length > 0 && isFlipped && (
+       {history.length > 0 && !isFlipped && (
           <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
             Zurück
           </Button>
