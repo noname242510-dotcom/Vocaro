@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, ChangeEvent, useEffect } from 'react';
@@ -798,14 +799,14 @@ export default function SubjectDetailPage() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-start gap-4 pr-12">
                             <div>
                                 <DialogTitle>Zeiten global auswählen</DialogTitle>
                                 <DialogDescription>
                                 Wähle Zeiten für {selectedVerbsCount} ausgewählte Verben.
                                 </DialogDescription>
                             </div>
-                            <Button variant="outline" onClick={handleToggleAllTenses} className="text-sm h-8">
+                            <Button variant="outline" onClick={handleToggleAllTenses} className="text-sm h-8 flex-shrink-0">
                                 {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
                             </Button>
                         </div>
