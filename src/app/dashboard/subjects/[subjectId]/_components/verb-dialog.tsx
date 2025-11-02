@@ -240,7 +240,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
   const foreignPronounKey = language.toLowerCase() as keyof typeof pronounOrder;
 
   const TenseList = ({ groupedTenses, forms, formType, pronounKey }: { groupedTenses: Record<string, string[]>, forms?: Record<string, VerbTense>, formType: 'forms' | 'germanForms', pronounKey: keyof typeof pronounOrder }) => (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-x-6 gap-y-4">
+    <div style={{ columnCount: 3, columnGap: '2rem' }}>
       {Object.entries(groupedTenses).map(([group, tenses]) => (
         <div key={group} className='mb-4' style={{ breakInside: 'avoid' }}>
           <h4 className="font-semibold text-sm text-muted-foreground mb-2 px-1">{group}</h4>
@@ -290,7 +290,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
         className="sm:max-w-4xl flex flex-col max-h-[90vh]"
         onInteractOutside={(e) => e.preventDefault()}
       >
-        <DialogHeader>
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>{existingVerb ? 'Verb bearbeiten' : 'Neues Verb hinzufügen'}</DialogTitle>
           <DialogDescription>
             {generatedData ? 'Überprüfe und bearbeite die generierten Formen.' : 'Gib ein Verb im Infinitiv ein, um alle Formen zu generieren.'}
@@ -345,24 +345,24 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
             </div>
             
             <div className="flex-grow min-h-0">
-              <ScrollArea className="h-full pr-6">
-                  <Tabs defaultValue="foreign" className="mt-2">
-                      <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
-                          <TabsTrigger value="german">Deutsch</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="foreign" className="mt-4">
-                          <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
-                      </TabsContent>
-                      <TabsContent value="german" className="mt-4">
-                          <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
-                      </TabsContent>
-                  </Tabs>
-              </ScrollArea>
+                <ScrollArea className="h-full pr-6" type="always">
+                    <Tabs defaultValue="foreign" className="mt-2">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
+                            <TabsTrigger value="german">Deutsch</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="foreign" className="mt-4">
+                            <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
+                        </TabsContent>
+                        <TabsContent value="german" className="mt-4">
+                            <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
+                        </TabsContent>
+                    </Tabs>
+                </ScrollArea>
             </div>
             
-            <div className="pt-4 flex-shrink-0 flex justify-end">
-              <Button onClick={handleSave} disabled={isSaving}>
+            <div className="pt-4 mt-auto flex-shrink-0 flex justify-end">
+               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Verb speichern
               </Button>
