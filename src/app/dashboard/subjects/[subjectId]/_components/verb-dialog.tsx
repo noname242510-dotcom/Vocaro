@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -239,7 +240,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
   const foreignPronounKey = language.toLowerCase() as keyof typeof pronounOrder;
 
   const TenseList = ({ groupedTenses, forms, formType, pronounKey }: { groupedTenses: Record<string, string[]>, forms?: Record<string, VerbTense>, formType: 'forms' | 'germanForms', pronounKey: keyof typeof pronounOrder }) => (
-    <div className="grid grid-cols-3 gap-x-6 gap-y-4">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-x-6 gap-y-4">
       {Object.entries(groupedTenses).map(([group, tenses]) => (
         <div key={group} className='mb-4' style={{ breakInside: 'avoid' }}>
           <h4 className="font-semibold text-sm text-muted-foreground mb-2 px-1">{group}</h4>
@@ -344,8 +345,8 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
             </div>
             
             <div className="flex-grow min-h-0">
-                <ScrollArea className="h-full" type="always">
-                    <Tabs defaultValue="foreign" className="mt-2 flex-grow min-h-0 flex flex-col pr-6">
+                <ScrollArea className="h-full pr-6">
+                    <Tabs defaultValue="foreign" className="mt-2">
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
                             <TabsTrigger value="german">Deutsch</TabsTrigger>
