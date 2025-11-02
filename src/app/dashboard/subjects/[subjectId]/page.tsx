@@ -773,6 +773,7 @@ export default function SubjectDetailPage() {
                   onDelete={() => { forceUpdate(); fetchAllVocab(); }}
                   onRename={() => { forceUpdate(); fetchAllVocab(); }}
                   onSelectionChange={handleSelectionChange}
+                  onVocabAdded={fetchAllVocab}
                 />
               ))}
             </div>
@@ -799,17 +800,17 @@ export default function SubjectDetailPage() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                        <div className="flex justify-between items-start gap-4 pr-12">
-                            <div>
-                                <DialogTitle>Zeiten global auswählen</DialogTitle>
-                                <DialogDescription>
-                                Wähle Zeiten für {selectedVerbsCount} ausgewählte Verben.
-                                </DialogDescription>
-                            </div>
-                            <Button variant="outline" onClick={handleToggleAllTenses} className="text-sm h-8 flex-shrink-0">
-                                {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
-                            </Button>
-                        </div>
+                      <div className="flex justify-between items-start gap-4">
+                          <div>
+                              <DialogTitle>Zeiten global auswählen</DialogTitle>
+                              <DialogDescription>
+                              Wähle Zeiten für {selectedVerbsCount} ausgewählte Verben.
+                              </DialogDescription>
+                          </div>
+                          <Button variant="outline" onClick={handleToggleAllTenses} className="text-sm h-8 flex-shrink-0">
+                              {allTempTensesSelected ? 'Alle abwählen' : 'Alle auswählen'}
+                          </Button>
+                      </div>
                     </DialogHeader>
                     <ScrollArea className="max-h-64 -mx-6 px-6">
                       <div className="p-1 space-y-4">
