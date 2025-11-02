@@ -4,6 +4,7 @@ import "./globals.css";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { PT_Sans, Merriweather, Inconsolata } from 'next/font/google';
 import { cn } from "@/lib/utils";
+import { ClientToaster } from "@/components/client-toaster";
 
 export const metadata: Metadata = {
   title: "Vocaro",
@@ -39,7 +40,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           {children}
         </FirebaseClientProvider>
-        <Toaster />
+        <ClientToaster />
       </body>
     </html>
   );
