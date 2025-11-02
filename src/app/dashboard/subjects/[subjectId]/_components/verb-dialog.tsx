@@ -245,7 +245,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                     <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
                     <TabsTrigger value="german">Deutsch</TabsTrigger>
                 </TabsList>
-                 <ScrollArea className="max-h-[50vh]">
+                 <ScrollArea className="max-h-[60vh]">
                     <div className="p-1">
                         <TabsContent value="foreign">
                             {sortedTenses.map(([tense, forms]) => (
