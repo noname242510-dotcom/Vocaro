@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -13,15 +12,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Loader2, Wand2, AlertTriangle, Save, ChevronDown } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Loader2, Wand2, AlertTriangle, Save, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateVerbForms, type GenerateVerbFormsOutput } from '@/ai/flows/generate-verb-forms';
 import type { Verb, VerbTense } from '@/lib/types';
 import { z } from 'zod';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface VerbDialogProps {
   isOpen: boolean;
@@ -37,24 +35,60 @@ const GenerateVerbFormsInputSchema = z.object({
 });
 type GenerateVerbFormsInput = z.infer<typeof GenerateVerbFormsInputSchema>;
 
-const tenseOrderConfig: { [key: string]: string[] } = {
-    'Indicatif': [
-        'Indicatif Présent', 'Indicatif Imparfait', 'Indicatif Passé composé', 
-        'Indicatif Plus-que-parfait', 'Indicatif Futur simple', 'Indicatif Futur antérieur'
-    ],
-    'Conditionnel': ['Conditionnel Présent', 'Conditionnel Passé'],
-    'Subjonctif': ['Subjonctif Présent', 'Subjonctif Passé'],
-    'Autres formes': ['Impératif Présent', 'Infinitif Présent', 'Participe Présent', 'Participe Passé'],
-    'Present': [
-        'Simple Present', 'Present Progressive', 'Present Perfect', 'Present Perfect Progressive'
-    ],
-    'Past': [
-        'Simple Past', 'Past Progressive', 'Past Perfect', 'Past Perfect Progressive'
-    ],
-    'Future': [
-        'Simple Future', 'Future Progressive', 'Future Perfect', 'Future Perfect Progressive'
-    ],
-    'Other Forms': ['Imperative', 'Infinitive', 'Present Participle', 'Past Participle']
+const tenseOrder: { [key: string]: string[] } = {
+  'Indicatif': [
+    'Indicatif Présent',
+    'Indicatif Imparfait',
+    'Indicatif Passé composé',
+    'Indicatif Plus-que-parfait',
+    'Indicatif Futur simple',
+    'Indicatif Futur antérieur'
+  ],
+  'Conditionnel': [
+    'Conditionnel Présent',
+    'Conditionnel Passé'
+  ],
+  'Subjonctif': [
+    'Subjonctif Présent',
+    'Subjonctif Passé'
+  ],
+  'Autres formes': [
+    'Impératif Présent',
+    'Infinitif Présent',
+    'Participe Présent',
+    'Participe Passé'
+  ],
+  'Present': [
+    'Simple Present',
+    'Present Progressive',
+    'Present Perfect',
+    'Present Perfect Progressive'
+  ],
+  'Past': [
+    'Simple Past',
+    'Past Progressive',
+    'Past Perfect',
+    'Past Perfect Progressive'
+  ],
+  'Future': [
+    'Simple Future',
+    'Future Progressive',
+    'Future Perfect',
+    'Future Perfect Progressive'
+  ],
+  'Other Forms': [
+    'Imperative',
+    'Infinitive',
+    'Present Participle',
+    'Past Participle'
+  ]
+};
+
+const pronounOrder: { [key: string]: string[] } = {
+  french: ["je", "tu", "il/elle/on", "nous", "vous", "ils/elles", "(tu)", "(nous)", "(vous)", "form"],
+  english: ["I", "you", "he/she/it", "we", "they", "form"],
+  german: ["ich", "du", "er/sie/es", "wir", "ihr", "sie/Sie", "form"],
+  default: ["form"]
 };
 
 const languageDisplayNames: { [key: string]: string } = {
@@ -159,30 +193,101 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     onOpenChange(open);
   }
 
-  const sortedTenses = useMemo(() => {
-    if (!generatedData) return [];
-    
-    const allTenses = Object.keys(generatedData.forms);
+  const getGroupedTenses = (forms: Verb['forms'] | Verb['germanForms']) => {
+    if (!forms) return {};
+    const allTenses = Object.keys(forms);
     const isFrench = allTenses.some(t => t.startsWith('Indicatif'));
-    const orderKeys = isFrench 
-      ? ['Indicatif', 'Conditionnel', 'Subjonctif', 'Autres formes']
-      : ['Present', 'Past', 'Future', 'Other Forms'];
-      
-    const orderedTenseList = orderKeys.flatMap(key => tenseOrderConfig[key] || []);
-    
-    const sorted = allTenses.sort((a, b) => {
-        const indexA = orderedTenseList.indexOf(a);
-        const indexB = orderedTenseList.indexOf(b);
-        if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+
+    const groups = isFrench 
+        ? ['Indicatif', 'Conditionnel', 'Subjonctif', 'Autres formes'] 
+        : ['Present', 'Past', 'Future', 'Other Forms'];
+        
+    const grouped: { [key: string]: string[] } = {};
+
+    for (const group of groups) {
+        const tensesInGroup = tenseOrder[group]?.filter(tense => allTenses.includes(tense));
+        if (tensesInGroup && tensesInGroup.length > 0) {
+        grouped[group] = tensesInGroup;
+        }
+    }
+
+    const ungroupedTenses = allTenses.filter(tense => !Object.values(tenseOrder).flat().includes(tense));
+    if (ungroupedTenses.length > 0) {
+        grouped['Uncategorized'] = ungroupedTenses;
+    }
+
+    return grouped;
+  }
+
+  const getSortedPronouns = (tenseForms: VerbTense, langKey: 'french' | 'english' | 'german' | 'default') => {
+    const currentPronounOrder = pronounOrder[langKey] || pronounOrder.default;
+    const getSortIndex = (pronoun: string) => {
+        if (pronoun.toLowerCase().startsWith("j'")) {
+            return currentPronounOrder.indexOf("je");
+        }
+        return currentPronounOrder.indexOf(pronoun);
+    };
+
+    return Object.keys(tenseForms).sort((a, b) => {
+        const indexA = getSortIndex(a);
+        const indexB = getSortIndex(b);
         if (indexA === -1) return 1;
         if (indexB === -1) return -1;
         return indexA - indexB;
     });
+  };
 
-    return sorted.map(tense => [tense, generatedData.forms[tense]]);
-  }, [generatedData]);
+  const groupedForeignTenses = useMemo(() => getGroupedTenses(generatedData?.forms), [generatedData]);
+  const groupedGermanTenses = useMemo(() => getGroupedTenses(generatedData?.germanForms), [generatedData]);
 
   const displayLanguage = languageDisplayNames[language] || language;
+  const foreignPronounKey = language.toLowerCase() as keyof typeof pronounOrder;
+
+
+  const TenseList = ({ groupedTenses, forms, formType, pronounKey }: { groupedTenses: Record<string, string[]>, forms?: Record<string, VerbTense>, formType: 'forms' | 'germanForms', pronounKey: keyof typeof pronounOrder }) => (
+    <div className="space-y-4">
+      {Object.entries(groupedTenses).map(([group, tenses]) => (
+        <div key={group}>
+          <h4 className="font-semibold text-sm text-muted-foreground mb-2 px-1">{group}</h4>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+            {tenses.map((tense) => (
+              <div key={tense} className="flex items-center">
+                <span className="text-sm">{tense}</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 ml-2 text-muted-foreground hover:text-foreground">
+                      <Info className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-2">
+                      <h4 className="font-medium leading-none">{tense}</h4>
+                      <div className="text-sm text-muted-foreground space-y-2 mt-2">
+                        {forms?.[tense] && getSortedPronouns(forms[tense], pronounKey).map(pronoun => (
+                          <div key={pronoun} className="grid grid-cols-[1fr,2fr] items-center gap-2">
+                            <Label htmlFor={`${formType}-${tense}-${pronoun}`} className="text-right text-xs">
+                              {pronoun}
+                            </Label>
+                            <Input
+                              id={`${formType}-${tense}-${pronoun}`}
+                              value={forms[tense][pronoun]}
+                              onChange={(e) => handleFormChange(tense, pronoun, e.target.value, formType)}
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -224,90 +329,46 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
             </DialogFooter>
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4 pt-4 pb-2">
+          <div className="flex flex-col flex-grow min-h-0">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 pb-4 border-b">
                 <div>
-                    <Label htmlFor="infinitive-display" className="text-lg font-semibold">{generatedData.infinitive}</Label>
+                    <Label htmlFor="infinitive-display" className="text-sm font-medium text-muted-foreground">Infinitiv</Label>
+                    <p id="infinitive-display" className="text-lg font-semibold">{generatedData.infinitive}</p>
                 </div>
                  <div>
-                    <Label htmlFor="translation" className="text-lg font-semibold">Deutsche Übersetzung</Label>
+                    <Label htmlFor="translation" className="text-sm font-medium text-muted-foreground">Deutsche Übersetzung</Label>
                     <Input
                         id="translation"
                         value={generatedData.translation}
                         onChange={(e) => handleTranslationChange(e.target.value)}
-                        className="mt-2"
+                        className="mt-1"
                     />
                 </div>
             </div>
             
-            <Tabs defaultValue="foreign" className="mt-2 flex-grow min-h-0 flex flex-col">
+            <Tabs defaultValue="foreign" className="mt-4 flex-grow min-h-0 flex flex-col">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
                 <TabsTrigger value="german">Deutsch</TabsTrigger>
               </TabsList>
-              <ScrollArea className="mt-2 flex-grow">
-                <div className="p-1">
+              
+              <ScrollArea className="mt-4 flex-grow pr-4 -mr-4">
                   <TabsContent value="foreign" className="mt-0">
-                    {sortedTenses.map(([tense, forms]) => (
-                      <Collapsible key={tense as string} className="space-y-2 p-2">
-                        <CollapsibleTrigger className="font-semibold text-lg w-full text-left flex justify-between items-center">
-                          <span>{tense as string}</span>
-                          <ChevronDown className="h-5 w-5 transition-transform-all [&[data-state=open]]:rotate-180" />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-3 pl-4">
-                          {Object.entries(forms).map(([pronoun, form]) => (
-                            <div key={pronoun} className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor={`${tense}-${pronoun}`} className="text-right text-muted-foreground">
-                                {pronoun}
-                              </Label>
-                              <Input
-                                id={`${tense}-${pronoun}`}
-                                value={form as string}
-                                onChange={(e) => handleFormChange(tense as string, pronoun, e.target.value, 'forms')}
-                                className="col-span-3"
-                              />
-                            </div>
-                          ))}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    ))}
+                      <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
                   </TabsContent>
                   <TabsContent value="german" className="mt-0">
-                    {generatedData.germanForms && sortedTenses.map(([tense]) => (
-                      <Collapsible key={`de-${tense as string}`} className="space-y-2 p-2">
-                        <CollapsibleTrigger className="font-semibold text-lg w-full text-left flex justify-between items-center">
-                          <span>{tense as string}</span>
-                          <ChevronDown className="h-5 w-5 transition-transform-all [&[data-state=open]]:rotate-180" />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-3 pl-4">
-                          {generatedData.germanForms?.[tense as string] && Object.entries(generatedData.germanForms[tense as string]).map(([pronoun, form]) => (
-                            <div key={`de-${pronoun}`} className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor={`de-${tense}-${pronoun}`} className="text-right text-muted-foreground">
-                                {pronoun}
-                              </Label>
-                              <Input
-                                id={`de-${tense}-${pronoun}`}
-                                value={form as string}
-                                onChange={(e) => handleFormChange(tense as string, pronoun, e.target.value, 'germanForms')}
-                                className="col-span-3"
-                              />
-                            </div>
-                          ))}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    ))}
+                     <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
                   </TabsContent>
-                </div>
               </ScrollArea>
             </Tabs>
             
-            <DialogFooter className="pt-4 mt-auto">
+            <DialogFooter className="pt-6 mt-auto border-t">
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Verb speichern
               </Button>
             </DialogFooter>
-          </>
+          </div>
         )}
       </DialogContent>
     </Dialog>
