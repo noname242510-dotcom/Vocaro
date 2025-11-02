@@ -7,7 +7,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -240,7 +239,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
   const foreignPronounKey = language.toLowerCase() as keyof typeof pronounOrder;
 
   const TenseList = ({ groupedTenses, forms, formType, pronounKey }: { groupedTenses: Record<string, string[]>, forms?: Record<string, VerbTense>, formType: 'forms' | 'germanForms', pronounKey: keyof typeof pronounOrder }) => (
-    <div className="grid grid-cols-3 gap-x-6 gap-y-4">
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-x-6 gap-y-4">
       {Object.entries(groupedTenses).map(([group, tenses]) => (
         <div key={group} className='mb-4' style={{ breakInside: 'avoid' }}>
           <h4 className="font-semibold text-sm text-muted-foreground mb-2 px-1">{group}</h4>
@@ -288,7 +287,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     <Dialog open={isOpen} onOpenChange={handleOpenChange} modal={true}>
       <DialogContent 
         className="sm:max-w-4xl flex flex-col max-h-[90vh]"
-        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <DialogTitle>{existingVerb ? 'Verb bearbeiten' : 'Neues Verb hinzufügen'}</DialogTitle>
@@ -319,12 +318,12 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                     <p>{error}</p>
                 </div>
             )}
-            <DialogFooter>
+            <div className="flex justify-end">
                 <Button onClick={handleGenerate} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                 Formen generieren
               </Button>
-            </DialogFooter>
+            </div>
           </div>
         ) : (
           <>
@@ -359,7 +358,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
               </ScrollArea>
             </Tabs>
             
-            <div className="pt-4 mt-auto border-t flex justify-end">
+            <div className="pt-4 mt-auto flex justify-end">
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Verb speichern
