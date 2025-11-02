@@ -108,7 +108,7 @@ const generateVerbFormsFlow = ai.defineFlow(
   {
     name: 'generateVerbFormsFlow',
     inputSchema: GenerateVerbFormsInputSchema,
-    outputSchema: z.custom<GenerateVerbFormsOutput>(),
+    outputSchema: AISchema,
   },
   async (input) => {
     let tenses, pronouns;
@@ -125,7 +125,7 @@ const generateVerbFormsFlow = ai.defineFlow(
       pronouns = englishPronouns;
     }
     
-    const { output: aiResponse } = await prompt({
+    const { output } = await prompt({
       verb: input.verb,
       language: input.language,
       tenses,
@@ -133,31 +133,33 @@ const generateVerbFormsFlow = ai.defineFlow(
       germanPronouns: germanPronouns,
     });
 
-    if (!aiResponse) {
+    if (!output) {
       throw new Error('AI failed to generate verb forms.');
     }
-
-    // Helper function to transform the flat array into the nested object structure
-    const structureForms = (conjugations: z.infer<typeof FlatConjugationSchema>[]) => {
-        const structured: GenerateVerbFormsOutput['forms'] = {};
-        for (const conjugation of conjugations) {
-            if (!structured[conjugation.tense]) {
-                structured[conjugation.tense] = {};
-            }
-            structured[conjugation.tense][conjugation.pronoun] = conjugation.form;
-        }
-        return structured;
-    }
-
-    return {
-      infinitive: input.verb,
-      translation: aiResponse.translation,
-      forms: structureForms(aiResponse.conjugations),
-      germanForms: structureForms(aiResponse.germanConjugations),
-    };
+    
+    return output;
   }
 );
 
 export async function generateVerbForms(input: GenerateVerbFormsInput): Promise<GenerateVerbFormsOutput> {
-  return generateVerbFormsFlow(input);
+  const aiResponse = await generateVerbFormsFlow(input);
+  
+  // Helper function to transform the flat array into the nested object structure
+  const structureForms = (conjugations: z.infer<typeof FlatConjugationSchema>[]) => {
+      const structured: GenerateVerbFormsOutput['forms'] = {};
+      for (const conjugation of conjugations) {
+          if (!structured[conjugation.tense]) {
+              structured[conjugation.tense] = {};
+          }
+          structured[conjugation.tense][conjugation.pronoun] = conjugation.form;
+      }
+      return structured;
+  }
+
+  return {
+    infinitive: input.verb,
+    translation: aiResponse.translation,
+    forms: structureForms(aiResponse.conjugations),
+    germanForms: structureForms(aiResponse.germanConjugations),
+  };
 }
