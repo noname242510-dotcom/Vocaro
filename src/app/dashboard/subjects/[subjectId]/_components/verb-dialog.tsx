@@ -87,9 +87,9 @@ const tenseOrder: { [key: string]: string[] } = {
 };
 
 const pronounOrder: { [key: string]: string[] } = {
-  french: ["je", "tu", "il/elle/on", "nous", "vous", "ils/elles", "(tu)", "(nous)", "(vous)", "form"],
+  french: ["je", "j'", "tu", "il/elle/on", "nous", "vous", "ils/elles", "(tu)", "(nous)", "(vous)", "form"],
   english: ["I", "you", "he/she/it", "we", "they", "form"],
-  german: ["ich", "du", "er/sie/es", "wir", "ihr", "sie/Sie", "form"],
+  german: ["ich", "du", "er/sie/es", "wir", "ihr", "sie/Sie", "form", "(du)", "(wir)", "(ihr)"],
   default: ["form"]
 };
 
@@ -221,18 +221,12 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     return grouped;
   }
 
-  const getSortedPronouns = (tenseForms: VerbTense, langKey: 'french' | 'english' | 'german' | 'default') => {
+  const getSortedPronouns = (tenseForms: VerbTense, langKey: keyof typeof pronounOrder) => {
     const currentPronounOrder = pronounOrder[langKey] || pronounOrder.default;
-    const getSortIndex = (pronoun: string) => {
-        if (pronoun.toLowerCase().startsWith("j'")) {
-            return currentPronounOrder.indexOf("je");
-        }
-        return currentPronounOrder.indexOf(pronoun);
-    };
-
     return Object.keys(tenseForms).sort((a, b) => {
-        const indexA = getSortIndex(a);
-        const indexB = getSortIndex(b);
+        const indexA = currentPronounOrder.indexOf(a);
+        const indexB = currentPronounOrder.indexOf(b);
+        if (indexA === -1 && indexB === -1) return 0;
         if (indexA === -1) return 1;
         if (indexB === -1) return -1;
         return indexA - indexB;
@@ -246,7 +240,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
   const foreignPronounKey = language.toLowerCase() as keyof typeof pronounOrder;
 
   const TenseList = ({ groupedTenses, forms, formType, pronounKey }: { groupedTenses: Record<string, string[]>, forms?: Record<string, VerbTense>, formType: 'forms' | 'germanForms', pronounKey: keyof typeof pronounOrder }) => (
-    <div style={{ columnCount: 3, columnGap: '2rem' }}>
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(18rem,1fr))] gap-x-8 gap-y-4">
       {Object.entries(groupedTenses).map(([group, tenses]) => (
         <div key={group} className='mb-4' style={{ breakInside: 'avoid' }}>
           <h4 className="font-semibold text-sm text-muted-foreground mb-2 px-1">{group}</h4>
@@ -352,8 +346,8 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                 <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
                 <TabsTrigger value="german">Deutsch</TabsTrigger>
               </TabsList>
-              <ScrollArea className="mt-2 flex-grow">
-                <div className="p-4">
+              <ScrollArea className="mt-4 flex-grow">
+                <div className="px-4 pb-4">
                   <TabsContent value="foreign" className="mt-0">
                       <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
                   </TabsContent>
