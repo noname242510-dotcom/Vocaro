@@ -35,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de" className="light">
-      <body className={cn("antialiased min-h-screen font-creative", ptSans.variable, merriweather.variable, inconsolata.variable)}>
+      <body className={cn("antialiased min-h-screen font-body", ptSans.variable, merriweather.variable, inconsolata.variable)}>
         <FirebaseClientProvider>
           {children}
         </FirebaseClientProvider>

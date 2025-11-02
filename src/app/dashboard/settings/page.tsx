@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 export default function SettingsPage() {
   const { user, isUserLoading } = useFirebase();
   const router = useRouter();
-  const [font, setFont] = useState('font-creative');
+  const [font, setFont] = useState('font-body');
   const [enableConfetti, setEnableConfetti] = useState(true);
   
   // Vocab settings
@@ -32,7 +32,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // Load persisted settings on mount
-    const persistedFont = localStorage.getItem('app-font') || 'font-creative';
+    const persistedFont = localStorage.getItem('app-font') || 'font-body';
     handleFontChange(persistedFont);
 
     const persistedConfetti = localStorage.getItem('enable-confetti');
