@@ -67,7 +67,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -105,11 +104,12 @@ export default function SubjectDetailPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isProcessingOcr, setIsProcessingOcr] = useState(false);
   const [newStackName, setNewStackName] = useState('');
+  const [isStackNameLocked, setIsStackNameLocked] = useState(false);
   const [manualTerm, setManualTerm] = useState('');
   const [manualDefinition, setManualDefinition] = useState('');
   const [manualNotes, setManualNotes] = useState('');
   const [isAddingManually, setIsAddingManually] = useState(false);
-  const [isOcrDialogOpen, setIsOcrDialogOpen] = useState(false);
+  const [isAddVocabDialogOpen, setIsAddVocabDialogOpen] = useState(false);
   const [isDeleteVocabDialogOpen, setIsDeleteVocabDialogOpen] = useState(false);
 
   // Subject state
@@ -324,11 +324,7 @@ export default function SubjectDetailPage() {
 
       toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im neuen Stapel "${newStackName}" gespeichert.` });
       
-      setNewStackName('');
-      setPreviewImage(null);
-      setIsOcrDialogOpen(false);
-      forceUpdate();
-      fetchAllVocab();
+      resetAndCloseAddVocabDialog();
 
     } catch (error: any) {
       console.error("Error during OCR and save process:", error);
@@ -355,14 +351,10 @@ export default function SubjectDetailPage() {
 
         if (existingStacks && existingStacks.length > 0) {
             stackRef = doc(stacksCollectionRef, existingStacks[0].id);
-            await updateDoc(stackRef, {
-                vocabCount: (existingStacks[0].vocabCount || 0) + 1
-            });
         } else {
             stackRef = await addDoc(stacksCollectionRef, {
                 name: newStackName,
                 createdAt: serverTimestamp(),
-                vocabCount: 1,
                 subjectId: subjectId,
             });
         }
@@ -379,10 +371,11 @@ export default function SubjectDetailPage() {
         setManualTerm('');
         setManualDefinition('');
         setManualNotes('');
+        
         if (closeOnFinish) {
-          setNewStackName('');
-          setIsOcrDialogOpen(false);
+          resetAndCloseAddVocabDialog();
         }
+        
         forceUpdate();
         fetchAllVocab();
 
@@ -393,10 +386,6 @@ export default function SubjectDetailPage() {
         setIsAddingManually(false);
     }
   };
-  
-  const handleAddMoreVocabulary = () => {
-    handleAddManualVocabulary(false);
-  }
   
   const handleSelectionChange = (vocabId: string, isSelected: boolean) => {
     setAllVocabulary(currentVocab => {
@@ -474,6 +463,28 @@ export default function SubjectDetailPage() {
       setIsDeleteVocabDialogOpen(false);
     }
   };
+  
+  const openAddVocabDialog = (stackName?: string) => {
+    if (stackName) {
+      setNewStackName(stackName);
+      setIsStackNameLocked(true);
+    } else {
+      setNewStackName('');
+      setIsStackNameLocked(false);
+    }
+    setIsAddVocabDialogOpen(true);
+  };
+
+  const resetAndCloseAddVocabDialog = () => {
+    setNewStackName('');
+    setManualTerm('');
+    setManualDefinition('');
+    setManualNotes('');
+    setPreviewImage(null);
+    setIsStackNameLocked(false);
+    setIsAddVocabDialogOpen(false);
+  };
+  
 
   // Verb handlers
   const allTenses = useMemo(() => {
@@ -773,7 +784,7 @@ export default function SubjectDetailPage() {
                   onDelete={() => { forceUpdate(); fetchAllVocab(); }}
                   onRename={() => { forceUpdate(); fetchAllVocab(); }}
                   onSelectionChange={handleSelectionChange}
-                  onVocabAdded={fetchAllVocab}
+                  onAddVocab={() => openAddVocabDialog(stack.name)}
                 />
               ))}
             </div>
@@ -918,9 +929,9 @@ export default function SubjectDetailPage() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
 
-                <Dialog open={isOcrDialogOpen} onOpenChange={setIsOcrDialogOpen}>
+                <Dialog open={isAddVocabDialogOpen} onOpenChange={(open) => !open && resetAndCloseAddVocabDialog()}>
                     <DialogTrigger asChild>
-                        <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full">
+                        <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" onClick={() => openAddVocabDialog()}>
                             <Plus className="h-6 w-6" />
                         </Button>
                     </DialogTrigger>
@@ -940,7 +951,7 @@ export default function SubjectDetailPage() {
                           <div className="grid gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="stack-name">Stapelname</Label>
-                                <Input id="stack-name" placeholder="z.B. Kapitel 1" value={newStackName} onChange={e => setNewStackName(e.target.value)} />
+                                <Input id="stack-name" placeholder="z.B. Kapitel 1" value={newStackName} onChange={e => setNewStackName(e.target.value)} disabled={isStackNameLocked}/>
                             </div>
                             <div className="grid gap-2">
                               <Label htmlFor="term">Fremdwort</Label>
@@ -954,23 +965,23 @@ export default function SubjectDetailPage() {
                               <Label htmlFor="notes">Hinweise (optional)</Label>
                               <Textarea id="notes" placeholder="z.B., Begrüßung" value={manualNotes} onChange={e => setManualNotes(e.target.value)} />
                             </div>
-                            <div className="flex flex-col gap-2">
-                               <Button variant="outline" onClick={handleAddMoreVocabulary} disabled={isAddingManually}>
-                                {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Weitere Vokabeln hinzufügen
+                             <DialogFooter className="flex-col gap-2 sm:flex-row">
+                               <Button variant="outline" onClick={() => handleAddManualVocabulary(false)} disabled={isAddingManually}>
+                                {isAddingManually ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                                Hinzufügen & Neu
                               </Button>
                               <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually}>
                                   {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                  Vokabel hinzufügen
+                                  Hinzufügen
                               </Button>
-                            </div>
+                            </DialogFooter>
                           </div>
                         </TabsContent>
                         <TabsContent value="ocr" className="pt-4">
                           <div className="grid gap-4">
                              <div className="grid gap-2">
                                 <Label htmlFor="stack-name-ocr">Stapelname</Label>
-                                <Input id="stack-name-ocr" placeholder="z.B. Aus meinem Notizbuch" value={newStackName} onChange={e => setNewStackName(e.target.value)} />
+                                <Input id="stack-name-ocr" placeholder="z.B. Aus meinem Notizbuch" value={newStackName} onChange={e => setNewStackName(e.target.value)} disabled={isStackNameLocked} />
                             </div>
                             <div className="grid gap-2">
                               <Label htmlFor="picture">Bild</Label>

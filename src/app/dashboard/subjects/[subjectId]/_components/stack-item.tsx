@@ -21,7 +21,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
@@ -46,10 +45,10 @@ interface StackItemProps {
   onSelectionChange: (vocabId: string, isSelected: boolean) => void;
   onDelete: () => void;
   onRename: () => void;
-  onVocabAdded: () => void;
+  onAddVocab: () => void;
 }
 
-export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onDelete, onRename, onVocabAdded }: StackItemProps) {
+export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onDelete, onRename, onAddVocab }: StackItemProps) {
   const { firestore, user } = useFirebase();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -58,12 +57,6 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
   const [newStackName, setNewStackName] = useState(stack.name);
   const [isTermFirst, setIsTermFirst] = useState(true);
   
-  const [isAddVocabDialogOpen, setIsAddVocabDialogOpen] = useState(false);
-  const [manualTerm, setManualTerm] = useState('');
-  const [manualDefinition, setManualDefinition] = useState('');
-  const [manualNotes, setManualNotes] = useState('');
-  const [isAddingManually, setIsAddingManually] = useState(false);
-
   const { toast } = useToast();
   const router = useRouter();
   
@@ -128,41 +121,6 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
         toast({ variant: 'destructive', title: 'Fehler beim Umbenennen', description: 'Der Stapel konnte nicht umbenannt werden.' });
     }
   };
-  
-  const resetAddVocabDialog = () => {
-      setManualTerm('');
-      setManualDefinition('');
-      setManualNotes('');
-  }
-
-  const handleAddManualVocabulary = async (closeOnFinish = true) => {
-    if (!manualTerm || !manualDefinition || !user || !firestore) {
-        toast({ variant: 'destructive', title: 'Fehlende Informationen', description: 'Bitte fülle Begriff und Definition aus.' });
-        return;
-    }
-    setIsAddingManually(true);
-    try {
-        const stackRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stack.id);
-        await addDoc(collection(stackRef, 'vocabulary'), {
-            term: manualTerm,
-            definition: manualDefinition,
-            notes: manualNotes,
-            createdAt: serverTimestamp(),
-        });
-        
-        toast({ title: 'Erfolg', description: 'Vokabel hinzugefügt.' });
-        resetAddVocabDialog();
-        if (closeOnFinish) {
-          setIsAddVocabDialogOpen(false);
-        }
-        onVocabAdded();
-    } catch (error) {
-        console.error("Error adding manual vocabulary:", error);
-        toast({ variant: 'destructive', title: 'Fehler', description: 'Konnte Vokabel nicht hinzufügen.' });
-    } finally {
-        setIsAddingManually(false);
-    }
-  };
 
 
   return (
@@ -180,45 +138,9 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
             <Badge variant="secondary">{vocabulary.length || 0} Vokabeln</Badge>
           </div>
           <div className="flex items-center gap-2">
-            <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Vokabel zu &quot;{stack.name}&quot; hinzufügen</DialogTitle>
-                  <DialogDescription>
-                    Füge eine neue Vokabel zu diesem Stapel hinzu.
-                  </DialogDescription>
-                </DialogHeader>
-                 <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="term">Fremdwort</Label>
-                      <Input id="term" placeholder="z.B., Hola" value={manualTerm} onChange={e => setManualTerm(e.target.value)} />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="definition">Deutsches Wort</Label>
-                      <Input id="definition" placeholder="z.B., Hallo" value={manualDefinition} onChange={e => setManualDefinition(e.target.value)} />
-                    </div>
-                     <div className="grid gap-2">
-                      <Label htmlFor="notes">Hinweise (optional)</Label>
-                      <Textarea id="notes" placeholder="z.B., Begrüßung" value={manualNotes} onChange={e => setManualNotes(e.target.value)} />
-                    </div>
-                  </div>
-                <DialogFooter className="flex-col gap-2 sm:flex-row">
-                  <Button variant="outline" onClick={() => handleAddManualVocabulary(false)} disabled={isAddingManually}>
-                    {isAddingManually ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                    Hinzufügen & Neu
-                  </Button>
-                  <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually}>
-                      {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Hinzufügen
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100" onClick={onAddVocab}>
+                <Plus className="h-4 w-4" />
+            </Button>
 
             <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
               <DialogTrigger asChild>
