@@ -46,7 +46,7 @@ interface StackItemProps {
   onSelectionChange: (vocabId: string, isSelected: boolean) => void;
   onDelete: () => void;
   onRename: () => void;
-  onAddVocab: () => void;
+  onAddVocab: (stack: Stack) => void;
 }
 
 export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onDelete, onRename, onAddVocab }: StackItemProps) {
@@ -139,7 +139,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
             <Badge variant="secondary">{vocabulary.length || 0} Vokabeln</Badge>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); onAddVocab(); }}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); onAddVocab(stack); }}>
                 <Plus className="h-4 w-4" />
             </Button>
 

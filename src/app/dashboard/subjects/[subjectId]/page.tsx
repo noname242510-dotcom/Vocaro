@@ -104,7 +104,7 @@ export default function SubjectDetailPage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isProcessingOcr, setIsProcessingOcr] = useState(false);
   const [newStackName, setNewStackName] = useState('');
-  const [isStackNameLocked, setIsStackNameLocked] = useState(false);
+  const [activeStackId, setActiveStackId] = useState<string | null>(null);
   const [manualTerm, setManualTerm] = useState('');
   const [manualDefinition, setManualDefinition] = useState('');
   const [manualNotes, setManualNotes] = useState('');
@@ -302,12 +302,21 @@ export default function SubjectDetailPage() {
          throw new Error("Benutzer nicht authentifiziert.");
       }
 
-      const stackRef = await addDoc(stacksCollectionRef, {
-        name: newStackName,
-        createdAt: serverTimestamp(),
-        vocabCount: generatedVocab.length,
-        subjectId: subjectId,
-      });
+      let stackRef;
+      if (activeStackId) {
+          stackRef = doc(stacksCollectionRef, activeStackId);
+      } else {
+           const existingStack = stacks?.find(s => s.name === newStackName);
+           if (existingStack) {
+               stackRef = doc(stacksCollectionRef, existingStack.id);
+           } else {
+                stackRef = await addDoc(stacksCollectionRef, {
+                    name: newStackName,
+                    createdAt: serverTimestamp(),
+                    subjectId: subjectId,
+                });
+           }
+      }
 
       const batch = writeBatch(firestore);
       const vocabCollectionRef = collection(stackRef, 'vocabulary');
@@ -322,7 +331,7 @@ export default function SubjectDetailPage() {
       });
       await batch.commit();
 
-      toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im neuen Stapel "${newStackName}" gespeichert.` });
+      toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im Stapel "${newStackName}" gespeichert.` });
       
       resetAndCloseAddVocabDialog();
       forceUpdate();
@@ -349,18 +358,20 @@ export default function SubjectDetailPage() {
     setIsAddingManually(true);
     try {
         let stackRef;
-        const existingStacks = stacks?.filter(s => s.name === newStackName);
-
-        if (existingStacks && existingStacks.length > 0) {
-            stackRef = doc(stacksCollectionRef, existingStacks[0].id);
+        if (activeStackId) {
+            stackRef = doc(stacksCollectionRef, activeStackId);
         } else {
-            stackRef = await addDoc(stacksCollectionRef, {
-                name: newStackName,
-                createdAt: serverTimestamp(),
-                subjectId: subjectId,
-            });
+            const existingStack = stacks?.find(s => s.name === newStackName);
+            if (existingStack) {
+                stackRef = doc(stacksCollectionRef, existingStack.id);
+            } else {
+                stackRef = await addDoc(stacksCollectionRef, {
+                    name: newStackName,
+                    createdAt: serverTimestamp(),
+                    subjectId: subjectId,
+                });
+            }
         }
-
 
         await addDoc(collection(stackRef, 'vocabulary'), {
             term: manualTerm,
@@ -466,13 +477,13 @@ export default function SubjectDetailPage() {
     }
   };
   
-  const openAddVocabDialog = (stackName?: string) => {
-    if (stackName) {
-      setNewStackName(stackName);
-      setIsStackNameLocked(true);
+  const openAddVocabDialog = (stack?: Stack) => {
+    if (stack) {
+      setNewStackName(stack.name);
+      setActiveStackId(stack.id);
     } else {
       setNewStackName('');
-      setIsStackNameLocked(false);
+      setActiveStackId(null);
     }
     setIsAddVocabDialogOpen(true);
   };
@@ -483,7 +494,7 @@ export default function SubjectDetailPage() {
     setManualDefinition('');
     setManualNotes('');
     setPreviewImage(null);
-    setIsStackNameLocked(false);
+    setActiveStackId(null);
     setIsAddVocabDialogOpen(false);
   };
   
@@ -786,7 +797,7 @@ export default function SubjectDetailPage() {
                   onDelete={() => { forceUpdate(); fetchAllVocab(); }}
                   onRename={() => { forceUpdate(); fetchAllVocab(); }}
                   onSelectionChange={handleSelectionChange}
-                  onAddVocab={() => openAddVocabDialog(stack.name)}
+                  onAddVocab={() => openAddVocabDialog(stack)}
                 />
               ))}
             </div>
@@ -953,7 +964,7 @@ export default function SubjectDetailPage() {
                           <div className="grid gap-4">
                             <div className="grid gap-2">
                                 <Label htmlFor="stack-name">Stapelname</Label>
-                                <Input id="stack-name" placeholder="z.B. Kapitel 1" value={newStackName} onChange={e => setNewStackName(e.target.value)} disabled={isStackNameLocked}/>
+                                <Input id="stack-name" placeholder="z.B. Kapitel 1" value={newStackName} onChange={e => setNewStackName(e.target.value)} disabled={!!activeStackId}/>
                             </div>
                             <div className="grid gap-2">
                               <Label htmlFor="term">Fremdwort</Label>
@@ -983,7 +994,7 @@ export default function SubjectDetailPage() {
                           <div className="grid gap-4">
                              <div className="grid gap-2">
                                 <Label htmlFor="stack-name-ocr">Stapelname</Label>
-                                <Input id="stack-name-ocr" placeholder="z.B. Aus meinem Notizbuch" value={newStackName} onChange={e => setNewStackName(e.target.value)} disabled={isStackNameLocked} />
+                                <Input id="stack-name-ocr" placeholder="z.B. Aus meinem Notizbuch" value={newStackName} onChange={e => setNewStackName(e.target.value)} disabled={!!activeStackId} />
                             </div>
                             <div className="grid gap-2">
                               <Label htmlFor="picture">Bild</Label>
