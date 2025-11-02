@@ -875,8 +875,9 @@ export default function SubjectDetailPage() {
                 </Dialog>
 
 
-                <Button onClick={handleAddNewVerb}>
-                    <Plus className="mr-2 h-4 w-4" /> Verb hinzufügen
+                <Button onClick={handleAddNewVerb} size="default" className="md:w-auto">
+                    <Plus className="h-4 w-4 md:mr-2" />
+                    <span className="hidden md:inline">Verb hinzufügen</span>
                 </Button>
               </div>
           </div>
@@ -1051,6 +1052,7 @@ export default function SubjectDetailPage() {
     
 
     
+
 
 
 
