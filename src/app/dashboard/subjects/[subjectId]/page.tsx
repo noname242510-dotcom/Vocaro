@@ -1017,9 +1017,6 @@ export default function SubjectDetailPage() {
                           </DialogFooter>
                         </TabsContent>
                       </Tabs>
-                       <DialogFooter>
-                        <Button variant="ghost" onClick={resetAndCloseAddVocabDialog}>Schliessen</Button>
-                      </DialogFooter>
                     </DialogContent>
                 </Dialog>
               </>
@@ -1054,3 +1051,4 @@ export default function SubjectDetailPage() {
     
 
     
+
