@@ -942,7 +942,7 @@ export default function SubjectDetailPage() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
 
-                <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
+                <Dialog open={isAddVocabDialogOpen} onOpenChange={resetAndCloseAddVocabDialog}>
                     <DialogTrigger asChild>
                         <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" onClick={() => openAddVocabDialog()}>
                             <Plus className="h-6 w-6" />
@@ -961,10 +961,10 @@ export default function SubjectDetailPage() {
                           <TabsTrigger value="ocr"><Upload className="mr-2 h-4 w-4" />aus Bild</TabsTrigger>
                         </TabsList>
                         <TabsContent value="manual" className="pt-4">
-                          <div className="grid gap-4">
+                           <div className="grid gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="stack-name">Stapelname</Label>
-                                <Input id="stack-name" placeholder="z.B. Kapitel 1" value={newStackName} onChange={e => setNewStackName(e.target.value)} disabled={!!activeStackId}/>
+                                <Label htmlFor="stack-name-manual">Stapelname</Label>
+                                <Input id="stack-name-manual" placeholder="z.B. Kapitel 1" value={newStackName} onChange={e => setNewStackName(e.target.value)} disabled={!!activeStackId}/>
                             </div>
                             <div className="grid gap-2">
                               <Label htmlFor="term">Fremdwort</Label>
@@ -978,7 +978,8 @@ export default function SubjectDetailPage() {
                               <Label htmlFor="notes">Hinweise (optional)</Label>
                               <Textarea id="notes" placeholder="z.B., Begrüßung" value={manualNotes} onChange={e => setManualNotes(e.target.value)} />
                             </div>
-                             <DialogFooter className="flex-col gap-2 sm:flex-row">
+                          </div>
+                           <DialogFooter className="pt-4">
                                <Button variant="outline" onClick={() => handleAddManualVocabulary(false)} disabled={isAddingManually}>
                                 {isAddingManually ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
                                 Hinzufügen & Neu
@@ -987,8 +988,7 @@ export default function SubjectDetailPage() {
                                   {isAddingManually && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Hinzufügen
                               </Button>
-                            </DialogFooter>
-                          </div>
+                          </DialogFooter>
                         </TabsContent>
                         <TabsContent value="ocr" className="pt-4">
                           <div className="grid gap-4">
@@ -1000,24 +1000,22 @@ export default function SubjectDetailPage() {
                               <Label htmlFor="picture">Bild</Label>
                               <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" disabled={isProcessingOcr} />
                             </div>
-
+                          </div>
+                           <DialogFooter className="pt-4">
                             {isProcessingOcr ? (
-                                <Button disabled>
+                                <Button disabled className="w-full">
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                     Verarbeite und speichere...
                                 </Button>
                             ) : (
-                                 <Button onClick={handleExtractAndSaveVocabulary} disabled={!previewImage || !newStackName}>
+                                 <Button onClick={handleExtractAndSaveVocabulary} disabled={!previewImage || !newStackName} className="w-full">
                                   <Upload className="mr-2 h-4 w-4" />
                                   Extrahieren und Speichern
                                 </Button>
                             )}
-                          </div>
+                          </DialogFooter>
                         </TabsContent>
                       </Tabs>
-                      <DialogFooter>
-                          <Button variant="ghost" onClick={resetAndCloseAddVocabDialog}>Schliessen</Button>
-                      </DialogFooter>
                     </DialogContent>
                 </Dialog>
               </>
