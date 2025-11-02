@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, ChangeEvent, useEffect } from 'react';
@@ -67,6 +66,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -325,6 +325,8 @@ export default function SubjectDetailPage() {
       toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im neuen Stapel "${newStackName}" gespeichert.` });
       
       resetAndCloseAddVocabDialog();
+      forceUpdate();
+      fetchAllVocab();
 
     } catch (error: any) {
       console.error("Error during OCR and save process:", error);
@@ -929,7 +931,7 @@ export default function SubjectDetailPage() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
 
-                <Dialog open={isAddVocabDialogOpen} onOpenChange={(open) => !open && resetAndCloseAddVocabDialog()}>
+                <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
                     <DialogTrigger asChild>
                         <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" onClick={() => openAddVocabDialog()}>
                             <Plus className="h-6 w-6" />
@@ -1002,6 +1004,9 @@ export default function SubjectDetailPage() {
                           </div>
                         </TabsContent>
                       </Tabs>
+                      <DialogFooter>
+                          <Button variant="ghost" onClick={resetAndCloseAddVocabDialog}>Schliessen</Button>
+                      </DialogFooter>
                     </DialogContent>
                 </Dialog>
               </>
@@ -1032,3 +1037,5 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
+    
