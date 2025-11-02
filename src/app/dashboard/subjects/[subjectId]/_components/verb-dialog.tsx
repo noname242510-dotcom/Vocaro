@@ -346,14 +346,14 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                 <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
                 <TabsTrigger value="german">Deutsch</TabsTrigger>
               </TabsList>
-              <ScrollArea className="mt-4 flex-grow">
-                <div className="px-4 pb-4">
-                  <TabsContent value="foreign" className="mt-0">
-                      <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
-                  </TabsContent>
-                  <TabsContent value="german" className="mt-0">
-                     <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
-                  </TabsContent>
+              <ScrollArea className="mt-2 flex-grow">
+                <div className="px-1 py-4">
+                    <TabsContent value="foreign" className="mt-0">
+                        <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
+                    </TabsContent>
+                    <TabsContent value="german" className="mt-0">
+                        <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
+                    </TabsContent>
                 </div>
               </ScrollArea>
             </Tabs>
