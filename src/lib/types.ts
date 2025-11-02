@@ -1,4 +1,5 @@
 
+
 export type Subject = {
   id: string;
   name: string;
@@ -57,3 +58,11 @@ export type UserSettings = {
   quiz: QuizSettings;
   appearance: AppearanceSettings;
 };
+
+// Passkey Authenticator-Struktur für Firestore
+export type Authenticator = {
+    credentialID: string;
+    credentialPublicKey: string;
+    counter: number;
+    transports?: AuthenticatorTransport[];
+}
