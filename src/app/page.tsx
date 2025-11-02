@@ -4,14 +4,15 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Fingerprint } from 'lucide-react';
+import { startAuthentication } from '@simplewebauthn/browser';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -51,6 +52,38 @@ export default function LoginPage() {
         description: description,
       });
     }
+  };
+
+  const handlePasskeyLogin = async () => {
+    // Diese Funktion ist ein Platzhalter. Hier würden Sie die WebAuthn-Logik implementieren.
+    toast({
+        title: "Noch nicht implementiert",
+        description: "Die Passkey-Anmeldung muss noch eingerichtet werden."
+    });
+
+    // Schritt 1: Anmelde-Optionen vom Server abrufen
+    // const responseOptions = await fetch('/api/passkey/generate-authentication-options');
+    // const options = await responseOptions.json();
+
+    // Schritt 2: Browser zur Authentifizierung auffordern
+    // const authenticationResponse = await startAuthentication(options);
+
+    // Schritt 3: Antwort an den Server zur Verifizierung senden
+    // const responseVerification = await fetch('/api/passkey/verify-authentication', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify(authenticationResponse),
+    // });
+    // const { verified, customToken } = await responseVerification.json();
+
+    // Schritt 4: Mit dem Custom Token bei Firebase anmelden
+    // if (verified && customToken) {
+    //     const auth = getAuth();
+    //     await signInWithCustomToken(auth, customToken);
+    //     router.push('/dashboard');
+    // } else {
+    //     // Fehlerbehandlung
+    // }
   };
 
   return (
@@ -107,6 +140,18 @@ export default function LoginPage() {
               </Button>
             </div>
           </form>
+          <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Oder</span>
+              </div>
+          </div>
+           <Button variant="outline" className="w-full" onClick={handlePasskeyLogin}>
+              <Fingerprint className="mr-2 h-4 w-4" />
+              Mit Passkey anmelden
+          </Button>
           <div className="mt-4 text-center text-sm">
             Du hast noch kein Konto?{" "}
             <Link href="/signup" className="underline">
