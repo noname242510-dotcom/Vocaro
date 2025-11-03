@@ -8,22 +8,13 @@ import type { Authenticator } from '@/lib/types';
 const RP_ID = process.env.NODE_ENV === 'development' ? 'localhost' : (new URL(process.env.NEXT_PUBLIC_BASE_URL!)).hostname;
 
 export async function POST(request: NextRequest) {
-    const body: AuthenticationResponseJSON & { username: string, challengeId: string } = await request.json();
-    const { username, challengeId } = body;
-    const email = `${username}@vocaro.app`;
+    const body: AuthenticationResponseJSON & { challengeId: string } = await request.json();
+    const { challengeId } = body;
 
+    // 1. Get the challenge from Firestore
     if (!challengeId) {
-        return NextResponse.json({ error: 'ChallengeID fehlt in der Anfrage.' }, { status: 400 });
+        return NextResponse.json({ error: 'ChallengeID fehlt.' }, { status: 400 });
     }
-
-    let userRecord;
-    try {
-        userRecord = await authAdmin.getUserByEmail(email);
-    } catch (error) {
-        return NextResponse.json({ error: 'Benutzer nicht gefunden.' }, { status: 404 });
-    }
-    const userId = userRecord.uid;
-
     const challengeRef = firestoreAdmin.collection('passkeyChallenges').doc(challengeId);
     const challengeDoc = await challengeRef.get();
 
@@ -31,9 +22,25 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Challenge nicht gefunden oder abgelaufen.' }, { status: 400 });
     }
     const { challenge } = challengeDoc.data()!;
+    
+    // This is the username stored in the passkey itself.
+    const userHandle = body.response.userHandle;
+    if (!userHandle) {
+        return NextResponse.json({ error: 'userHandle im Passkey nicht gefunden.' }, { status: 400 });
+    }
+    const email = `${userHandle}@vocaro.app`;
 
-    // userHandle aus der Antwort ist der Benutzername, der im Passkey gespeichert ist.
-    // Wir verwenden diesen, um den richtigen Authenticator zu finden.
+    // 2. Get the user from Firebase Auth
+    let userRecord;
+    try {
+        userRecord = await authAdmin.getUserByEmail(email);
+    } catch (error) {
+        return NextResponse.json({ error: `Benutzer '${userHandle}' nicht gefunden.` }, { status: 404 });
+    }
+    const userId = userRecord.uid;
+
+    // 3. Get the specific authenticator used for this login
+    // The `id` from the response body is the credentialID (in base64url format)
     const authenticatorDoc = await firestoreAdmin
         .collection('users').doc(userId)
         .collection('authenticators').doc(body.id).get();
@@ -43,6 +50,7 @@ export async function POST(request: NextRequest) {
     }
     const authenticator = authenticatorDoc.data() as Authenticator;
     
+    // 4. Verify the authentication response
     const expectedOrigin = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get('host')}`;
 
     let verification: VerifiedAuthenticationResponse;
@@ -68,10 +76,12 @@ export async function POST(request: NextRequest) {
     const { verified, authenticationInfo } = verification;
     
     if (verified) {
+        // 5. If successful, update the counter and create a custom token
         await authenticatorDoc.ref.update({
             counter: authenticationInfo.newCounter,
         });
 
+        // Delete the used challenge
         await challengeDoc.ref.delete();
 
         const customToken = await authAdmin.createCustomToken(userId);
@@ -79,5 +89,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ verified: true, customToken });
     }
 
+    // If verification failed for any other reason
     return NextResponse.json({ verified: false, error: 'Die Passkey-Verifizierung ist fehlgeschlagen.' }, { status: 400 });
 }

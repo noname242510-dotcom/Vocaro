@@ -58,24 +58,21 @@ export default function LoginPage() {
     try {
         const usernameQuery = username ? `?username=${encodeURIComponent(username)}` : '';
         const responseOptions = await fetch(`/api/passkey/generate-authentication-options${usernameQuery}`);
-        const options = await responseOptions.json();
         
-        if(responseOptions.status !== 200) throw new Error(options.error || 'Anmeldeoptionen konnten nicht geladen werden.');
+        if (!responseOptions.ok) {
+            const errorBody = await responseOptions.json().catch(() => ({error: 'Anmeldeoptionen konnten nicht vom Server geladen werden.'}));
+            throw new Error(errorBody.error);
+        }
+        const options = await responseOptions.json();
 
         const authenticationResponse = await startAuthentication(options);
         
-        const verifiedUsername = authenticationResponse.response.userHandle;
-        if (!verifiedUsername) {
-            throw new Error('Benutzername konnte nicht aus dem Passkey gelesen werden.');
-        }
-
         const responseVerification = await fetch('/api/passkey/verify-authentication', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               ...authenticationResponse,
-              challengeId: options.challengeId, // Send back the challengeId
-              username: verifiedUsername,
+              challengeId: options.challengeId, // Send back the challengeId received from the server
             }),
         });
 
