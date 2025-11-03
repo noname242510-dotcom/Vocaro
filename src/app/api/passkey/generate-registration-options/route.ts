@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     attestationType: 'none',
     excludeCredentials: [], // Hier könnten bestehende Credentials ausgeschlossen werden, falls der Benutzer bereits welche hat
     authenticatorSelection: {
-      residentKey: 'required',
+      residentKey: 'required', // Dies ist die entscheidende Änderung!
       userVerification: 'preferred',
     },
   });

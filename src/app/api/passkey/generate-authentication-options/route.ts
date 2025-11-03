@@ -11,26 +11,35 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const username = searchParams.get('username');
 
-    if (!username) {
-        return NextResponse.json({ error: 'Benutzername fehlt' }, { status: 400 });
+    let userAuthenticators: Authenticator[] = [];
+
+    // Wenn ein Benutzername angegeben wird, suchen wir nach den Schlüsseln dieses Benutzers.
+    // Dies ist der "nicht-auffindbare" Flow.
+    if (username) {
+        let userRecord;
+        try {
+            const email = `${username}@vocaro.app`;
+            userRecord = await authAdmin.getUserByEmail(email);
+        } catch (error) {
+            // Wenn der Benutzer nicht gefunden wird, fahren wir fort und erlauben
+            // dem Gerät, auffindbare Anmeldeinformationen vorzuschlagen.
+            userRecord = null;
+        }
+
+        if (userRecord) {
+            const userId = userRecord.uid;
+            const authenticatorsSnapshot = await firestoreAdmin
+                .collection('users').doc(userId)
+                .collection('authenticators').get();
+
+            if (!authenticatorsSnapshot.empty) {
+                userAuthenticators = authenticatorsSnapshot.docs.map(doc => doc.data() as Authenticator);
+            }
+        }
     }
-    const email = `${username}@vocaro.app`;
-
-    let userRecord;
-    try {
-        userRecord = await authAdmin.getUserByEmail(email);
-    } catch (error) {
-        return NextResponse.json({ error: 'Benutzer nicht gefunden.' }, { status: 404 });
-    }
-
-    const userId = userRecord.uid;
-
-    const authenticatorsSnapshot = await firestoreAdmin
-        .collection('users').doc(userId)
-        .collection('authenticators').get();
-
-    const userAuthenticators: Authenticator[] = authenticatorsSnapshot.docs.map(doc => doc.data() as Authenticator);
-
+    
+    // `allowCredentials` ist leer, wenn kein Benutzername angegeben wurde.
+    // Dies aktiviert den "auffindbaren" Anmelde-Flow.
     const options = await generateAuthenticationOptions({
         rpID: RP_ID,
         allowCredentials: userAuthenticators.map(auth => ({
@@ -41,14 +50,17 @@ export async function GET(request: NextRequest) {
         userVerification: 'preferred',
     });
     
-    // Speichere die Challenge temporär
-    const challengeRef = firestoreAdmin.collection('passkeyChallenges').doc(userId);
+    // Die Challenge muss für die Verifizierung immer gespeichert werden.
+    // Wir verwenden eine temporäre ID, da wir den Benutzer noch nicht kennen.
+    const challengeId = `auth_challenge_${Date.now()}`;
+    const challengeRef = firestoreAdmin.collection('passkeyChallenges').doc(challengeId);
     await challengeRef.set({ 
         challenge: options.challenge,
-        username: username,
+        // Wir speichern den Benutzernamen, falls er angegeben wurde, um ihn später zuordnen zu können.
+        username: username || null,
         expires: Date.now() + 5 * 60 * 1000 // 5 Minuten
     });
 
-
-    return NextResponse.json(options);
+    // Wir müssen die ChallengeID an das Frontend zurückgeben, damit es sie bei der Verifizierung mitsenden kann.
+    return NextResponse.json({ ...options, challengeId });
 }

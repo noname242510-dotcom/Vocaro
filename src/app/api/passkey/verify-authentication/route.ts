@@ -9,8 +9,8 @@ const RP_ID = process.env.NODE_ENV === 'development' ? 'localhost' : (new URL(pr
 const ORIGIN = process.env.NEXT_PUBLIC_BASE_URL || `https://${RP_ID}`;
 
 export async function POST(request: NextRequest) {
-    const body: AuthenticationResponseJSON & { username: string } = await request.json();
-    const { username } = body;
+    const body: AuthenticationResponseJSON & { username: string, challengeId?: string } = await request.json();
+    const { username, challengeId } = body;
     const email = `${username}@vocaro.app`;
 
     let userRecord;
@@ -22,10 +22,26 @@ export async function POST(request: NextRequest) {
     const userId = userRecord.uid;
 
     // 1. Hole die gespeicherte Challenge
-    const challengeRef = firestoreAdmin.collection('passkeyChallenges').doc(userId);
-    const challengeDoc = await challengeRef.get();
+    // Wenn keine challengeId übergeben wird, versuchen wir, die letzte Challenge des Benutzers zu finden.
+    // Dies ist ein Fallback und sollte in Produktion robuster sein.
+    const challengeQuery = challengeId 
+        ? firestoreAdmin.collection('passkeyChallenges').doc(challengeId)
+        : firestoreAdmin.collection('passkeyChallenges').where('username', '==', username).orderBy('expires', 'desc').limit(1);
 
-    if (!challengeDoc.exists) {
+    const challengeSnapshot = await challengeQuery.get();
+    
+    let challengeDoc: FirebaseFirestore.DocumentSnapshot | undefined;
+    if ('docs' in challengeSnapshot) { // QuerySnapshot
+        if (challengeSnapshot.empty) {
+            return NextResponse.json({ error: 'Challenge nicht gefunden oder abgelaufen.' }, { status: 400 });
+        }
+        challengeDoc = challengeSnapshot.docs[0];
+    } else { // DocumentSnapshot
+        challengeDoc = challengeSnapshot as FirebaseFirestore.DocumentSnapshot;
+    }
+
+
+    if (!challengeDoc || !challengeDoc.exists) {
         return NextResponse.json({ error: 'Challenge nicht gefunden oder abgelaufen.' }, { status: 400 });
     }
     const { challenge } = challengeDoc.data()!;
@@ -70,7 +86,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Lösche die Challenge
-        await challengeRef.delete();
+        await challengeDoc.ref.delete();
 
         // 5. Erstelle Custom Token
         const customToken = await authAdmin.createCustomToken(userId);

@@ -55,25 +55,29 @@ export default function LoginPage() {
   };
 
   const handlePasskeyLogin = async () => {
-    if (!username.trim()) {
-        toast({ variant: 'destructive', title: 'Benutzername fehlt', description: 'Bitte gib zuerst deinen Benutzernamen ein.' });
-        return;
-    }
-    
     try {
         // Schritt 1: Anmelde-Optionen vom Server abrufen
-        const responseOptions = await fetch(`/api/passkey/generate-authentication-options?username=${encodeURIComponent(username)}`);
+        // Wichtig: Wir übergeben keinen Benutzernamen mehr, um auffindbare Anmeldeinformationen zu nutzen.
+        const responseOptions = await fetch(`/api/passkey/generate-authentication-options`);
         const options = await responseOptions.json();
-        if(responseOptions.status !== 200) throw new Error(options.error);
+        
+        if(responseOptions.status !== 200) throw new Error(options.error || 'Anmeldeoptionen konnten nicht geladen werden.');
 
         // Schritt 2: Browser zur Authentifizierung auffordern
         const authenticationResponse = await startAuthentication(options);
+        
+        // Den Benutzernamen erhalten wir nun aus der Antwort, da er im Passkey gespeichert ist.
+        const verifiedUsername = authenticationResponse.response.userHandle;
+        
+        if (!verifiedUsername) {
+            throw new Error('Benutzername konnte nicht aus dem Passkey gelesen werden.');
+        }
 
         // Schritt 3: Antwort an den Server zur Verifizierung senden
         const responseVerification = await fetch('/api/passkey/verify-authentication', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, ...authenticationResponse }),
+            body: JSON.stringify({ username: verifiedUsername, ...authenticationResponse }),
         });
         const { verified, customToken, error } = await responseVerification.json();
         if (responseVerification.status !== 200) throw new Error(error);
