@@ -6,7 +6,6 @@ import { firestoreAdmin, authAdmin } from '@/lib/firebase-admin';
 import type { Authenticator } from '@/lib/types';
 
 const RP_ID = process.env.NODE_ENV === 'development' ? 'localhost' : (new URL(process.env.NEXT_PUBLIC_BASE_URL!)).hostname;
-const ORIGIN = process.env.NEXT_PUBLIC_BASE_URL || `https://${RP_ID}`;
 
 export async function POST(request: NextRequest) {
     const body: AuthenticationResponseJSON & { username: string, challengeId?: string } = await request.json();
@@ -21,9 +20,6 @@ export async function POST(request: NextRequest) {
     }
     const userId = userRecord.uid;
 
-    // 1. Hole die gespeicherte Challenge
-    // Wenn keine challengeId übergeben wird, versuchen wir, die letzte Challenge des Benutzers zu finden.
-    // Dies ist ein Fallback und sollte in Produktion robuster sein.
     const challengeQuery = challengeId 
         ? firestoreAdmin.collection('passkeyChallenges').doc(challengeId)
         : firestoreAdmin.collection('passkeyChallenges').where('username', '==', username).orderBy('expires', 'desc').limit(1);
@@ -31,12 +27,12 @@ export async function POST(request: NextRequest) {
     const challengeSnapshot = await challengeQuery.get();
     
     let challengeDoc: FirebaseFirestore.DocumentSnapshot | undefined;
-    if ('docs' in challengeSnapshot) { // QuerySnapshot
+    if ('docs' in challengeSnapshot) { 
         if (challengeSnapshot.empty) {
             return NextResponse.json({ error: 'Challenge nicht gefunden oder abgelaufen.' }, { status: 400 });
         }
         challengeDoc = challengeSnapshot.docs[0];
-    } else { // DocumentSnapshot
+    } else { 
         challengeDoc = challengeSnapshot as FirebaseFirestore.DocumentSnapshot;
     }
 
@@ -46,7 +42,6 @@ export async function POST(request: NextRequest) {
     }
     const { challenge } = challengeDoc.data()!;
 
-    // 2. Hole den passenden Authenticator des Benutzers aus Firestore
     const authenticatorDoc = await firestoreAdmin
         .collection('users').doc(userId)
         .collection('authenticators').doc(body.id).get();
@@ -56,13 +51,14 @@ export async function POST(request: NextRequest) {
     }
     const authenticator = authenticatorDoc.data() as Authenticator;
     
-    // 3. Verifiziere die Antwort
+    const expectedOrigin = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get('host')}`;
+
     let verification: VerifiedAuthenticationResponse;
     try {
         verification = await verifyAuthenticationResponse({
             response: body,
             expectedChallenge: challenge,
-            expectedOrigin: ORIGIN,
+            expectedOrigin: expectedOrigin,
             expectedRPID: RP_ID,
             authenticator: {
                 credentialID: Buffer.from(authenticator.credentialID, 'base64'),
@@ -73,26 +69,23 @@ export async function POST(request: NextRequest) {
             requireUserVerification: true,
         });
     } catch (error: any) {
-        console.error(error);
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        console.error("verifyAuthenticationResponse error:", error);
+        return NextResponse.json({ verified: false, error: `Verifizierung fehlgeschlagen: ${error.message}` }, { status: 400 });
     }
 
     const { verified, authenticationInfo } = verification;
     
     if (verified) {
-        // 4. Update den Counter in Firestore
         await authenticatorDoc.ref.update({
             counter: authenticationInfo.newCounter,
         });
 
-        // Lösche die Challenge
         await challengeDoc.ref.delete();
 
-        // 5. Erstelle Custom Token
         const customToken = await authAdmin.createCustomToken(userId);
 
         return NextResponse.json({ verified: true, customToken });
     }
 
-    return NextResponse.json({ verified: false }, { status: 400 });
+    return NextResponse.json({ verified: false, error: 'Die Passkey-Verifizierung ist fehlgeschlagen.' }, { status: 400 });
 }
