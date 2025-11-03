@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -74,53 +75,59 @@ export default function DashboardPage() {
   };
 
   return (
-    <div>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {subjects && subjects.map((subject) => (
-          <SubjectCard 
-            key={subject.id} 
-            subject={subject} 
-            onSubjectDeleted={forceUpdate}
-            onSubjectRenamed={forceUpdate}
-          />
-        ))}
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Card className="flex items-center justify-center border-dashed hover:border-primary hover:shadow-lg transition-all duration-300 min-h-[180px] cursor-pointer">
-              <div className="rounded-full h-auto p-6 text-muted-foreground hover:text-primary flex flex-col items-center gap-2 text-center">
-                <Plus className="h-8 w-8" />
-                <span className="text-sm font-medium">Neues Fach</span>
+    <div className="flex flex-col min-h-[calc(100vh-10rem)]">
+      <div className="flex-grow">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {subjects && subjects.map((subject) => (
+            <SubjectCard 
+              key={subject.id} 
+              subject={subject} 
+              onSubjectDeleted={forceUpdate}
+              onSubjectRenamed={forceUpdate}
+            />
+          ))}
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Card className="flex items-center justify-center border-dashed hover:border-primary hover:shadow-lg transition-all duration-300 min-h-[180px] cursor-pointer">
+                <div className="rounded-full h-auto p-6 text-muted-foreground hover:text-primary flex flex-col items-center gap-2 text-center">
+                  <Plus className="h-8 w-8" />
+                  <span className="text-sm font-medium">Neues Fach</span>
+                </div>
+              </Card>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Neues Fach erstellen</DialogTitle>
+                <DialogDescription>
+                  Gib einen Namen für dein neues Fach ein.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    id="name"
+                    value={newSubjectName}
+                    onChange={(e) => setNewSubjectName(e.target.value)}
+                    className="col-span-3"
+                    placeholder="z.B. Spanisch"
+                    onKeyDown={(e) => e.key === 'Enter' && handleCreateSubject()}
+                  />
+                </div>
               </div>
-            </Card>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Neues Fach erstellen</DialogTitle>
-              <DialogDescription>
-                Gib einen Namen für dein neues Fach ein.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
-                </Label>
-                <Input
-                  id="name"
-                  value={newSubjectName}
-                  onChange={(e) => setNewSubjectName(e.target.value)}
-                  className="col-span-3"
-                  placeholder="z.B. Spanisch"
-                  onKeyDown={(e) => e.key === 'Enter' && handleCreateSubject()}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" onClick={handleCreateSubject}>Erstellen</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button type="submit" onClick={handleCreateSubject}>Erstellen</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+      <footer className="w-full text-center text-xs text-muted-foreground p-6 mt-auto">
+        <p>© 2025 Vocaro. Entwickelt mit ♥ und KI-Unterstützung für moderne Sprachlernende.</p>
+        <p>Bald auch als App verfügbar.</p>
+      </footer>
     </div>
   );
 }
