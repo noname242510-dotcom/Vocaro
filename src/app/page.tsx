@@ -56,33 +56,36 @@ export default function LoginPage() {
 
   const handlePasskeyLogin = async () => {
     try {
-        // Schritt 1: Anmelde-Optionen vom Server abrufen
-        // Wichtig: Wir übergeben keinen Benutzernamen mehr, um auffindbare Anmeldeinformationen zu nutzen.
-        const responseOptions = await fetch(`/api/passkey/generate-authentication-options`);
+        const usernameQuery = username ? `?username=${encodeURIComponent(username)}` : '';
+        const responseOptions = await fetch(`/api/passkey/generate-authentication-options${usernameQuery}`);
         const options = await responseOptions.json();
         
         if(responseOptions.status !== 200) throw new Error(options.error || 'Anmeldeoptionen konnten nicht geladen werden.');
 
-        // Schritt 2: Browser zur Authentifizierung auffordern
         const authenticationResponse = await startAuthentication(options);
         
-        // Den Benutzernamen erhalten wir nun aus der Antwort, da er im Passkey gespeichert ist.
         const verifiedUsername = authenticationResponse.response.userHandle;
-        
         if (!verifiedUsername) {
             throw new Error('Benutzername konnte nicht aus dem Passkey gelesen werden.');
         }
 
-        // Schritt 3: Antwort an den Server zur Verifizierung senden
         const responseVerification = await fetch('/api/passkey/verify-authentication', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: verifiedUsername, ...authenticationResponse }),
+            body: JSON.stringify({ 
+              ...authenticationResponse,
+              challengeId: options.challengeId, // Send back the challengeId
+              username: verifiedUsername,
+            }),
         });
-        const { verified, customToken, error } = await responseVerification.json();
-        if (responseVerification.status !== 200) throw new Error(error);
 
-        // Schritt 4: Mit dem Custom Token bei Firebase anmelden
+        if (!responseVerification.ok) {
+          const errorBody = await responseVerification.json().catch(() => ({ error: 'Anmelde-Verifizierung fehlgeschlagen.' }));
+          throw new Error(errorBody.error);
+        }
+
+        const { verified, customToken } = await responseVerification.json();
+        
         if (verified && customToken) {
             const auth = getAuth();
             await signInWithCustomToken(auth, customToken);

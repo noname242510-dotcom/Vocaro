@@ -8,9 +8,13 @@ import type { Authenticator } from '@/lib/types';
 const RP_ID = process.env.NODE_ENV === 'development' ? 'localhost' : (new URL(process.env.NEXT_PUBLIC_BASE_URL!)).hostname;
 
 export async function POST(request: NextRequest) {
-    const body: AuthenticationResponseJSON & { username: string, challengeId?: string } = await request.json();
+    const body: AuthenticationResponseJSON & { username: string, challengeId: string } = await request.json();
     const { username, challengeId } = body;
     const email = `${username}@vocaro.app`;
+
+    if (!challengeId) {
+        return NextResponse.json({ error: 'ChallengeID fehlt in der Anfrage.' }, { status: 400 });
+    }
 
     let userRecord;
     try {
@@ -20,28 +24,16 @@ export async function POST(request: NextRequest) {
     }
     const userId = userRecord.uid;
 
-    const challengeQuery = challengeId 
-        ? firestoreAdmin.collection('passkeyChallenges').doc(challengeId)
-        : firestoreAdmin.collection('passkeyChallenges').where('username', '==', username).orderBy('expires', 'desc').limit(1);
+    const challengeRef = firestoreAdmin.collection('passkeyChallenges').doc(challengeId);
+    const challengeDoc = await challengeRef.get();
 
-    const challengeSnapshot = await challengeQuery.get();
-    
-    let challengeDoc: FirebaseFirestore.DocumentSnapshot | undefined;
-    if ('docs' in challengeSnapshot) { 
-        if (challengeSnapshot.empty) {
-            return NextResponse.json({ error: 'Challenge nicht gefunden oder abgelaufen.' }, { status: 400 });
-        }
-        challengeDoc = challengeSnapshot.docs[0];
-    } else { 
-        challengeDoc = challengeSnapshot as FirebaseFirestore.DocumentSnapshot;
-    }
-
-
-    if (!challengeDoc || !challengeDoc.exists) {
+    if (!challengeDoc.exists || (challengeDoc.data()!.expires < Date.now())) {
         return NextResponse.json({ error: 'Challenge nicht gefunden oder abgelaufen.' }, { status: 400 });
     }
     const { challenge } = challengeDoc.data()!;
 
+    // userHandle aus der Antwort ist der Benutzername, der im Passkey gespeichert ist.
+    // Wir verwenden diesen, um den richtigen Authenticator zu finden.
     const authenticatorDoc = await firestoreAdmin
         .collection('users').doc(userId)
         .collection('authenticators').doc(body.id).get();
