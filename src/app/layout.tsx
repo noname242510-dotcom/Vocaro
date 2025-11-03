@@ -9,6 +9,10 @@ import { ClientToaster } from "@/components/client-toaster";
 export const metadata: Metadata = {
   title: "Vocaro",
   description: "Foto hochladen. Vokabeln lernen.",
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 const ptSans = PT_Sans({
