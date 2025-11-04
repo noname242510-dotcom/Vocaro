@@ -969,11 +969,9 @@ export default function SubjectDetailPage() {
                 </Button>
 
                 <Dialog open={isAddVocabDialogOpen} onOpenChange={resetAndCloseAddVocabDialog}>
-                    <DialogTrigger asChild>
-                         <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" onClick={() => openAddVocabDialog()}>
-                            <Plus className="h-6 w-6" />
-                        </Button>
-                    </DialogTrigger>
+                    <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" onClick={() => openAddVocabDialog()}>
+                        <Plus className="h-6 w-6" />
+                    </Button>
                     <DialogContent className="sm:max-w-[625px]">
                       <DialogHeader>
                         <DialogTitle>Neue Vokabeln hinzufügen</DialogTitle>
