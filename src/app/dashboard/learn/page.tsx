@@ -448,7 +448,7 @@ export default function LearnPage() {
               </AlertDialogContent>
             </AlertDialog>
             
-            <Button variant={isTypedMode ? 'secondary' : 'ghost'} size="icon" onClick={toggleInputMode}>
+            <Button variant={isTypedMode ? 'default' : 'ghost'} size="icon" onClick={toggleInputMode}>
                 <Pencil className="h-5 w-5" />
             </Button>
         </div>
