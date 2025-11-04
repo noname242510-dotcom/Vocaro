@@ -25,7 +25,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -305,13 +304,15 @@ export default function SubjectDetailPage() {
     });
 
     try {
+      // Step 1: Extract text from image
       const ocrResult = await suggestVocabularyFromImageContext({ imageDataUri: previewImage });
       const extractedText = ocrResult.suggestedVocabulary.join('\n');
       
       if (!extractedText.trim()) {
         throw new Error("Im Bild wurde kein Text gefunden.");
       }
-
+      
+      // Step 2: Generate structured vocabulary from the text
       const generationResult = await generateVocabularyFromExtractedText({ extractedText });
       const generatedVocab = generationResult.vocabulary;
       const totalWords = generatedVocab.length;
@@ -319,13 +320,15 @@ export default function SubjectDetailPage() {
        if (totalWords === 0) {
         throw new Error("Aus dem extrahierten Text konnten keine Vokabeln generiert werden.");
       }
-
+      
+      // Step 3: Update UI with total count *before* saving
       setOcrState(prev => ({ ...prev, total: totalWords }));
       
       if (!user || !firestore || !stacksCollectionRef) {
          throw new Error("Benutzer nicht authentifiziert.");
       }
-
+      
+      // Step 4: Get or create the stack reference
       let stackRef;
       if (activeStackId) {
           stackRef = doc(stacksCollectionRef, activeStackId);
@@ -341,10 +344,13 @@ export default function SubjectDetailPage() {
                 });
            }
       }
-
+      
+      // Step 5: Save vocabulary to Firestore and update progress
       const batch = writeBatch(firestore);
       const vocabCollectionRef = collection(stackRef, 'vocabulary');
-      generatedVocab.forEach((vocabItem, index) => {
+      
+      for (let i = 0; i < generatedVocab.length; i++) {
+        const vocabItem = generatedVocab[i];
         const newVocabRef = doc(vocabCollectionRef);
         batch.set(newVocabRef, {
           term: vocabItem.term,
@@ -352,15 +358,17 @@ export default function SubjectDetailPage() {
           notes: vocabItem.notes || '',
           createdAt: serverTimestamp(),
         });
-        // Simulate progress for the UI
-         setTimeout(() => {
-            setOcrState(prev => ({ ...prev, progress: index + 1 }));
-        }, index * 50); // Small delay to show progress
-      });
+
+        // Simulate progress for the UI by updating state in a timeout
+        await new Promise(resolve => setTimeout(resolve, 50)); // Small delay
+        setOcrState(prev => ({ ...prev, progress: i + 1 }));
+      }
+      
       await batch.commit();
 
       toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im Stapel "${newStackName}" gespeichert.` });
       
+      // Close popup after a short delay
       setTimeout(() => {
         setOcrState({ isOpen: false, stackName: '', progress: 0, total: 0, error: null });
         forceUpdate();
@@ -968,10 +976,12 @@ export default function SubjectDetailPage() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
 
-                <Dialog open={isAddVocabDialogOpen} onOpenChange={resetAndCloseAddVocabDialog}>
-                    <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" onClick={() => openAddVocabDialog()}>
-                        <Plus className="h-6 w-6" />
-                    </Button>
+                <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
+                    <DialogTrigger asChild>
+                         <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" onClick={() => openAddVocabDialog()}>
+                            <Plus className="h-6 w-6" />
+                        </Button>
+                    </DialogTrigger>
                     <DialogContent className="sm:max-w-[625px]">
                       <DialogHeader>
                         <DialogTitle>Neue Vokabeln hinzufügen</DialogTitle>
