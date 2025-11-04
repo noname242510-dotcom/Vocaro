@@ -130,6 +130,7 @@ export default function SignUpPage() {
                     className="rounded-full"
                     autoCapitalize="none"
                     autoCorrect="off"
+                    autoComplete="username"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -142,6 +143,7 @@ export default function SignUpPage() {
                           onChange={(e) => setPassword(e.target.value)}
                           required
                           className="rounded-full pr-10"
+                          autoComplete="new-password"
                       />
                       <Button
                           type="button"

@@ -123,6 +123,7 @@ export default function LoginPage() {
                     onChange={(e) => setUsername(e.target.value)}
                     autoCapitalize="none"
                     autoCorrect="off"
+                    autoComplete="username"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -137,6 +138,7 @@ export default function LoginPage() {
                       className="rounded-full pr-10"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="current-password"
                     />
                     <Button
                       type="button"
