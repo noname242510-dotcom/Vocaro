@@ -28,7 +28,7 @@ export function OcrProcessingPopup({
     return null;
   }
   
-  const percentage = total > 0 ? (progress / total) * 100 : 0;
+  const percentage = 100;
 
   return (
     <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
@@ -38,12 +38,8 @@ export function OcrProcessingPopup({
           error ? 'bg-destructive/10 border-destructive/20' : 'border-glass-border'
         )}
       >
-        <h3 className="text-lg font-semibold mb-4 truncate">{stackName}</h3>
+        <h3 className="text-lg font-semibold mb-8 truncate">{stackName}</h3>
         
-        <div className="animate-pulse mx-auto w-fit mb-4">
-            <Logo iconOnly className="h-12 w-12" />
-        </div>
-
         {error ? (
             <>
                 <p className="text-destructive font-medium mb-4">{error}</p>
