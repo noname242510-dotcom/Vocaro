@@ -123,6 +123,7 @@ export default function SignUpPage() {
                   <Label htmlFor="username">Benutzername</Label>
                   <Input
                     id="username"
+                    name="username"
                     placeholder="Dein Benutzername"
                     required
                     value={username}
@@ -138,6 +139,7 @@ export default function SignUpPage() {
                    <div className="relative">
                       <Input
                           id="password"
+                          name="new-password"
                           type={showPassword ? 'text' : 'password'}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}

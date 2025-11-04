@@ -115,6 +115,7 @@ export default function LoginPage() {
                   <Label htmlFor="username">Benutzername</Label>
                   <Input
                     id="username"
+                    name="username"
                     type="text"
                     placeholder="Dein Benutzername"
                     required
@@ -133,6 +134,7 @@ export default function LoginPage() {
                   <div className="relative">
                     <Input
                       id="password"
+                      name="password"
                       type={showPassword ? 'text' : 'password'}
                       required
                       className="rounded-full pr-10"
