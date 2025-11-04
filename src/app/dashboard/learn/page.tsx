@@ -1,17 +1,17 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent } from '@/components/ui/card';
-import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Confetti } from '@/components/confetti';
 import { useFirebase } from '@/firebase';
-import { collection, doc, getDoc, getDocs, query, where, documentId, addDoc, serverTimestamp, collectionGroup } from 'firebase/firestore';
+import { collection, getDocs, query, where, documentId, collectionGroup } from 'firebase/firestore';
 import type { VocabularyItem } from '@/lib/types';
 import {
   AlertDialog,
@@ -24,7 +24,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
+import { Input } from '@/components/ui/input';
+import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 
 // Function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -36,15 +37,21 @@ function shuffleArray<T>(array: T[]): T[] {
   return newArray;
 }
 
+type AnswerStatus = 'unanswered' | 'correct' | 'incorrect' | 'accepted';
+
 interface LearnState {
   vocabulary: VocabularyItem[];
   currentIndex: number;
   incorrectlyAnsweredIds: Set<string>;
+  answeredIds: Map<string, AnswerStatus>;
+  userInput: string;
 }
 
 export default function LearnPage() {
   const { firestore, user } = useFirebase();
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { triggerHapticFeedback } = useHapticFeedback();
   
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
   const [initialVocab, setInitialVocab] = useState<VocabularyItem[]>([]);
@@ -55,6 +62,7 @@ export default function LearnPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [incorrectlyAnsweredIds, setIncorrectlyAnsweredIds] = useState<Set<string>>(new Set());
+  const [answeredIds, setAnsweredIds] = useState<Map<string, AnswerStatus>>(new Map());
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [isNewCard, setIsNewCard] = useState(false);
@@ -64,6 +72,12 @@ export default function LearnPage() {
   const [shouldShowHints, setShouldShowHints] = useState(true);
 
   const [history, setHistory] = useState<LearnState[]>([]);
+  
+  // Typed Input Mode State
+  const [isTypedMode, setIsTypedMode] = useState(false);
+  const [userInput, setUserInput] = useState('');
+  const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
+
 
   useEffect(() => {
     // Load settings from local storage
@@ -73,6 +87,9 @@ export default function LearnPage() {
     const showHintsSetting = localStorage.getItem('show-vocab-hints') !== 'false';
     setShouldShowHints(showHintsSetting);
     
+    const typedModeSetting = localStorage.getItem('learn-mode-typed') === 'true';
+    setIsTypedMode(typedModeSetting);
+
     if (!firestore || !user) return;
 
     const fetchVocab = async () => {
@@ -104,25 +121,7 @@ export default function LearnPage() {
       try {
         const allVocab: VocabularyItem[] = [];
         const CHUNK_SIZE = 30; // Firestore 'in' query limit
-
-        const vocabCollectionGroup = collectionGroup(firestore, 'vocabulary');
-
-        for (let i = 0; i < vocabIds.length; i += CHUNK_SIZE) {
-          const chunk = vocabIds.slice(i, i + CHUNK_SIZE);
-          
-          if (chunk.length > 0) {
-            const vocabQuery = query(
-              vocabCollectionGroup,
-              where('__name__', 'in', chunk.map(id => `users/${user.uid}/subjects/${storedSubjectId}/stacks/${id.split('_')[0]}/vocabulary/${id.split('_')[1]}`)),
-            );
-          }
-        }
         
-        const chunks: string[][] = [];
-        for (let i = 0; i < vocabIds.length; i += CHUNK_SIZE) {
-          chunks.push(vocabIds.slice(i, i + CHUNK_SIZE));
-        }
-
         const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', storedSubjectId, 'stacks');
         const stacksSnapshot = await getDocs(stacksCollectionRef);
         const queryPromisesPerStack: Promise<any>[] = [];
@@ -174,12 +173,17 @@ export default function LearnPage() {
 
   useEffect(() => {
     if (isNewCard) {
-      const timer = setTimeout(() => setIsNewCard(false), 300); // Duration of the animation
+      const timer = setTimeout(() => {
+        setIsNewCard(false);
+        if (isTypedMode && inputRef.current) {
+            inputRef.current.focus();
+        }
+      }, 300); // Duration of the animation
       return () => clearTimeout(timer);
     }
-  }, [isNewCard]);
+  }, [isNewCard, isTypedMode]);
   
-  const correctAnswersCount = totalVocabCount > 0 ? totalVocabCount - vocabulary.length : 0;
+  const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted').length;
   const progress = totalVocabCount > 0 ? (correctAnswersCount / totalVocabCount) * 100 : 0;
 
   const handleGoBack = () => {
@@ -188,51 +192,112 @@ export default function LearnPage() {
       setVocabulary(lastState.vocabulary);
       setCurrentIndex(lastState.currentIndex);
       setIncorrectlyAnsweredIds(lastState.incorrectlyAnsweredIds);
+      setAnsweredIds(lastState.answeredIds);
+      setUserInput(lastState.userInput);
+
       setHistory(prev => prev.slice(0, -1));
+      
+      setAnswerStatus('unanswered');
       setIsFlipped(false);
       setIsNewCard(true);
     }
   };
-
-
-  const handleAnswer = (knewIt: boolean) => {
-    if (!isFlipped || !user || !firestore) return;
-
-    // Save current state to history before changing it
-    setHistory(prev => [...prev, { vocabulary, currentIndex, incorrectlyAnsweredIds }]);
-
-    const currentCard = vocabulary[currentIndex];
-    let remainingCards = [...vocabulary];
-
-    if (!knewIt) {
-        if (!incorrectlyAnsweredIds.has(currentCard.id)) {
-            setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
-        }
-        
-        const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
-        remainingCards.push(cardToRepeat);
-    } else {
-        remainingCards.splice(currentIndex, 1);
-    }
-
-    if (remainingCards.length === 0) {
-        const incorrectCount = incorrectlyAnsweredIds.size;
-        const correctCount = totalVocabCount - incorrectCount;
-        const finalScore = totalVocabCount > 0 ? Math.round((correctCount / totalVocabCount) * 100) : 0;
-        
-        const confettiEnabled = localStorage.getItem('enable-confetti') !== 'false';
-        if (finalScore >= 90 && confettiEnabled) {
-            setShowConfetti(true);
-        }
-        setShowResults(true);
-    } else {
+  
+  const goToNextCard = () => {
+     let remainingCards = [...vocabulary];
+     remainingCards.splice(currentIndex, 1);
+     
+     if (remainingCards.length === 0) {
+        finishSession();
+     } else {
         const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
         
         setVocabulary(remainingCards);
         setCurrentIndex(newIndex);
+        
+        // Reset for next card
+        setIsNewCard(true);
+        setIsFlipped(false);
+        setAnswerStatus('unanswered');
+        setUserInput('');
+     }
+  }
+
+  const handleClassicAnswer = (knewIt: boolean) => {
+    if (!isFlipped || !user || !firestore) return;
+
+    setHistory(prev => [...prev, { vocabulary, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
+
+    const currentCard = vocabulary[currentIndex];
+
+    if (knewIt) {
+        setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+        triggerHapticFeedback('light');
+        goToNextCard();
+    } else {
+        if (!incorrectlyAnsweredIds.has(currentCard.id)) {
+            setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
+        }
+        setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
+        triggerHapticFeedback('heavy');
+
+        const cardToRepeat = vocabulary.splice(currentIndex, 1)[0];
+        const newVocabulary = [...vocabulary, cardToRepeat];
+        
+        setVocabulary(newVocabulary);
+        
+        // No need to change index, as the next card is now at the current index
         setIsNewCard(true);
         setTimeout(() => setIsFlipped(false), 0);
     }
+  };
+
+  const handleCheckAnswer = () => {
+    if (isFlipped) {
+      goToNextCard();
+      return;
+    }
+
+    setHistory(prev => [...prev, { vocabulary, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
+    setIsFlipped(true);
+
+    const currentCard = vocabulary[currentIndex];
+    const expectedAnswer = isTermFirst ? currentCard.definition : currentCard.term;
+
+    // Simple case-insensitive and trimming comparison
+    const isCorrect = userInput.trim().toLowerCase() === expectedAnswer.trim().toLowerCase();
+
+    if (isCorrect) {
+      setAnswerStatus('correct');
+      setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+      triggerHapticFeedback('light');
+    } else {
+      setAnswerStatus('incorrect');
+      if (!incorrectlyAnsweredIds.has(currentCard.id)) {
+        setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
+      }
+      setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
+      triggerHapticFeedback('heavy', 'heavy'); // Double tap
+    }
+  };
+  
+  const handleMarkAsCorrect = () => {
+    setAnswerStatus('accepted');
+    const currentCard = vocabulary[currentIndex];
+    setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'accepted'));
+    triggerHapticFeedback('light');
+  }
+
+  const finishSession = () => {
+    const incorrectCount = incorrectlyAnsweredIds.size;
+    const correctCount = totalVocabCount - incorrectCount;
+    const finalScore = totalVocabCount > 0 ? Math.round((correctCount / totalVocabCount) * 100) : 0;
+    
+    const confettiEnabled = localStorage.getItem('enable-confetti') !== 'false';
+    if (finalScore >= 90 && confettiEnabled) {
+        setShowConfetti(true);
+    }
+    setShowResults(true);
   };
 
   const resetSession = () => {
@@ -242,7 +307,10 @@ export default function LearnPage() {
     setShowResults(false);
     setShowConfetti(false);
     setIncorrectlyAnsweredIds(new Set());
+    setAnsweredIds(new Map());
     setHistory([]);
+    setUserInput('');
+    setAnswerStatus('unanswered');
     setIsNewCard(true);
   };
   
@@ -253,6 +321,14 @@ export default function LearnPage() {
         router.push('/dashboard');
     }
   };
+  
+  const toggleInputMode = () => {
+    const newMode = !isTypedMode;
+    setIsTypedMode(newMode);
+    localStorage.setItem('learn-mode-typed', String(newMode));
+    resetSession();
+  };
+
 
   const getMotivationMessage = (score: number) => {
     if (score >= 90) return "Exzellente Leistung. Halte das Niveau.";
@@ -261,7 +337,6 @@ export default function LearnPage() {
     if (score >= 30) return "Kein Grund zur Sorge. Lerne gezielt die Fehler, dann kommst du schnell voran.";
     return "Das Fundament fehlt noch – wiederhole regelmäßig, um Fortschritt zu sehen.";
   };
-
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin" /></div>;
@@ -308,11 +383,25 @@ export default function LearnPage() {
         </div>
     );
   }
+  
+  const feedbackStyles = {
+    correct: 'text-green-500',
+    incorrect: 'text-red-500',
+    accepted: 'text-gray-500',
+    unanswered: 'text-foreground'
+  };
+  
+  const feedbackSmiley = {
+    correct: '😊',
+    incorrect: '😕',
+    accepted: '🙂',
+    unanswered: ''
+  };
 
   return (
     <div className="flex flex-col items-center">
       <div className="w-full max-w-2xl px-4 sm:px-0">
-        <div className="flex items-center justify-start mb-2">
+        <div className="flex items-center justify-between mb-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -332,6 +421,10 @@ export default function LearnPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            
+            <Button variant="ghost" size="icon" onClick={toggleInputMode}>
+                <Pencil className={cn("h-5 w-5", isTypedMode && "text-primary")} />
+            </Button>
         </div>
         <Progress value={progress} className="h-2 w-full mb-1" />
         <p className="text-sm text-muted-foreground text-center">
@@ -346,14 +439,17 @@ export default function LearnPage() {
             isFlipped && "[transform:rotateX(-180deg)]",
             isNewCard && 'animate-pop-in'
           )}
-          onClick={() => setIsFlipped(!isFlipped)}
+          onClick={() => !isTypedMode && setIsFlipped(!isFlipped)}
         >
           {/* Front of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] flex items-center justify-center p-6 rounded-2xl bg-card">
+          <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect">
             <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
           </div>
           {/* Back of the card */}
-          <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
+          <div className={cn("absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect", feedbackStyles[answerStatus])}>
+            {isTypedMode && (
+              <div className="absolute top-4 text-4xl">{feedbackSmiley[answerStatus]}</div>
+            )}
             <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
             {shouldShowHints && currentCard.notes && (
                 <div className="flex items-start gap-2 text-base text-center text-muted-foreground mt-4">
@@ -361,39 +457,65 @@ export default function LearnPage() {
                   <p>{currentCard.notes}</p>
                 </div>
             )}
+            {isTypedMode && answerStatus === 'incorrect' && (
+               <div className="absolute bottom-6 text-center opacity-75 transition-opacity duration-300">
+                  <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
+                      Ich hab's gewusst
+                  </Button>
+              </div>
+            )}
           </div>
         </Card>
       </div>
       
-       <div className="mt-8 w-full max-w-2xl">
-          {!isFlipped ? (
-            <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+       <div className="mt-8 w-full max-w-2xl min-h-[6rem]">
+          {isTypedMode ? (
+            <>
+              <div className={cn("flex gap-2 transition-opacity duration-300 w-full", isFlipped && 'opacity-0 pointer-events-none')}>
+                <Input
+                  ref={inputRef}
+                  placeholder="Antwort tippen..."
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
+                  className="text-center text-lg h-12"
+                  autoFocus
+                />
+                <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
+              </div>
+              <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
+                <Button size="lg" className="w-full" onClick={goToNextCard}>
+                  {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
+                </Button>
+              </div>
+            </>
           ) : (
-          <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
-            <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
-              <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-            </Button>
-            <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(true)}>
-              <Check className="mr-2 h-4 w-4" /> Wusste ich
-            </Button>
-          </div>
+            <>
+              {!isFlipped ? (
+                <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+              ) : (
+                <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
+                  <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(false)}>
+                    <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+                  </Button>
+                  <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(true)}>
+                    <Check className="mr-2 h-4 w-4" /> Wusste ich
+                  </Button>
+                </div>
+              )}
+            </>
           )}
        </div>
-       {history.length > 0 && !isFlipped && (
-          <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
-            Zurück
-          </Button>
-       )}
+       <div className="w-full max-w-2xl flex justify-center">
+            {history.length > 0 && (
+                <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Zurück
+                </Button>
+            )}
+       </div>
     </div>
   );
 }
-
-declare module '@/lib/types' {
-    interface VocabularyItem {
-        stackId?: string;
-    }
-}
-
-    
 
     
