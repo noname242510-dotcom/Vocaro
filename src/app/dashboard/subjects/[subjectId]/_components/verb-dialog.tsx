@@ -406,8 +406,9 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
         statusText={generationState.statusText}
         onClose={() => {
             setGenerationState(prev => ({ ...prev, isOpen: false, error: null }));
-            if (!generatedData) {
-              onOpenChange(true); // Re-open the main dialog if generation failed and wasn't completed.
+            // Only re-open if there was an error, indicating generation was not successful
+            if (generationState.error) {
+              onOpenChange(true);
             }
         }}
        />
