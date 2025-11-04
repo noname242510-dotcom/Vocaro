@@ -27,17 +27,18 @@ export function OcrProcessingPopup({
     return null;
   }
   
-  const percentage = total > 0 ? (progress / total) * 100 : 0;
+  const percentage = total > 0 ? (progress / total) * 100 : progress;
 
   return (
     <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
       <div
         className={cn(
-          'glass-effect w-full max-w-sm rounded-2xl p-6 text-center transition-colors duration-300',
-          error ? 'bg-destructive/10 border-destructive/20' : 'border-glass-border'
+          'w-full max-w-sm rounded-2xl p-6 text-center transition-colors duration-300',
+          'bg-background border shadow-lg',
+          error ? 'border-destructive/50' : 'border-border'
         )}
       >
-        <h3 className="text-lg font-semibold mb-8 truncate">{stackName}</h3>
+        <h3 className="text-lg font-semibold mb-2 truncate">{stackName}</h3>
         
         {error ? (
             <>
