@@ -305,6 +305,7 @@ export default function SubjectDetailPage() {
         
         if (!extractedText.trim()) throw new Error("Im Bild wurde kein Text gefunden.");
         
+        setOcrState(prev => ({ ...prev, statusText: "Vokabeln werden aufbereitet..."}));
         const generationResult = await generateVocabularyFromExtractedText({ extractedText });
         const generatedVocab = generationResult.vocabulary;
         
@@ -832,7 +833,7 @@ export default function SubjectDetailPage() {
                     onChange={e => setVerbSearchQuery(e.target.value)}
                   />
               </div>
-              <div className="flex items-center gap-2 justify-end">
+              <div className="flex items-center gap-2 justify-center md:justify-end">
                 <Dialog open={isTenseSelectionDialogOpen} onOpenChange={setIsTenseSelectionDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" disabled={selectedVerbsCount === 0} onClick={handleOpenTenseDialog}>
