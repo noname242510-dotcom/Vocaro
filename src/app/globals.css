@@ -82,6 +82,16 @@
       transform: translateY(var(--y-end)) translateX(calc(var(--x-end) - var(--x-start))) rotate3d(1, 1, 1, var(--rotation-end));
     }
   }
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.8;
+    }
+  }
 }
 
 @layer components {
@@ -90,5 +100,8 @@
   }
   .animate-pop-in {
     animation: pop-in 0.3s ease-out;
+  }
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }

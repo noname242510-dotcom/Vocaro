@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useMemo, ChangeEvent, useEffect } from 'react';
@@ -72,6 +70,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { OcrProcessingPopup } from '@/components/ocr-processing-popup';
 
 const tenseOrderConfig: { [key: string]: string[] } = {
     'Indicatif': [
@@ -103,7 +102,6 @@ export default function SubjectDetailPage() {
   // Vocab state
   const [allVocabulary, setAllVocabulary] = useState<Record<string, VocabularyItem[]>>({});
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [isProcessingOcr, setIsProcessingOcr] = useState(false);
   const [newStackName, setNewStackName] = useState('');
   const [activeStackId, setActiveStackId] = useState<string | null>(null);
   const [manualTerm, setManualTerm] = useState('');
@@ -112,6 +110,21 @@ export default function SubjectDetailPage() {
   const [isAddingManually, setIsAddingManually] = useState(false);
   const [isAddVocabDialogOpen, setIsAddVocabDialogOpen] = useState(false);
   const [isDeleteVocabDialogOpen, setIsDeleteVocabDialogOpen] = useState(false);
+  
+  // OCR Popup State
+  const [ocrState, setOcrState] = useState<{
+    isOpen: boolean;
+    stackName: string;
+    progress: number;
+    total: number;
+    error: string | null;
+  }>({
+    isOpen: false,
+    stackName: '',
+    progress: 0,
+    total: 0,
+    error: null,
+  });
 
   // Subject state
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -282,7 +295,14 @@ export default function SubjectDetailPage() {
       return;
     }
 
-    setIsProcessingOcr(true);
+    resetAndCloseAddVocabDialog();
+    setOcrState({
+        isOpen: true,
+        stackName: newStackName,
+        progress: 0,
+        total: 0,
+        error: null,
+    });
 
     try {
       const ocrResult = await suggestVocabularyFromImageContext({ imageDataUri: previewImage });
@@ -294,10 +314,13 @@ export default function SubjectDetailPage() {
 
       const generationResult = await generateVocabularyFromExtractedText({ extractedText });
       const generatedVocab = generationResult.vocabulary;
+      const totalWords = generatedVocab.length;
 
-      if (generatedVocab.length === 0) {
+       if (totalWords === 0) {
         throw new Error("Aus dem extrahierten Text konnten keine Vokabeln generiert werden.");
       }
+
+      setOcrState(prev => ({ ...prev, total: totalWords }));
       
       if (!user || !firestore || !stacksCollectionRef) {
          throw new Error("Benutzer nicht authentifiziert.");
@@ -321,7 +344,7 @@ export default function SubjectDetailPage() {
 
       const batch = writeBatch(firestore);
       const vocabCollectionRef = collection(stackRef, 'vocabulary');
-      generatedVocab.forEach((vocabItem) => {
+      generatedVocab.forEach((vocabItem, index) => {
         const newVocabRef = doc(vocabCollectionRef);
         batch.set(newVocabRef, {
           term: vocabItem.term,
@@ -329,24 +352,25 @@ export default function SubjectDetailPage() {
           notes: vocabItem.notes || '',
           createdAt: serverTimestamp(),
         });
+        // Simulate progress for the UI
+         setTimeout(() => {
+            setOcrState(prev => ({ ...prev, progress: index + 1 }));
+        }, index * 50); // Small delay to show progress
       });
       await batch.commit();
 
       toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im Stapel "${newStackName}" gespeichert.` });
       
-      resetAndCloseAddVocabDialog();
-      forceUpdate();
-      fetchAllVocab();
+      setTimeout(() => {
+        setOcrState({ isOpen: false, stackName: '', progress: 0, total: 0, error: null });
+        forceUpdate();
+        fetchAllVocab();
+      }, 1000);
+
 
     } catch (error: any) {
       console.error("Error during OCR and save process:", error);
-      toast({
-        variant: "destructive",
-        title: "Fehler beim Verarbeiten",
-        description: error.message || "Der Vorgang konnte nicht abgeschlossen werden. Bitte versuche es erneut.",
-      });
-    } finally {
-      setIsProcessingOcr(false);
+      setOcrState(prev => ({ ...prev, error: error.message || "Der Vorgang konnte nicht abgeschlossen werden. Bitte versuche es erneut." }));
     }
   };
 
@@ -944,7 +968,7 @@ export default function SubjectDetailPage() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
 
-                <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
+                <Dialog open={isAddVocabDialogOpen} onOpenChange={resetAndCloseAddVocabDialog}>
                     <DialogTrigger asChild>
                          <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" onClick={() => openAddVocabDialog()}>
                             <Plus className="h-6 w-6" />
@@ -1000,21 +1024,14 @@ export default function SubjectDetailPage() {
                             </div>
                             <div className="grid gap-2">
                               <Label htmlFor="picture">Bild</Label>
-                              <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" disabled={isProcessingOcr} />
+                              <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" />
                             </div>
                           </div>
                            <DialogFooter className="pt-4">
-                            {isProcessingOcr ? (
-                                <Button disabled className="w-full">
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Verarbeite und speichere...
-                                </Button>
-                            ) : (
-                                 <Button onClick={handleExtractAndSaveVocabulary} disabled={!previewImage || !newStackName} className="w-full">
+                                <Button onClick={handleExtractAndSaveVocabulary} disabled={!previewImage || !newStackName} className="w-full">
                                   <Upload className="mr-2 h-4 w-4" />
                                   Extrahieren und Speichern
                                 </Button>
-                            )}
                           </DialogFooter>
                         </TabsContent>
                       </Tabs>
@@ -1045,15 +1062,15 @@ export default function SubjectDetailPage() {
         onSave={handleSaveVerb}
         existingVerb={editingVerb}
       />
+      
+      <OcrProcessingPopup
+        isOpen={ocrState.isOpen}
+        stackName={ocrState.stackName}
+        progress={ocrState.progress}
+        total={ocrState.total}
+        error={ocrState.error}
+        onClose={() => setOcrState(prev => ({ ...prev, isOpen: false, error: null }))}
+      />
     </div>
   );
 }
-
-    
-
-    
-
-
-
-
-
