@@ -3,7 +3,6 @@
 import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { Logo } from './logo';
 
 interface VerbGenerationPopupProps {
   isOpen: boolean;
@@ -46,20 +45,7 @@ export function VerbGenerationPopup({
                 <p className="text-muted-foreground text-sm mt-1 mb-4 h-5">
                   {/* Progress details can be added here if needed */}
                 </p>
-                <Progress value={undefined} className="w-full h-1 indeterminate" />
-                 <style jsx>{`
-                    .indeterminate {
-                        animation: indeterminate-progress 1.5s infinite;
-                    }
-                    @keyframes indeterminate-progress {
-                        0% { transform: translateX(-100%); }
-                        100% { transform: translateX(100%); }
-                    }
-                    .indeterminate > div {
-                        width: 50%;
-                        background: hsl(var(--primary));
-                    }
-                `}</style>
+                <Progress value={undefined} className="w-full" />
             </>
         )}
       </div>
