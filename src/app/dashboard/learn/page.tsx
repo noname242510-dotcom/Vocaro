@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft } from 'lucide-react';
+import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft, Smile, Frown, Meh } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -391,11 +391,13 @@ export default function LearnPage() {
     unanswered: 'text-foreground'
   };
   
-  const feedbackSmiley = {
-    correct: '😊',
-    incorrect: '😕',
-    accepted: '🙂',
-    unanswered: ''
+  const FeedbackIcon = ({ status }: { status: AnswerStatus }) => {
+    switch (status) {
+        case 'correct': return <Smile className="h-10 w-10" />;
+        case 'incorrect': return <Frown className="h-10 w-10" />;
+        case 'accepted': return <Meh className="h-10 w-10" />;
+        default: return <div className="h-10 w-10" />;
+    }
   };
 
   return (
@@ -447,18 +449,19 @@ export default function LearnPage() {
           </div>
           {/* Back of the card */}
           <div className={cn("absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect", feedbackStyles[answerStatus])}>
-            {isTypedMode && (
-              <div className="absolute top-4 text-4xl">{feedbackSmiley[answerStatus]}</div>
-            )}
-            <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
+            <div className="flex flex-col items-center justify-center gap-4">
+                <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
+                {isTypedMode && <FeedbackIcon status={answerStatus} />}
+            </div>
+
             {shouldShowHints && currentCard.notes && (
-                <div className="flex items-start gap-2 text-base text-center text-muted-foreground mt-4">
+                <div className="absolute bottom-16 flex items-start gap-2 text-base text-center text-muted-foreground mt-4 px-6">
                   <Lightbulb className="h-5 w-5 flex-shrink-0" />
                   <p>{currentCard.notes}</p>
                 </div>
             )}
             {isTypedMode && answerStatus === 'incorrect' && (
-               <div className="absolute bottom-6 text-center opacity-75 transition-opacity duration-300">
+               <div className="absolute bottom-4 text-center opacity-75 transition-opacity duration-300">
                   <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
                       Ich hab's gewusst
                   </Button>
