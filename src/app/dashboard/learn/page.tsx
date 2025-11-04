@@ -47,6 +47,30 @@ interface LearnState {
   userInput: string;
 }
 
+const DiffHighlight = ({userInput, correctAnswer}: {userInput: string, correctAnswer: string}) => {
+    const userChars = userInput.trim().split('');
+    const correctChars = correctAnswer.trim().split('');
+
+    return (
+        <p className="text-xl font-mono text-center mb-1">
+        {userChars.map((char, index) => (
+            <span 
+                key={index}
+                className={cn(
+                    "border-b-2",
+                    index < correctChars.length && char.toLowerCase() === correctChars[index].toLowerCase()
+                        ? 'border-transparent'
+                        : 'border-destructive'
+                )}
+            >
+                {char}
+            </span>
+        ))}
+        </p>
+    );
+};
+
+
 export default function LearnPage() {
   const { firestore, user } = useFirebase();
   const router = useRouter();
@@ -384,13 +408,6 @@ export default function LearnPage() {
     );
   }
   
-  const feedbackStyles = {
-    correct: 'text-green-500',
-    incorrect: 'text-red-500',
-    accepted: 'text-gray-500',
-    unanswered: 'text-foreground'
-  };
-  
   const FeedbackIcon = ({ status }: { status: AnswerStatus }) => {
     switch (status) {
         case 'correct': return <Smile className="h-10 w-10" />;
@@ -399,6 +416,9 @@ export default function LearnPage() {
         default: return <div className="h-10 w-10" />;
     }
   };
+  
+  const expectedAnswer = isTermFirst ? currentCard.definition : currentCard.term;
+
 
   return (
     <div className="flex flex-col items-center">
@@ -448,10 +468,13 @@ export default function LearnPage() {
             <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
           </div>
           {/* Back of the card */}
-          <div className={cn("absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect", feedbackStyles[answerStatus])}>
-            <div className="flex flex-col items-center justify-center gap-4">
+          <div className={cn("absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect")}>
+             <div className="flex flex-col items-center justify-center gap-4">
+                {isTypedMode && answerStatus === 'incorrect' && (
+                    <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
+                )}
                 <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
-                {isTypedMode && <FeedbackIcon status={answerStatus} />}
+                {isTypedMode && <div className="mt-2"><FeedbackIcon status={answerStatus} /></div>}
             </div>
 
             {shouldShowHints && currentCard.notes && (
