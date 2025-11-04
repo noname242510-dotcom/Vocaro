@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useContext } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { VerbGenerationPopup } from '@/components/verb-generation-popup';
+import { TaskContext } from '@/contexts/task-context';
 
 
 interface VerbDialogProps {
@@ -107,18 +107,8 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { runTask, isRunning } = useContext(TaskContext);
 
-    const [generationState, setGenerationState] = useState<{
-        isOpen: boolean;
-        verb: string;
-        error: string | null;
-        statusText: string;
-    }>({
-        isOpen: false,
-        verb: '',
-        error: null,
-        statusText: "KI erstellt Verbformen...",
-    });
 
   useEffect(() => {
     if (isOpen) {
@@ -144,31 +134,28 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
       return;
     }
     
-    setIsLoading(true);
     setError(null);
     setGeneratedData(null);
     onOpenChange(false); // Close main dialog
-    
-    setGenerationState({
-        isOpen: true,
-        verb: infinitive,
-        error: null,
-        statusText: "KI erstellt Verbformen...",
-    });
-    
-    try {
-      const result = await generateVerbForms({ verb: infinitive, language });
-      setGeneratedData(result);
-      setGenerationState(prev => ({ ...prev, isOpen: false }));
-      onOpenChange(true); // Re-open main dialog with data
-    } catch (e) {
-      console.error(e);
-      const errorMessage = 'Die Verbformen konnten nicht generiert werden. Bitte versuche es erneut.';
-      setGenerationState(prev => ({ ...prev, error: errorMessage }));
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+
+    runTask(
+      async () => {
+        const result = await generateVerbForms({ verb: infinitive, language });
+        return result;
+      },
+      {
+        name: `Verbformen für "${infinitive}" generieren`,
+        onSuccess: (result) => {
+            setGeneratedData(result as GenerateVerbFormsOutput);
+            onOpenChange(true); // Re-open main dialog with data
+            toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert.` });
+        },
+        onError: (error) => {
+            setError(error.message || 'Die Verbformen konnten nicht generiert werden.');
+            onOpenChange(true); // Re-open to show error
+        }
+      }
+    );
   };
 
   const handleFormChange = (tense: string, pronoun: string, value: string, formType: 'forms' | 'germanForms') => {
@@ -337,7 +324,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                   className="col-span-3"
                   placeholder={language === 'French' ? 'z.B. aller' : 'z.B. to go'}
                   onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                  disabled={!!existingVerb}
+                  disabled={!!existingVerb || isRunning}
                 />
               </div>
                {error && (
@@ -347,8 +334,8 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                   </div>
               )}
               <div className="flex justify-end">
-                  <Button onClick={handleGenerate} disabled={isLoading}>
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                  <Button onClick={handleGenerate} disabled={isLoading || isRunning}>
+                  {isLoading || isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                   Formen generieren
                 </Button>
               </div>
@@ -398,20 +385,6 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
           )}
         </DialogContent>
       </Dialog>
-      
-       <VerbGenerationPopup
-        isOpen={generationState.isOpen}
-        verb={generationState.verb}
-        error={generationState.error}
-        statusText={generationState.statusText}
-        onClose={() => {
-            setGenerationState(prev => ({ ...prev, isOpen: false, error: null }));
-            // Only re-open if there was an error, indicating generation was not successful
-            if (generationState.error) {
-              onOpenChange(true);
-            }
-        }}
-       />
     </>
   );
 }

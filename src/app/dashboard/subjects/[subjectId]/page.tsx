@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, ChangeEvent, useEffect, useRef } from 'react';
+import { useState, useMemo, ChangeEvent, useEffect, useRef, useContext } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import {
@@ -69,7 +69,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { OcrProcessingPopup } from '@/components/ocr-processing-popup';
+import { TaskContext } from '@/contexts/task-context';
+
 
 const tenseOrderConfig: { [key: string]: string[] } = {
     'Indicatif': [
@@ -98,6 +99,7 @@ export default function SubjectDetailPage() {
   const searchParams = useSearchParams();
   const subjectId = params.subjectId as string;
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { runTask, isRunning } = useContext(TaskContext);
 
   // Vocab state
   const [allVocabulary, setAllVocabulary] = useState<Record<string, VocabularyItem[]>>({});
@@ -111,23 +113,6 @@ export default function SubjectDetailPage() {
   const [isAddVocabDialogOpen, setIsAddVocabDialogOpen] = useState(false);
   const [isDeleteVocabDialogOpen, setIsDeleteVocabDialogOpen] = useState(false);
   
-  // OCR Popup State
-  const [ocrState, setOcrState] = useState<{
-    isOpen: boolean;
-    stackName: string;
-    progress: number;
-    total: number;
-    error: string | null;
-    statusText: string;
-  }>({
-    isOpen: false,
-    stackName: '',
-    progress: 0,
-    total: 0,
-    error: null,
-    statusText: "Vokabeln werden erkannt...",
-  });
-
   // Subject state
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -298,32 +283,16 @@ export default function SubjectDetailPage() {
     }
 
     resetAndCloseAddVocabDialog();
-    setOcrState({
-        isOpen: true,
-        stackName: newStackName,
-        progress: 0,
-        total: 0,
-        error: null,
-        statusText: "Vokabeln werden erkannt...",
-    });
-
-    try {
+    
+    runTask(
+      async () => {
         const ocrResult = await suggestVocabularyFromImageContext({ imageDataUri: previewImage });
         const extractedText = ocrResult.suggestedVocabulary.join('\n');
-        
         if (!extractedText.trim()) throw new Error("Im Bild wurde kein Text gefunden.");
-        
-        setOcrState(prev => ({ ...prev, statusText: "Vokabeln werden aufbereitet..."}));
+
         const generationResult = await generateVocabularyFromExtractedText({ extractedText });
         const generatedVocab = generationResult.vocabulary;
-        
-        if (generatedVocab.length === 0) throw new Error("Aus dem extrahierten Text konnten keine Vokabeln generiert werden.");
-
-        setOcrState(prev => ({ 
-            ...prev, 
-            total: generatedVocab.length,
-            statusText: `Vokabeln werden gespeichert...`
-        }));
+        if (generatedVocab.length === 0) throw new Error("Aus dem Text konnten keine Vokabeln generiert werden.");
         
         if (!user || !firestore || !stacksCollectionRef) throw new Error("Benutzer nicht authentifiziert.");
         
@@ -353,23 +322,21 @@ export default function SubjectDetailPage() {
                 notes: vocabItem.notes || '',
                 createdAt: serverTimestamp(),
             });
-
-            setOcrState(prev => ({ ...prev, progress: i + 1 }));
-            await new Promise(resolve => setTimeout(resolve, 30));
         }
-
-        toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im Stapel "${newStackName}" gespeichert.` });
-      
-        setTimeout(() => {
-            setOcrState({ isOpen: false, stackName: '', progress: 0, total: 0, error: null, statusText: '' });
+        return { count: generatedVocab.length };
+      },
+      {
+        name: `Vokabeln für "${newStackName}" erkennen`,
+        onSuccess: (result: any) => {
+            toast({ title: 'Erfolg!', description: `${result.count} Vokabeln im Stapel "${newStackName}" gespeichert.` });
             forceUpdate();
             fetchAllVocab();
-        }, 1000);
-
-    } catch (error: any) {
-        console.error("Error during OCR and save process:", error);
-        setOcrState(prev => ({ ...prev, error: error.message || "Der Vorgang konnte nicht abgeschlossen werden. Bitte versuche es erneut." }));
-    }
+        },
+        onError: (error) => {
+            toast({ variant: "destructive", title: "Fehler bei der Vokabelerkennung", description: error.message });
+        }
+      }
+    );
   };
 
 
@@ -915,8 +882,8 @@ export default function SubjectDetailPage() {
                 </Dialog>
 
 
-                <Button onClick={handleAddNewVerb} size="default">
-                    <Plus className="h-4 w-4 md:mr-2" />
+                <Button onClick={handleAddNewVerb} size="default" disabled={isRunning}>
+                    {isRunning ? <Loader2 className="h-4 w-4 md:mr-2 animate-spin" /> : <Plus className="h-4 w-4 md:mr-2" />}
                     <span className="hidden md:inline">Verb hinzufügen</span>
                 </Button>
               </div>
@@ -992,8 +959,8 @@ export default function SubjectDetailPage() {
                     }
                 }}>
                     <DialogTrigger asChild>
-                         <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full">
-                            <Plus className="h-6 w-6" />
+                         <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" disabled={isRunning}>
+                            {isRunning ? <Loader2 className="h-6 w-6 animate-spin" /> : <Plus className="h-6 w-6" />}
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[625px]">
@@ -1050,8 +1017,8 @@ export default function SubjectDetailPage() {
                             </div>
                           </div>
                            <DialogFooter className="pt-4">
-                                <Button onClick={handleExtractAndSaveVocabulary} disabled={!previewImage || !newStackName} className="w-full">
-                                  <Upload className="mr-2 h-4 w-4" />
+                                <Button onClick={handleExtractAndSaveVocabulary} disabled={!previewImage || !newStackName || isRunning} className="w-full">
+                                  {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                                   Extrahieren und Speichern
                                 </Button>
                           </DialogFooter>
@@ -1083,16 +1050,6 @@ export default function SubjectDetailPage() {
         language={getLanguageFromSubject(subject?.name)}
         onSave={handleSaveVerb}
         existingVerb={editingVerb}
-      />
-      
-      <OcrProcessingPopup
-        isOpen={ocrState.isOpen}
-        stackName={ocrState.stackName}
-        progress={ocrState.progress}
-        total={ocrState.total}
-        error={ocrState.error}
-        onClose={() => setOcrState(prev => ({ ...prev, isOpen: false, error: null }))}
-        statusText={ocrState.statusText}
       />
     </div>
   );
