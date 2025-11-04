@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, ChangeEvent, useEffect } from 'react';
+import { useState, useMemo, ChangeEvent, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import {
@@ -97,6 +97,7 @@ export default function SubjectDetailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const subjectId = params.subjectId as string;
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Vocab state
   const [allVocabulary, setAllVocabulary] = useState<Record<string, VocabularyItem[]>>({});
@@ -137,6 +138,7 @@ export default function SubjectDetailPage() {
   const [isTenseSelectionDialogOpen, setIsTenseSelectionDialogOpen] = useState(false);
   const [editingVerb, setEditingVerb] = useState<Verb | null>(null);
   const [verbSearchQuery, setVerbSearchQuery] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [localVerbs, setLocalVerbs] = useState<Verb[]>([]);
   const [tempSelectedTenses, setTempSelectedTenses] = useState<Set<string>>(new Set());
   
@@ -174,6 +176,13 @@ export default function SubjectDetailPage() {
       setRenamedSubjectName(subject.name);
     }
   }, [subject]);
+  
+  useEffect(() => {
+    if (isSearchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchExpanded]);
+
 
   const fetchAllVocab = async () => {
     if (stacks && firestore && user) {
@@ -299,7 +308,6 @@ export default function SubjectDetailPage() {
     });
 
     try {
-        // Step 1: AI analysis
         const ocrResult = await suggestVocabularyFromImageContext({ imageDataUri: previewImage });
         const extractedText = ocrResult.suggestedVocabulary.join('\n');
         
@@ -311,7 +319,6 @@ export default function SubjectDetailPage() {
         
         if (generatedVocab.length === 0) throw new Error("Aus dem extrahierten Text konnten keine Vokabeln generiert werden.");
 
-        // Step 2: Update UI with total and change status text
         setOcrState(prev => ({ 
             ...prev, 
             total: generatedVocab.length,
@@ -320,7 +327,6 @@ export default function SubjectDetailPage() {
         
         if (!user || !firestore || !stacksCollectionRef) throw new Error("Benutzer nicht authentifiziert.");
         
-        // Step 3: Get or create the stack reference
         let stackRef;
         if (activeStackId) {
             stackRef = doc(stacksCollectionRef, activeStackId);
@@ -337,7 +343,6 @@ export default function SubjectDetailPage() {
             }
         }
         
-        // Step 4: Save vocabulary to Firestore and update progress
         const vocabCollectionRef = collection(stackRef, 'vocabulary');
         
         for (let i = 0; i < generatedVocab.length; i++) {
@@ -349,9 +354,8 @@ export default function SubjectDetailPage() {
                 createdAt: serverTimestamp(),
             });
 
-            // Update state to reflect progress after each write.
             setOcrState(prev => ({ ...prev, progress: i + 1 }));
-            await new Promise(resolve => setTimeout(resolve, 30)); // Small delay for UI update
+            await new Promise(resolve => setTimeout(resolve, 30));
         }
 
         toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im Stapel "${newStackName}" gespeichert.` });
@@ -823,22 +827,40 @@ export default function SubjectDetailPage() {
           )}
         </TabsContent>
         <TabsContent value="verbs" className="mt-6">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-4">
-              <div className="relative w-full md:max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Verben durchsuchen..." 
-                    className="pl-10" 
-                    value={verbSearchQuery}
-                    onChange={e => setVerbSearchQuery(e.target.value)}
-                  />
+            <div className="flex justify-between items-center mb-4 gap-2">
+              <div className="flex-1 flex justify-start">
+                  <div className="relative flex items-center">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className={cn("md:hidden transition-all duration-300", isSearchExpanded && "w-0 opacity-0 p-0")}
+                      onClick={() => setIsSearchExpanded(true)}
+                    >
+                      <Search className="h-5 w-5" />
+                    </Button>
+                    <Input 
+                      ref={searchInputRef}
+                      placeholder="Verben durchsuchen..."
+                      className={cn(
+                        "pl-10 hidden md:block transition-all duration-300",
+                        "md:w-full",
+                        "focus:w-full",
+                        isSearchExpanded && "w-[50vw] block"
+                      )}
+                      value={verbSearchQuery}
+                      onChange={e => setVerbSearchQuery(e.target.value)}
+                      onBlur={() => setIsSearchExpanded(false)}
+                    />
+                     <Search className={cn("absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hidden", (isSearchExpanded || !/Mobi|Android/i.test(navigator.userAgent)) && 'md:block')} />
+
+                  </div>
               </div>
-              <div className="flex items-center gap-2 justify-center md:justify-end">
+              <div className="flex items-center gap-2 justify-end">
                 <Dialog open={isTenseSelectionDialogOpen} onOpenChange={setIsTenseSelectionDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" disabled={selectedVerbsCount === 0} onClick={handleOpenTenseDialog}>
                       <Settings2 className="mr-2 h-4 w-4" />
-                      Zeiten auswählen
+                      <span className="hidden md:inline">Zeiten auswählen</span>
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
@@ -962,9 +984,15 @@ export default function SubjectDetailPage() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
 
-                <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
+                <Dialog open={isAddVocabDialogOpen} onOpenChange={(open) => {
+                    if (open) {
+                        openAddVocabDialog();
+                    } else {
+                        resetAndCloseAddVocabDialog();
+                    }
+                }}>
                     <DialogTrigger asChild>
-                         <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full" onClick={() => openAddVocabDialog()}>
+                         <Button variant="secondary" size="icon" className="h-11 w-11 rounded-full">
                             <Plus className="h-6 w-6" />
                         </Button>
                     </DialogTrigger>
