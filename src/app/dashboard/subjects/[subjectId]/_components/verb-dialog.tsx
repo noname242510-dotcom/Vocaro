@@ -117,7 +117,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
         isOpen: false,
         verb: '',
         error: null,
-        statusText: "AI is creating verb forms...",
+        statusText: "KI erstellt Verbformen...",
     });
 
   useEffect(() => {
@@ -153,7 +153,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
         isOpen: true,
         verb: infinitive,
         error: null,
-        statusText: "AI is creating verb forms...",
+        statusText: "KI erstellt Verbformen...",
     });
     
     try {
