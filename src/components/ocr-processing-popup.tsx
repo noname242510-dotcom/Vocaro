@@ -52,8 +52,8 @@ export function OcrProcessingPopup({
         ) : (
             <>
                 <p className="text-lg font-medium">{statusText}</p>
-                <p className="text-muted-foreground text-sm mt-1 mb-4">
-                    {total > 0 ? `Erkannt ${progress} / ${total} Wörter` : '...'}
+                <p className="text-muted-foreground text-sm mt-1 mb-4 h-5">
+                  {/* Text removed as per user request */}
                 </p>
                 <Progress value={percentage} className="w-full" />
             </>

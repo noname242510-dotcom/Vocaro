@@ -13,13 +13,12 @@ export function Logo({ className, iconOnly = false }: LogoProps) {
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
             className="h-full w-full"
         >
-            <path d="M5.5 22v-6.5l8-8V2" />
-            <path d="m20.5 2-8 8v6.5L20.5 22V2z" />
+          <path d="M5 3l7 18 7-18" />
         </svg>
     ) : (
         <span className="font-bold font-headline tracking-wider">Vocaro</span>
