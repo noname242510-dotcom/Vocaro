@@ -12,6 +12,7 @@ interface OcrProcessingPopupProps {
   total: number;
   error: string | null;
   onClose: () => void;
+  statusText: string;
 }
 
 export function OcrProcessingPopup({
@@ -21,6 +22,7 @@ export function OcrProcessingPopup({
   total,
   error,
   onClose,
+  statusText,
 }: OcrProcessingPopupProps) {
   if (!isOpen) {
     return null;
@@ -49,9 +51,9 @@ export function OcrProcessingPopup({
             </>
         ) : (
             <>
-                <p className="text-lg font-medium">Vokabeln werden erkannt...</p>
+                <p className="text-lg font-medium">{statusText}</p>
                 <p className="text-muted-foreground text-sm mt-1 mb-4">
-                    Erkannt {progress} / {total} Wörter
+                    {total > 0 ? `Erkannt ${progress} / ${total} Wörter` : '...'}
                 </p>
                 <Progress value={percentage} className="w-full" />
             </>

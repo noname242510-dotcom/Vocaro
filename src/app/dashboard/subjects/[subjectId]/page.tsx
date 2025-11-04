@@ -117,12 +117,14 @@ export default function SubjectDetailPage() {
     progress: number;
     total: number;
     error: string | null;
+    statusText: string;
   }>({
     isOpen: false,
     stackName: '',
     progress: 0,
     total: 0,
     error: null,
+    statusText: "Vokabeln werden erkannt...",
   });
 
   // Subject state
@@ -278,19 +280,11 @@ export default function SubjectDetailPage() {
 
   const handleExtractAndSaveVocabulary = async () => {
     if (!previewImage) {
-      toast({
-        variant: "destructive",
-        title: "Kein Bild ausgewählt",
-        description: "Bitte wähle zuerst ein Bild aus.",
-      });
+      toast({ variant: "destructive", title: "Kein Bild ausgewählt", description: "Bitte wähle zuerst ein Bild aus." });
       return;
     }
-     if (!newStackName) {
-      toast({
-        variant: "destructive",
-        title: "Kein Stapelname",
-        description: "Bitte gib einen Namen für den neuen Stapel an.",
-      });
+    if (!newStackName) {
+      toast({ variant: "destructive", title: "Kein Stapelname", description: "Bitte gib einen Namen für den neuen Stapel an." });
       return;
     }
 
@@ -301,84 +295,75 @@ export default function SubjectDetailPage() {
         progress: 0,
         total: 0,
         error: null,
+        statusText: "Vokabeln werden erkannt...",
     });
 
     try {
-      // Step 1: Extract text from image
-      const ocrResult = await suggestVocabularyFromImageContext({ imageDataUri: previewImage });
-      const extractedText = ocrResult.suggestedVocabulary.join('\n');
-      
-      if (!extractedText.trim()) {
-        throw new Error("Im Bild wurde kein Text gefunden.");
-      }
-      
-      // Step 2: Generate structured vocabulary from the text
-      const generationResult = await generateVocabularyFromExtractedText({ extractedText });
-      const generatedVocab = generationResult.vocabulary;
-      const totalWords = generatedVocab.length;
+        // Step 1: AI analysis
+        const ocrResult = await suggestVocabularyFromImageContext({ imageDataUri: previewImage });
+        const extractedText = ocrResult.suggestedVocabulary.join('\n');
+        
+        if (!extractedText.trim()) throw new Error("Im Bild wurde kein Text gefunden.");
+        
+        const generationResult = await generateVocabularyFromExtractedText({ extractedText });
+        const generatedVocab = generationResult.vocabulary;
+        
+        if (generatedVocab.length === 0) throw new Error("Aus dem extrahierten Text konnten keine Vokabeln generiert werden.");
 
-       if (totalWords === 0) {
-        throw new Error("Aus dem extrahierten Text konnten keine Vokabeln generiert werden.");
-      }
-      
-      // Step 3: Update UI with total count *before* saving
-      setOcrState(prev => ({ ...prev, total: totalWords }));
-      
-      if (!user || !firestore || !stacksCollectionRef) {
-         throw new Error("Benutzer nicht authentifiziert.");
-      }
-      
-      // Step 4: Get or create the stack reference
-      let stackRef;
-      if (activeStackId) {
-          stackRef = doc(stacksCollectionRef, activeStackId);
-      } else {
-           const existingStack = stacks?.find(s => s.name === newStackName);
-           if (existingStack) {
-               stackRef = doc(stacksCollectionRef, existingStack.id);
-           } else {
+        // Step 2: Update UI with total and change status text
+        setOcrState(prev => ({ 
+            ...prev, 
+            total: generatedVocab.length,
+            statusText: `Vokabeln werden gespeichert...`
+        }));
+        
+        if (!user || !firestore || !stacksCollectionRef) throw new Error("Benutzer nicht authentifiziert.");
+        
+        // Step 3: Get or create the stack reference
+        let stackRef;
+        if (activeStackId) {
+            stackRef = doc(stacksCollectionRef, activeStackId);
+        } else {
+            const existingStack = stacks?.find(s => s.name === newStackName);
+            if (existingStack) {
+                stackRef = doc(stacksCollectionRef, existingStack.id);
+            } else {
                 stackRef = await addDoc(stacksCollectionRef, {
                     name: newStackName,
                     createdAt: serverTimestamp(),
                     subjectId: subjectId,
                 });
-           }
-      }
-      
-      // Step 5: Save vocabulary to Firestore and update progress
-      const batch = writeBatch(firestore);
-      const vocabCollectionRef = collection(stackRef, 'vocabulary');
-      
-      for (let i = 0; i < generatedVocab.length; i++) {
-        const vocabItem = generatedVocab[i];
-        const newVocabRef = doc(vocabCollectionRef);
-        batch.set(newVocabRef, {
-          term: vocabItem.term,
-          definition: vocabItem.definition,
-          notes: vocabItem.notes || '',
-          createdAt: serverTimestamp(),
-        });
+            }
+        }
+        
+        // Step 4: Save vocabulary to Firestore and update progress
+        const vocabCollectionRef = collection(stackRef, 'vocabulary');
+        
+        for (let i = 0; i < generatedVocab.length; i++) {
+            const vocabItem = generatedVocab[i];
+            await addDoc(vocabCollectionRef, {
+                term: vocabItem.term,
+                definition: vocabItem.definition,
+                notes: vocabItem.notes || '',
+                createdAt: serverTimestamp(),
+            });
 
-        // Simulate progress for the UI by updating state in a timeout
-        await new Promise(resolve => setTimeout(resolve, 50)); // Small delay
-        setOcrState(prev => ({ ...prev, progress: i + 1 }));
-      }
-      
-      await batch.commit();
+            // Update state to reflect progress after each write.
+            setOcrState(prev => ({ ...prev, progress: i + 1 }));
+            await new Promise(resolve => setTimeout(resolve, 30)); // Small delay for UI update
+        }
 
-      toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im Stapel "${newStackName}" gespeichert.` });
+        toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im Stapel "${newStackName}" gespeichert.` });
       
-      // Close popup after a short delay
-      setTimeout(() => {
-        setOcrState({ isOpen: false, stackName: '', progress: 0, total: 0, error: null });
-        forceUpdate();
-        fetchAllVocab();
-      }, 1000);
-
+        setTimeout(() => {
+            setOcrState({ isOpen: false, stackName: '', progress: 0, total: 0, error: null, statusText: '' });
+            forceUpdate();
+            fetchAllVocab();
+        }, 1000);
 
     } catch (error: any) {
-      console.error("Error during OCR and save process:", error);
-      setOcrState(prev => ({ ...prev, error: error.message || "Der Vorgang konnte nicht abgeschlossen werden. Bitte versuche es erneut." }));
+        console.error("Error during OCR and save process:", error);
+        setOcrState(prev => ({ ...prev, error: error.message || "Der Vorgang konnte nicht abgeschlossen werden. Bitte versuche es erneut." }));
     }
   };
 
@@ -1078,6 +1063,7 @@ export default function SubjectDetailPage() {
         total={ocrState.total}
         error={ocrState.error}
         onClose={() => setOcrState(prev => ({ ...prev, isOpen: false, error: null }))}
+        statusText={ocrState.statusText}
       />
     </div>
   );
