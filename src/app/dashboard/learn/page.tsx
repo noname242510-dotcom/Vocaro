@@ -448,8 +448,8 @@ export default function LearnPage() {
               </AlertDialogContent>
             </AlertDialog>
             
-            <Button variant="ghost" size="icon" onClick={toggleInputMode}>
-                <Pencil className={cn("h-5 w-5", isTypedMode && "text-primary")} />
+            <Button variant={isTypedMode ? 'secondary' : 'ghost'} size="icon" onClick={toggleInputMode}>
+                <Pencil className="h-5 w-5" />
             </Button>
         </div>
         <Progress value={progress} className="h-2 w-full mb-1" />
