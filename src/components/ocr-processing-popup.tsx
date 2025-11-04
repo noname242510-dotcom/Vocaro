@@ -1,6 +1,5 @@
 'use client';
 
-import { Logo } from './logo';
 import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
@@ -28,7 +27,7 @@ export function OcrProcessingPopup({
     return null;
   }
   
-  const percentage = 100;
+  const percentage = total > 0 ? (progress / total) * 100 : 0;
 
   return (
     <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
