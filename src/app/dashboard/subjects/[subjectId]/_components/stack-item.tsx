@@ -137,7 +137,10 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                />
              </div>
             <h3 className="font-headline text-lg">{stack.name}</h3>
-            <Badge variant="secondary">{vocabulary.length || 0} Vokabeln</Badge>
+            <Badge variant="secondary">
+              {vocabulary.length || 0}
+              <span className="hidden sm:inline">&nbsp;Vokabeln</span>
+            </Badge>
           </div>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100" onClick={() => onAddVocab(stack)}>
