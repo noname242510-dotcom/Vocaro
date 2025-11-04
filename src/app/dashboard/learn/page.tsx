@@ -350,7 +350,11 @@ export default function LearnPage() {
     const newMode = !isTypedMode;
     setIsTypedMode(newMode);
     localStorage.setItem('learn-mode-typed', String(newMode));
-    resetSession();
+    
+    // Reset only the state for the current card view
+    setUserInput('');
+    setAnswerStatus('unanswered');
+    setIsFlipped(false);
   };
 
 
@@ -543,5 +547,3 @@ export default function LearnPage() {
     </div>
   );
 }
-
-    
