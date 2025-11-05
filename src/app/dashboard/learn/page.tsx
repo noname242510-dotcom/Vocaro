@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft, Smile, Frown, Meh, XCircle } from 'lucide-react';
+import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft, Smile, Frown, Meh } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
-import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // Function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -493,15 +493,15 @@ export default function LearnPage() {
                                 <Lightbulb className="h-5 w-5" />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto max-w-xs sm:max-w-sm" side="top">
-                            <div className="relative">
-                                <PopoverClose className="absolute -top-2 -right-2 rounded-full p-1 bg-background">
-                                    <XCircle className="h-5 w-5 text-muted-foreground" />
-                                </PopoverClose>
-                                <div className="flex items-start gap-2 pr-4">
-                                    <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
-                                    <p className="text-sm">{currentCard.notes}</p>
-                                </div>
+                        <PopoverContent 
+                            className="w-auto max-w-xs sm:max-w-sm" 
+                            side="top"
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-start gap-2">
+                                <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
+                                <p className="text-sm">{currentCard.notes}</p>
                             </div>
                         </PopoverContent>
                     </Popover>
@@ -569,3 +569,4 @@ export default function LearnPage() {
     </div>
   );
 }
+
