@@ -554,7 +554,10 @@ export default function LearnPage() {
                 </div>
             ) : (
                 <div className={cn("relative w-full h-12", isExiting && "opacity-0")}>
-                  <div className={cn("absolute inset-0 flex gap-2 transition-all duration-300", isFlipped ? 'opacity-0 scale-90' : 'opacity-100 scale-100')}>
+                  <div className={cn(
+                      "absolute inset-0 flex gap-2 transition-all duration-300", 
+                      isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
+                  )}>
                     <Input
                       ref={inputRef}
                       placeholder="Antwort tippen..."
@@ -566,7 +569,10 @@ export default function LearnPage() {
                     />
                     <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
                   </div>
-                  <div className={cn("absolute inset-0 flex gap-2 transition-all duration-300", !isFlipped ? 'opacity-0 scale-90' : 'opacity-100 scale-100')}>
+                  <div className={cn(
+                      "absolute inset-0 flex gap-2 transition-all duration-300", 
+                      !isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
+                  )}>
                     <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
                       {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
                     </Button>
@@ -576,12 +582,18 @@ export default function LearnPage() {
           ) : (
             <div className={cn("relative w-full h-12", isExiting && "opacity-0")}>
                 {/* "Umdrehen" button */}
-                <div className={cn("absolute inset-0 flex justify-center items-center transition-all duration-300", isFlipped ? 'opacity-0 scale-90' : 'opacity-100 scale-100')}>
+                <div className={cn(
+                    "absolute inset-0 flex justify-center items-center transition-all duration-300", 
+                    isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
+                )}>
                     <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
                 </div>
 
                 {/* "Wusste ich nicht" / "Wusste ich" buttons */}
-                <div className={cn("absolute inset-0 flex justify-center items-center gap-2 transition-all duration-300", !isFlipped ? 'opacity-0 scale-90' : 'opacity-100 scale-100')}>
+                <div className={cn(
+                    "absolute inset-0 flex justify-center items-center gap-2 transition-all duration-300",
+                    !isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
+                )}>
                     {showContinueButton ? (
                         <Button size="lg" className="w-full" onClick={() => { setIsFlipped(false); goToNextCard(true); }}>Weiter</Button>
                     ) : (
