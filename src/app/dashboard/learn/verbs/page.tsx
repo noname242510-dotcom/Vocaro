@@ -331,8 +331,8 @@ export default function VerbPracticePage() {
         
         setIsExiting(true);
         setTimeout(() => {
-          setTimeout(() => setIsFlipped(false), 0);
           goToNextCard(knewIt);
+          setIsFlipped(false);
           setIsExiting(false);
         }, 200); // Duration of fade-out animation
     };
@@ -342,8 +342,8 @@ export default function VerbPracticePage() {
           const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
           setIsExiting(true);
           setTimeout(() => {
-            setTimeout(() => setIsFlipped(false), 0);
             goToNextCard(isCorrect);
+            setIsFlipped(false);
             setIsExiting(false);
           }, 200);
           return;
@@ -525,43 +525,36 @@ export default function VerbPracticePage() {
             </div>
 
             <div className="w-full max-w-2xl h-80 relative mt-4">
-                <div
+                <Card
                     className={cn(
-                        "relative w-full h-full",
+                        "relative w-full h-full flex flex-col items-center justify-center p-6 rounded-2xl glass-effect",
                         isNewCard && 'animate-pop-in',
                         isExiting && 'animate-fade-out',
                     )}
                     onClick={() => !isTypedMode && setIsFlipped(f => !f)}
                 >
-                    {/* Front of the card */}
-                    <Card className={cn(
-                        "absolute w-full h-full flex flex-col items-center justify-center p-6 rounded-2xl glass-effect transition-opacity duration-500",
-                        isFlipped ? 'opacity-0' : 'opacity-100'
-                    )}>
-                        {shouldShowHints && currentCard.isConjugation && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
-                        <p className="text-4xl font-bold text-center">{currentCard.front}</p>
-                    </Card>
-                    {/* Back of the card */}
-                    <Card className={cn(
-                        "absolute w-full h-full flex flex-col items-center justify-center p-6 rounded-2xl glass-effect transition-opacity duration-500",
-                        isFlipped ? 'opacity-100' : 'opacity-0'
-                    )}>
-                        <div className="flex flex-col items-center justify-center gap-4">
+                     {/* Front and Back Text Container */}
+                    <div className="relative text-center">
+                        <div className={cn("transition-opacity duration-300", isFlipped ? 'opacity-0' : 'opacity-100')}>
+                            {shouldShowHints && currentCard.isConjugation && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
+                            <p className="text-4xl font-bold text-center">{currentCard.front}</p>
+                        </div>
+                        <div className={cn("absolute inset-0 transition-opacity duration-300 flex flex-col items-center justify-center", isFlipped ? 'opacity-100' : 'opacity-0')}>
                             {isTypedMode && answerStatus === 'incorrect' && (
                                 <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
                             )}
                             <p className="text-4xl font-bold text-center">{currentCard.back}</p>
                             {isTypedMode && !showContinueButton && !showClassicButtonsInTypedMode && <div className="mt-2"><FeedbackIcon status={answerStatus} /></div>}
                         </div>
-                         {isTypedMode && answerStatus === 'incorrect' && (
-                           <div className="absolute bottom-4 text-center opacity-75 transition-opacity duration-300">
-                              <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
-                                  Ich hab's gewusst
-                              </Button>
-                          </div>
-                        )}
-                    </Card>
-                </div>
+                    </div>
+                    {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
+                        <div className="absolute bottom-4 text-center opacity-75 transition-opacity duration-300">
+                            <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
+                                Ich hab's gewusst
+                            </Button>
+                        </div>
+                    )}
+                </Card>
             </div>
 
             <div className="mt-8 w-full max-w-2xl min-h-[6rem] relative">
