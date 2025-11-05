@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, ChangeEvent, useEffect, useRef, useContext } from 'react';
@@ -799,16 +800,13 @@ export default function SubjectDetailPage() {
                     <div
                         className={cn(
                         'relative flex items-center border rounded-full transition-all duration-300',
-                        'md:bg-background md:w-full',
-                        'has-[input:focus]:ring-2 has-[input:focus]:ring-ring has-[input:focus]:ring-offset-2 has-[input:focus]:ring-offset-background',
-                        isSearchExpanded ? 'w-full bg-background' : 'w-10 bg-transparent'
+                        'md:bg-background md:w-full md:ring-2 md:ring-ring md:ring-offset-2 md:ring-offset-background',
+                        isSearchExpanded ? 'w-full bg-background ring-2 ring-ring ring-offset-2 ring-offset-background' : 'w-10 bg-transparent'
                         )}
                     >
                         <Search
-                            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 md:cursor-text cursor-pointer"
-                            onMouseDown={(e) => {
-                                // Prevent the input's onBlur from firing immediately
-                                e.preventDefault();
+                            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 cursor-pointer"
+                            onClick={() => {
                                 setIsSearchExpanded(prev => !prev);
                                 if (!isSearchExpanded) {
                                     searchInputRef.current?.focus();
@@ -828,7 +826,6 @@ export default function SubjectDetailPage() {
                             value={verbSearchQuery}
                             onChange={(e) => setVerbSearchQuery(e.target.value)}
                             onBlur={() => {
-                                // Close only if search query is empty on mobile
                                 if (verbSearchQuery === '') {
                                     setIsSearchExpanded(false);
                                 }
@@ -1068,5 +1065,7 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
+    
 
     
