@@ -1,16 +1,22 @@
 'use client';
 
 import React, { createContext, useState, ReactNode, useCallback } from 'react';
+import type { GenerateVerbFormsOutput } from '@/ai/flows/generate-verb-forms';
+
+type TaskResult = GenerateVerbFormsOutput | { [key: string]: any } | null;
 
 interface TaskState {
   isRunning: boolean;
   taskName: string | null;
   progress: number;
   error: Error | null;
+  taskResult: TaskResult;
+  taskType: string | null;
 }
 
 interface TaskRunnerOptions<T> {
   name: string;
+  type: string;
   onSuccess?: (result: T) => void;
   onError?: (error: Error) => void;
   onFinally?: () => void;
@@ -21,6 +27,7 @@ interface TaskContextType extends TaskState {
     task: () => Promise<T>,
     options: TaskRunnerOptions<T>
   ) => void;
+  clearTaskResult: () => void;
 }
 
 export const TaskContext = createContext<TaskContextType>({
@@ -28,8 +35,13 @@ export const TaskContext = createContext<TaskContextType>({
   taskName: null,
   progress: 0,
   error: null,
+  taskResult: null,
+  taskType: null,
   runTask: () => {
     throw new Error('runTask function must be overridden by TaskProvider');
+  },
+  clearTaskResult: () => {
+    throw new Error('clearTaskResult function must be overridden by TaskProvider');
   },
 });
 
@@ -43,12 +55,13 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
     taskName: null,
     progress: 0,
     error: null,
+    taskResult: null,
+    taskType: null,
   });
 
   const runTask = useCallback(
     async <T,>(task: () => Promise<T>, options: TaskRunnerOptions<T>) => {
       if (taskState.isRunning) {
-        // Optionally, you could use toast here to inform the user.
         console.warn('Ein anderer Task wird bereits ausgeführt.');
         return;
       }
@@ -58,25 +71,25 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
         taskName: options.name,
         progress: 0,
         error: null,
+        taskResult: null,
+        taskType: options.type,
       });
 
       try {
         const result = await task();
-        setTaskState(prev => ({ ...prev, progress: 100 }));
+        setTaskState(prev => ({ ...prev, progress: 100, taskResult: result as TaskResult }));
         options.onSuccess?.(result);
-
-        // Hide the toast after a delay on success
+        
         setTimeout(() => {
-          setTaskState({ isRunning: false, taskName: null, progress: 0, error: null });
+          setTaskState(prev => ({ ...prev, isRunning: false, taskName: null, progress: 0, error: null }));
         }, 3000);
 
       } catch (error: any) {
-        setTaskState(prev => ({ ...prev, error }));
+        setTaskState(prev => ({ ...prev, error, isRunning: false }));
         options.onError?.(error);
         
-        // Keep the toast visible longer on error
         setTimeout(() => {
-            setTaskState({ isRunning: false, taskName: null, progress: 0, error: null });
+            setTaskState(prev => ({ ...prev, isRunning: false, taskName: null, progress: 0, error: null }));
         }, 5000);
 
       } finally {
@@ -85,9 +98,13 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
     },
     [taskState.isRunning]
   );
+  
+  const clearTaskResult = useCallback(() => {
+    setTaskState(prev => ({ ...prev, taskResult: null, taskType: null }));
+  }, []);
 
   return (
-    <TaskContext.Provider value={{ ...taskState, runTask }}>
+    <TaskContext.Provider value={{ ...taskState, runTask, clearTaskResult }}>
       {children}
     </TaskContext.Provider>
   );

@@ -29,6 +29,7 @@ interface VerbDialogProps {
   language: string;
   onSave: (verbData: Omit<Verb, 'id' | 'subjectId' | 'language'>) => Promise<void>;
   existingVerb?: Verb | null;
+  initialData?: GenerateVerbFormsOutput | null;
 }
 
 const GenerateVerbFormsInputSchema = z.object({
@@ -100,18 +101,21 @@ const languageDisplayNames: { [key: string]: string } = {
     'German': 'Deutsch',
 };
 
-export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVerb }: VerbDialogProps) {
+export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVerb, initialData }: VerbDialogProps) {
   const [infinitive, setInfinitive] = useState('');
   const [generatedData, setGeneratedData] = useState<GenerateVerbFormsOutput | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { runTask, isRunning } = useContext(TaskContext);
+  const { runTask, isRunning, clearTaskResult } = useContext(TaskContext);
 
 
   useEffect(() => {
     if (isOpen) {
-      if (existingVerb) {
+      if (initialData) {
+        setInfinitive(initialData.infinitive);
+        setGeneratedData(initialData);
+      } else if (existingVerb) {
         setInfinitive(existingVerb.infinitive);
         setGeneratedData({ 
           infinitive: existingVerb.infinitive,
@@ -120,11 +124,10 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
           germanForms: existingVerb.germanForms
         });
       } else {
-        // Reset state when opening for a new verb
         closeAndReset();
       }
     }
-  }, [isOpen, existingVerb]);
+  }, [isOpen, existingVerb, initialData]);
 
 
   const handleGenerate = async () => {
@@ -134,14 +137,14 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     }
     
     setError(null);
-    setGeneratedData(null);
+    onOpenChange(false); // Close the dialog to let the background task run
 
     runTask(
       () => generateVerbForms({ verb: infinitive, language }),
       {
         name: `Verbformen für "${infinitive}" generieren`,
+        type: 'verb-generation',
         onSuccess: (result) => {
-            setGeneratedData(result as GenerateVerbFormsOutput);
             toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert.` });
         },
         onError: (error) => {
@@ -172,13 +175,12 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     setIsSaving(true);
     try {
       await onSave({
-        infinitive,
+        infinitive: generatedData.infinitive, // Use infinitive from generatedData
         translation: generatedData.translation,
         forms: generatedData.forms,
         germanForms: generatedData.germanForms,
       });
-      closeAndReset();
-      onOpenChange(false);
+      handleOpenChange(false);
     } catch (e) {
       toast({ variant: 'destructive', title: 'Fehler beim Speichern', description: 'Das Verb konnte nicht gespeichert werden.' });
     } finally {
@@ -191,6 +193,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     setGeneratedData(null);
     setError(null);
     setIsSaving(false);
+    clearTaskResult();
   };
   
   const handleOpenChange = (open: boolean) => {
@@ -305,7 +308,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
             </DialogDescription>
           </DialogHeader>
 
-          <fieldset disabled={isRunning} className="contents">
+          <fieldset disabled={isRunning || isSaving} className="contents">
             {!generatedData ? (
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">

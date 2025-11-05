@@ -327,6 +327,7 @@ export default function SubjectDetailPage() {
       },
       {
         name: `Vokabeln für "${newStackName}" erkennen`,
+        type: 'ocr',
         onSuccess: (result: any) => {
             toast({ title: 'Erfolg!', description: `${result.count} Vokabeln im Stapel "${newStackName}" gespeichert.` });
             forceUpdate();
