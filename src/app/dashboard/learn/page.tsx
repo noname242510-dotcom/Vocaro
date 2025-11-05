@@ -233,6 +233,11 @@ export default function LearnPage() {
   
     if (isCorrect) {
       remainingCards.splice(currentIndex, 1);
+      // In typed mode, if the card was accepted after being incorrect, it's now considered "correct"
+      // for the session and should not be repeated. But the initial incorrect mark remains for final score.
+       if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
+          setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+       }
     } else {
       const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
       remainingCards.push(cardToRepeat);
@@ -508,7 +513,7 @@ export default function LearnPage() {
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                  className="text-center text-lg h-12"
+                  className="text-center text-lg h-11 rounded-full"
                   autoFocus
                 />
                 <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
@@ -527,7 +532,7 @@ export default function LearnPage() {
               <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')}>
                 <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
               </div>
-              <div className={cn("flex gap-2 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
+              <div className={cn("flex gap-2 w-full transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
                 <Button variant="outline" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(false)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
                   <X className="mr-2 h-4 w-4" /> Wusste ich nicht
                 </Button>
@@ -549,7 +554,3 @@ export default function LearnPage() {
     </div>
   );
 }
-
-    
-
-    
