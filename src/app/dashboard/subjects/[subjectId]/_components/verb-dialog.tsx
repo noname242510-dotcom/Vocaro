@@ -121,15 +121,20 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     }
     
     setError(null);
-    setGeneratedData(null);
     
     runTask(
         () => generateVerbForms({ verb: infinitive, language }),
         {
             name: `Verbformen für "${infinitive}" generieren`,
             onSuccess: (result) => {
-                setGeneratedData(result);
-                toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert.` });
+                // Automatically save the verb in the background
+                onSave({
+                  infinitive: result.infinitive,
+                  translation: result.translation,
+                  forms: result.forms,
+                  germanForms: result.germanForms,
+                });
+                toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert und gespeichert.` });
             },
             onError: (e) => {
                 setError(e.message || 'Die Verbformen konnten nicht generiert werden.');
@@ -137,6 +142,8 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
             }
         }
     );
+    // Close the dialog immediately after starting the task
+    handleOpenChange(false);
   };
 
   const handleFormChange = (tense: string, pronoun: string, value: string, formType: 'forms' | 'germanForms') => {
@@ -168,6 +175,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
         forms: generatedData.forms,
         germanForms: generatedData.germanForms,
       });
+      toast({ title: 'Erfolg!', description: 'Änderungen am Verb gespeichert.' });
       handleOpenChange(false);
     } catch (e) {
       toast({ variant: 'destructive', title: 'Fehler beim Speichern', description: 'Das Verb konnte nicht gespeichert werden.' });
@@ -252,7 +260,9 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                   <PopoverContent 
                     className="w-80" 
                     onOpenAutoFocus={(e) => e.preventDefault()}
-                    onInteractOutside={(e) => e.preventDefault()}
+                    onInteractOutside={(e) => {
+                        e.preventDefault();
+                    }}
                   >
                     <div className="space-y-2">
                       <h4 className="font-medium leading-none">{tense}</h4>
