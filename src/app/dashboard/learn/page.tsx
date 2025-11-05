@@ -525,7 +525,7 @@ export default function LearnPage() {
                                 e.preventDefault();
                             }}
                         >
-                            <div className="flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-start gap-2">
                                 <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
                                 <p className="text-sm">{currentCard.notes}</p>
                             </div>
@@ -589,10 +589,10 @@ export default function LearnPage() {
                     <Button size="lg" className="w-full" onClick={() => goToNextCard(true)}>Weiter</Button>
                 ) : (
                     <>
-                        <Button variant="outline" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(false)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
+                        <Button variant="outline" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(false)} style={{ transform: isFlipped && !showClassicButtonsInTypedMode ? 'translateX(0)' : 'translateX(50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
                             <X className="mr-2 h-4 w-4" /> Wusste ich nicht
                         </Button>
-                        <Button variant="default" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(true)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(-50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
+                        <Button variant="default" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(true)} style={{ transform: isFlipped && !showClassicButtonsInTypedMode ? 'translateX(0)' : 'translateX(-50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
                             <Check className="mr-2 h-4 w-4" /> Wusste ich
                         </Button>
                     </>
@@ -612,5 +612,7 @@ export default function LearnPage() {
     </div>
   );
 }
+
+    
 
     
