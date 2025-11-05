@@ -135,13 +135,10 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     
     setError(null);
     setGeneratedData(null);
-    onOpenChange(false); // Close main dialog
+    onOpenChange(false); // Close main dialog while running in background
 
     runTask(
-      async () => {
-        const result = await generateVerbForms({ verb: infinitive, language });
-        return result;
-      },
+      () => generateVerbForms({ verb: infinitive, language }),
       {
         name: `Verbformen für "${infinitive}" generieren`,
         onSuccess: (result) => {
