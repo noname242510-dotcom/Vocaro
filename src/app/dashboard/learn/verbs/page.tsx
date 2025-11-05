@@ -121,6 +121,7 @@ export default function VerbPracticePage() {
     const [answeredIds, setAnsweredIds] = useState<Map<string, AnswerStatus>>(new Map());
     const [showResults, setShowResults] = useState(false);
     const [isNewCard, setIsNewCard] = useState(false);
+    const [isExiting, setIsExiting] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
     
     const [isGermanFirst, setIsGermanFirst] = useState(false);
@@ -287,6 +288,7 @@ export default function VerbPracticePage() {
         setUserInput('');
         setShowContinueButton(false);
         setShowClassicButtonsInTypedMode(false);
+        setIsFlipped(false);
       
         if (isCorrect) {
           remainingCards.splice(currentIndex, 1);
@@ -310,7 +312,7 @@ export default function VerbPracticePage() {
     };
     
     const handleClassicAnswer = (knewIt: boolean) => {
-        if (!isFlipped) return; // Prevent answering before flipping
+        if (!isFlipped || isExiting) return;
         if (showContinueButton) return;
 
         setHistory(prev => [...prev, { practiceItems, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
@@ -328,15 +330,21 @@ export default function VerbPracticePage() {
             triggerHapticFeedback('heavy');
         }
         
-        setIsFlipped(false);
-        setTimeout(() => goToNextCard(knewIt), 250); // Delay for flip animation
+        setIsExiting(true);
+        setTimeout(() => {
+          goToNextCard(knewIt);
+          setIsExiting(false);
+        }, 200); // Duration of fade-out animation
     };
     
       const handleCheckAnswer = () => {
         if (isFlipped) {
           const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
-          setIsFlipped(false);
-          setTimeout(() => goToNextCard(isCorrect), 250);
+          setIsExiting(true);
+          setTimeout(() => {
+            goToNextCard(isCorrect);
+            setIsExiting(false);
+          }, 200);
           return;
         }
 
@@ -519,9 +527,10 @@ export default function VerbPracticePage() {
                 <div
                     className={cn(
                         "relative w-full h-full duration-700 [transform-style:preserve-3d]",
-                        isNewCard && 'animate-pop-in'
+                        isNewCard && 'animate-pop-in',
+                        isExiting && 'animate-fade-out',
+                        isFlipped ? '[transform:rotateX(180deg)]' : '[transform:rotateX(0deg)]'
                     )}
-                    style={{ transform: isFlipped ? 'rotateX(180deg)' : 'rotateX(0deg)' }}
                 >
                     {/* Front of the card */}
                     <Card className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect" onClick={() => !isTypedMode && setIsFlipped(f => !f)}>
@@ -585,15 +594,15 @@ export default function VerbPracticePage() {
                   <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')} style={{ opacity: isFlipped ? 0 : 1 }}>
                     <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
                   </div>
-                  <div className={cn("flex gap-2 w-full transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
+                  <div className={cn("flex gap-2 w-full transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')} style={{ opacity: isFlipped ? 1 : 0}}>
                     {showContinueButton ? (
-                        <Button size="lg" className="w-full" onClick={() => {setIsFlipped(false); goToNextCard(true); }}>Weiter</Button>
+                        <Button size="lg" className="w-full" onClick={() => goToNextCard(true)}>Weiter</Button>
                     ) : (
                         <>
-                            <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(false)} style={{ opacity: isFlipped && !showClassicButtonsInTypedMode ? 1 : 0}}>
+                            <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(false)}>
                             <X className="mr-2 h-4 w-4" /> Wusste ich nicht
                             </Button>
-                            <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(true)} style={{ opacity: isFlipped && !showClassicButtonsInTypedMode ? 1 : 0}}>
+                            <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(true)}>
                             <Check className="mr-2 h-4 w-4" /> Wusste ich
                             </Button>
                         </>

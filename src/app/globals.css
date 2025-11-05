@@ -77,6 +77,14 @@
       transform: scale(1);
     }
   }
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
   @keyframes fall {
     to {
       transform: translateY(var(--y-end)) translateX(calc(var(--x-end) - var(--x-start))) rotate3d(1, 1, 1, var(--rotation-end));
@@ -100,6 +108,9 @@
   }
   .animate-pop-in {
     animation: pop-in 0.3s ease-out;
+  }
+  .animate-fade-out {
+    animation: fade-out 0.2s ease-out forwards;
   }
   .animate-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
