@@ -92,9 +92,20 @@ export function GlobalVerbResultListener() {
     clearTaskResult();
   };
 
-  if (!isOpen || !verbData) {
+  if (!isOpen) {
     return null;
   }
+  
+  // This is a bit of a hack. The dialog needs an existing verb, but we only have the raw data.
+  // We can construct a temporary "Verb"-like object for the dialog to use.
+  // The important part is that `onSave` uses the fresh data passed to it.
+  const tempExistingVerb: Verb | null = verbData ? {
+    id: '', // Not a real existing verb
+    subjectId: activeSubjectId || '',
+    language: activeLanguage,
+    ...verbData
+  } : null;
+
 
   return (
     <VerbDialog
@@ -102,7 +113,7 @@ export function GlobalVerbResultListener() {
       onOpenChange={(open) => !open && handleClose()}
       language={activeLanguage}
       onSave={handleSave}
-      existingVerb={editingVerb}
+      existingVerb={tempExistingVerb}
     />
   );
 }
