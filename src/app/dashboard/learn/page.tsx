@@ -227,25 +227,32 @@ export default function LearnPage() {
     }
   };
   
-  const goToNextCard = () => {
-     let remainingCards = [...vocabulary];
-     remainingCards.splice(currentIndex, 1);
-     
-     if (remainingCards.length === 0) {
-        finishSession();
-     } else {
-        const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
-        
-        setVocabulary(remainingCards);
-        setCurrentIndex(newIndex);
-        
-        // Reset for next card
-        setIsNewCard(true);
-        setIsFlipped(false);
-        setAnswerStatus('unanswered');
-        setUserInput('');
-     }
-  }
+  const goToNextCard = (isCorrect: boolean) => {
+    const currentCard = vocabulary[currentIndex];
+    let remainingCards = [...vocabulary];
+  
+    if (isCorrect) {
+      remainingCards.splice(currentIndex, 1);
+    } else {
+      const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
+      remainingCards.push(cardToRepeat);
+    }
+  
+    if (remainingCards.length === 0) {
+      finishSession();
+    } else {
+      const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
+      
+      setVocabulary(remainingCards);
+      setCurrentIndex(newIndex);
+      
+      // Reset for next card
+      setIsNewCard(true);
+      setIsFlipped(false);
+      setAnswerStatus('unanswered');
+      setUserInput('');
+    }
+  };
 
   const handleClassicAnswer = (knewIt: boolean) => {
     if (!isFlipped || !user || !firestore) return;
@@ -257,28 +264,21 @@ export default function LearnPage() {
     if (knewIt) {
         setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
         triggerHapticFeedback('light');
-        goToNextCard();
+        goToNextCard(true);
     } else {
         if (!incorrectlyAnsweredIds.has(currentCard.id)) {
             setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
         }
         setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
         triggerHapticFeedback('heavy');
-
-        const cardToRepeat = vocabulary.splice(currentIndex, 1)[0];
-        const newVocabulary = [...vocabulary, cardToRepeat];
-        
-        setVocabulary(newVocabulary);
-        
-        // No need to change index, as the next card is now at the current index
-        setIsNewCard(true);
-        setTimeout(() => setIsFlipped(false), 0);
+        goToNextCard(false);
     }
   };
 
   const handleCheckAnswer = () => {
     if (isFlipped) {
-      goToNextCard();
+      const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
+      goToNextCard(isCorrect);
       return;
     }
 
@@ -514,7 +514,10 @@ export default function LearnPage() {
                 <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
               </div>
               <div className={cn("absolute inset-0 flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
-                <Button size="lg" className="w-full" onClick={goToNextCard}>
+                <Button size="lg" className="w-full" onClick={() => {
+                    const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
+                    goToNextCard(isCorrect);
+                }}>
                   {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
                 </Button>
               </div>
@@ -546,5 +549,7 @@ export default function LearnPage() {
     </div>
   );
 }
+
+    
 
     
