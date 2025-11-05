@@ -237,8 +237,6 @@ export default function LearnPage() {
     const currentCard = vocabulary[currentIndex];
     let remainingCards = [...vocabulary];
   
-    // Reset all temporary card states before determining the next card
-    setIsFlipped(false);
     setAnswerStatus('unanswered');
     setUserInput('');
     setShowContinueButton(false);
@@ -261,7 +259,7 @@ export default function LearnPage() {
       
       setVocabulary(remainingCards);
       setCurrentIndex(newIndex);
-      setIsNewCard(true); // Trigger pop-in animation for the new card
+      setIsNewCard(true);
     }
   };
 
@@ -286,6 +284,9 @@ export default function LearnPage() {
     
     setIsExiting(true);
     setTimeout(() => {
+      // This timeout ensures that the state changes from exiting have been processed
+      // before we reset everything for the next card.
+      setTimeout(() => setIsFlipped(false), 0);
       goToNextCard(knewIt);
       setIsExiting(false);
     }, 200); // Duration of fade-out animation
@@ -296,6 +297,7 @@ export default function LearnPage() {
       const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
       setIsExiting(true);
       setTimeout(() => {
+        setTimeout(() => setIsFlipped(false), 0);
         goToNextCard(isCorrect);
         setIsExiting(false);
       }, 200);

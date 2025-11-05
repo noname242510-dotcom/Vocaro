@@ -284,8 +284,6 @@ export default function VerbPracticePage() {
         const currentCard = practiceItems[currentIndex];
         let remainingCards = [...practiceItems];
 
-        // Reset all temporary card states before determining the next card
-        setIsFlipped(false);
         setAnswerStatus('unanswered');
         setUserInput('');
         setShowContinueButton(false);
@@ -333,6 +331,7 @@ export default function VerbPracticePage() {
         
         setIsExiting(true);
         setTimeout(() => {
+          setTimeout(() => setIsFlipped(false), 0);
           goToNextCard(knewIt);
           setIsExiting(false);
         }, 200); // Duration of fade-out animation
@@ -343,6 +342,7 @@ export default function VerbPracticePage() {
           const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
           setIsExiting(true);
           setTimeout(() => {
+            setTimeout(() => setIsFlipped(false), 0);
             goToNextCard(isCorrect);
             setIsExiting(false);
           }, 200);
