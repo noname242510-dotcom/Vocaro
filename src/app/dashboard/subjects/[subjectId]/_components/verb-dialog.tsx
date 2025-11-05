@@ -120,10 +120,10 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
   }, [isOpen, existingVerb]);
 
   useEffect(() => {
-    if (taskResult && 'infinitive' in taskResult) {
-      setGeneratedData(taskResult as GenerateVerbFormsOutput);
+    if (taskResult && 'infinitive' in taskResult && taskResult.infinitive === infinitive) {
+        setGeneratedData(taskResult as GenerateVerbFormsOutput);
     }
-  }, [taskResult]);
+  }, [taskResult, infinitive]);
 
 
   const handleGenerate = async () => {
@@ -133,6 +133,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     }
     
     setError(null);
+    setGeneratedData(null);
 
     runTask(
       () => generateVerbForms({ verb: infinitive, language }),
@@ -261,7 +262,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                       <Info className="h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80">
+                  <PopoverContent className="w-80" onOpenAutoFocus={(e) => e.preventDefault()}>
                     <div className="space-y-2">
                       <h4 className="font-medium leading-none">{tense}</h4>
                       <div className="text-sm text-muted-foreground space-y-2 mt-2">

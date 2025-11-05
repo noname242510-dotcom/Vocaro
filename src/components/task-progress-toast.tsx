@@ -13,7 +13,7 @@ export function TaskProgressToast() {
   }
 
   return (
-    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 w-full max-w-sm z-50 p-4">
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 w-full max-w-sm z-50 p-4">
       <div className="bg-background border shadow-lg rounded-2xl p-4 flex items-center gap-4">
         <div className="flex-shrink-0">
           {error ? (

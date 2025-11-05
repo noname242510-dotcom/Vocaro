@@ -48,7 +48,7 @@ export function GlobalVerbResultListener() {
 
   const handleSave = async (data: Omit<Verb, 'id' | 'subjectId' | 'language'>) => {
     if (!firestore || !user || !activeSubjectId) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Cannot save verb. Context is missing.' });
+        toast({ variant: 'destructive', title: 'Fehler', description: 'Konnte Verb nicht speichern. Kontext fehlt.' });
         return;
     }
     const verbsCollectionRef = collection(firestore, 'users', user.uid, 'subjects', activeSubjectId, 'verbs');
@@ -57,7 +57,7 @@ export function GlobalVerbResultListener() {
         if (editingVerb) {
             const verbDocRef = doc(verbsCollectionRef, editingVerb.id);
             await updateDoc(verbDocRef, data);
-            toast({ title: 'Success', description: 'Verb updated.' });
+            toast({ title: 'Erfolg', description: 'Verb aktualisiert.' });
         } else {
             await addDoc(verbsCollectionRef, {
                 ...data,
@@ -65,12 +65,12 @@ export function GlobalVerbResultListener() {
                 language: activeLanguage,
                 createdAt: serverTimestamp(),
             });
-            toast({ title: 'Success', description: 'Verb saved.' });
+            toast({ title: 'Erfolg', description: 'Verb gespeichert.' });
         }
         handleClose();
     } catch (error) {
         console.error("Error saving verb: ", error);
-        toast({ variant: 'destructive', title: 'Save Error', description: 'Could not save the verb.' });
+        toast({ variant: 'destructive', title: 'Fehler beim Speichern', description: 'Das Verb konnte nicht gespeichert werden.' });
     }
   };
   
@@ -92,7 +92,7 @@ export function GlobalVerbResultListener() {
     clearTaskResult();
   };
 
-  if (!isOpen) {
+  if (!isOpen && !verbData) {
     return null;
   }
   
