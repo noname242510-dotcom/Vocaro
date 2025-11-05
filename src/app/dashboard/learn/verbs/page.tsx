@@ -530,7 +530,7 @@ export default function VerbPracticePage() {
                         "relative w-full h-full duration-700 [transform-style:preserve-3d]",
                         isNewCard && 'animate-pop-in',
                         isExiting && 'animate-fade-out',
-                        isFlipped ? '[transform:rotateX(180deg)]' : '[transform:rotateX(0deg)]'
+                        isFlipped && '[transform:rotateX(180deg)]'
                     )}
                 >
                     {/* Front of the card */}
