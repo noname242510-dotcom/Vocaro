@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, ChangeEvent, useEffect, useRef, useContext } from 'react';
@@ -804,7 +805,9 @@ export default function SubjectDetailPage() {
                         <Search
                             className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 md:cursor-text cursor-pointer"
                             onClick={() => {
-                                if (!isSearchExpanded) {
+                                if (isSearchExpanded) {
+                                    setIsSearchExpanded(false);
+                                } else {
                                     setIsSearchExpanded(true);
                                     searchInputRef.current?.focus();
                                 }
