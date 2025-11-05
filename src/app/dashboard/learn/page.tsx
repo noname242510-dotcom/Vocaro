@@ -102,6 +102,7 @@ export default function LearnPage() {
   const [isTypedMode, setIsTypedMode] = useState(false);
   const [userInput, setUserInput] = useState('');
   const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
+  const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
 
 
   useEffect(() => {
@@ -427,6 +428,13 @@ export default function LearnPage() {
   
   const expectedAnswer = isTermFirst ? currentCard.definition : currentCard.term;
 
+  const handleCardClick = () => {
+    if (isTypedMode || isHintPopoverOpen) {
+      return;
+    }
+    setIsFlipped(!isFlipped);
+  };
+
 
   return (
     <div className="flex flex-col items-center">
@@ -469,7 +477,7 @@ export default function LearnPage() {
             isFlipped && "[transform:rotateX(-180deg)]",
             isNewCard && 'animate-pop-in'
           )}
-          onClick={() => !isTypedMode && setIsFlipped(!isFlipped)}
+          onClick={handleCardClick}
         >
           {/* Front of the card */}
           <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect">
@@ -487,7 +495,7 @@ export default function LearnPage() {
 
             {shouldShowHints && currentCard.notes && (
                 <div className="absolute bottom-6 left-6">
-                    <Popover>
+                    <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
                         <PopoverTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => e.stopPropagation()}>
                                 <Lightbulb className="h-5 w-5" />
@@ -544,7 +552,7 @@ export default function LearnPage() {
             </>
           ) : (
             <>
-              <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(0) scale(1)', opacity: isFlipped ? 0 : 1 }}>
+              <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')} style={{ opacity: isFlipped ? 0 : 1 }}>
                 <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
               </div>
               <div className={cn("flex gap-2 w-full transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
@@ -569,4 +577,3 @@ export default function LearnPage() {
     </div>
   );
 }
-
