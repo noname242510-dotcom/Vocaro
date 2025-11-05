@@ -644,6 +644,7 @@ export default function SubjectDetailPage() {
   };
   
   const filteredVerbs = useMemo(() => {
+    if (!verbSearchQuery) return localVerbs;
     return localVerbs?.filter(verb => verb.infinitive.toLowerCase().includes(verbSearchQuery.toLowerCase())) || [];
   }, [localVerbs, verbSearchQuery]);
 
@@ -793,8 +794,8 @@ export default function SubjectDetailPage() {
           )}
         </TabsContent>
         <TabsContent value="verbs" className="mt-6">
-            <div className="flex justify-between items-center mb-4 gap-2">
-                <div className="flex-1 flex justify-start">
+             <div className="flex justify-between items-center mb-4 gap-2">
+                 <div className="flex-1 flex justify-start">
                     <div
                         className={cn(
                             'relative flex items-center border rounded-full transition-all duration-300 md:bg-background',
@@ -803,13 +804,11 @@ export default function SubjectDetailPage() {
                         )}
                         >
                         <Search
-                            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 md:cursor-text cursor-pointer"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 cursor-pointer"
                             onClick={() => {
-                                if (isSearchExpanded) {
-                                    setIsSearchExpanded(false);
-                                } else {
-                                    setIsSearchExpanded(true);
-                                    searchInputRef.current?.focus();
+                                setIsSearchExpanded(!isSearchExpanded);
+                                if (!isSearchExpanded) {
+                                  searchInputRef.current?.focus();
                                 }
                             }}
                         />
@@ -817,13 +816,23 @@ export default function SubjectDetailPage() {
                             ref={searchInputRef}
                             placeholder="Verben durchsuchen..."
                             className={cn(
-                            'h-10 pl-10 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300',
-                            isSearchExpanded ? 'w-full opacity-100' : 'w-0 opacity-0 md:w-full md:opacity-100'
+                                'h-10 pl-10 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300',
+                                isSearchExpanded ? 'w-full opacity-100' : 'w-0 opacity-0 md:w-full md:opacity-100'
                             )}
                             value={verbSearchQuery}
-                            onChange={(e) => setVerbSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setVerbSearchQuery(e.target.value)
+                                if (e.target.value === '' && !isSearchExpanded) {
+                                    // allows search to stay expanded on desktop while clearing
+                                } else if (e.target.value === '') {
+                                    setIsSearchExpanded(false);
+                                }
+                            }}
                             onBlur={() => {
-                            if (verbSearchQuery === '') setIsSearchExpanded(false);
+                                // On mobile, close if empty. On desktop, it stays.
+                                if (window.innerWidth < 768 && verbSearchQuery === '') {
+                                    setIsSearchExpanded(false);
+                                }
                             }}
                         />
                     </div>
