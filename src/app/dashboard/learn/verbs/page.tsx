@@ -298,16 +298,17 @@ export default function VerbPracticePage() {
         } else {
           const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
           
-          setPracticeItems(remainingCards);
-          setCurrentIndex(newIndex);
-          
           // Reset for next card
-          setIsNewCard(true);
           setIsFlipped(false);
           setAnswerStatus('unanswered');
           setUserInput('');
           setShowContinueButton(false);
           setShowClassicButtonsInTypedMode(false);
+          
+          // THEN update data
+          setPracticeItems(remainingCards);
+          setCurrentIndex(newIndex);
+          setIsNewCard(true);
         }
     };
     
@@ -521,6 +522,7 @@ export default function VerbPracticePage() {
                         isFlipped && "[transform:rotateX(-180deg)]",
                         isNewCard && 'animate-pop-in'
                     )}
+                     onClick={() => !isTypedMode && setIsFlipped(!isFlipped)}
                 >
                     {/* Front of the card */}
                     <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect">

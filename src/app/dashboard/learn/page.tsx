@@ -251,16 +251,17 @@ export default function LearnPage() {
     } else {
       const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
       
-      setVocabulary(remainingCards);
-      setCurrentIndex(newIndex);
-      
       // Reset for next card
-      setIsNewCard(true);
       setIsFlipped(false);
       setAnswerStatus('unanswered');
       setUserInput('');
       setShowContinueButton(false);
       setShowClassicButtonsInTypedMode(false);
+      
+      // THEN update data
+      setVocabulary(remainingCards);
+      setCurrentIndex(newIndex);
+      setIsNewCard(true);
     }
   };
 
@@ -492,6 +493,10 @@ export default function LearnPage() {
             isFlipped && "[transform:rotateX(-180deg)]",
             isNewCard && 'animate-pop-in'
           )}
+          onClick={() => {
+            if (isTypedMode || isHintPopoverOpen) return;
+            setIsFlipped(!isFlipped);
+          }}
         >
           {/* Front of the card */}
           <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect">
