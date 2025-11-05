@@ -135,7 +135,6 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     
     setError(null);
     setGeneratedData(null);
-    onOpenChange(false); // Close main dialog while running in background
 
     runTask(
       () => generateVerbForms({ verb: infinitive, language }),
@@ -143,12 +142,10 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
         name: `Verbformen für "${infinitive}" generieren`,
         onSuccess: (result) => {
             setGeneratedData(result as GenerateVerbFormsOutput);
-            onOpenChange(true); // Re-open main dialog with data
             toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert.` });
         },
         onError: (error) => {
             setError(error.message || 'Die Verbformen konnten nicht generiert werden.');
-            onOpenChange(true); // Re-open to show error
         }
       }
     );
@@ -297,7 +294,9 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
       <Dialog open={isOpen} onOpenChange={handleOpenChange} modal={true}>
         <DialogContent 
           className="sm:max-w-4xl flex flex-col max-h-[90vh]"
-          onInteractOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => {
+            if (isRunning) e.preventDefault();
+          }}
         >
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>{existingVerb ? 'Verb bearbeiten' : 'Neues Verb hinzufügen'}</DialogTitle>
@@ -306,78 +305,80 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
             </DialogDescription>
           </DialogHeader>
 
-          {!generatedData ? (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="infinitive" className="text-right">
-                  Infinitiv
-                </Label>
-                <Input
-                  id="infinitive"
-                  value={infinitive}
-                  onChange={(e) => setInfinitive(e.target.value)}
-                  className="col-span-3"
-                  placeholder={language === 'French' ? 'z.B. aller' : 'z.B. to go'}
-                  onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                  disabled={!!existingVerb || isRunning}
-                />
+          <fieldset disabled={isRunning} className="contents">
+            {!generatedData ? (
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="infinitive" className="text-right">
+                    Infinitiv
+                  </Label>
+                  <Input
+                    id="infinitive"
+                    value={infinitive}
+                    onChange={(e) => setInfinitive(e.target.value)}
+                    className="col-span-3"
+                    placeholder={language === 'French' ? 'z.B. aller' : 'z.B. to go'}
+                    onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+                    disabled={!!existingVerb}
+                  />
+                </div>
+                 {error && (
+                    <div className="col-span-4 flex items-center gap-2 text-destructive text-sm p-2 bg-destructive/10 rounded-md">
+                        <AlertTriangle className="h-4 w-4" />
+                        <p>{error}</p>
+                    </div>
+                )}
+                <div className="flex justify-end">
+                    <Button onClick={handleGenerate} disabled={isRunning}>
+                    {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                    Formen generieren
+                  </Button>
+                </div>
               </div>
-               {error && (
-                  <div className="col-span-4 flex items-center gap-2 text-destructive text-sm p-2 bg-destructive/10 rounded-md">
-                      <AlertTriangle className="h-4 w-4" />
-                      <p>{error}</p>
-                  </div>
-              )}
-              <div className="flex justify-end">
-                  <Button onClick={handleGenerate} disabled={isRunning}>
-                  {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                  Formen generieren
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-x-8 gap-y-4 pb-4 border-b flex-shrink-0">
-                  <div>
-                      <Label htmlFor="infinitive-display" className="text-sm font-medium text-muted-foreground">Infinitiv</Label>
-                      <p id="infinitive-display" className="text-lg font-semibold">{generatedData.infinitive}</p>
-                  </div>
-                   <div>
-                      <Label htmlFor="translation" className="text-sm font-medium text-muted-foreground">Deutsche Übersetzung</Label>
-                      <Input
-                          id="translation"
-                          value={generatedData.translation}
-                          onChange={(e) => handleTranslationChange(e.target.value)}
-                          className="mt-1"
-                      />
-                  </div>
-              </div>
-              
-              <div className="flex-grow min-h-0">
-                  <ScrollArea className="h-full pr-6" type="always">
-                      <Tabs defaultValue="foreign" className="mt-2">
-                          <TabsList className="grid w-full grid-cols-2">
-                              <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
-                              <TabsTrigger value="german">Deutsch</TabsTrigger>
-                          </TabsList>
-                          <TabsContent value="foreign" className="mt-4">
-                              <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
-                          </TabsContent>
-                          <TabsContent value="german" className="mt-4">
-                              <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
-                          </TabsContent>
-                      </Tabs>
-                  </ScrollArea>
-              </div>
-              
-              <div className="pt-4 mt-auto flex-shrink-0 flex justify-end">
-                 <Button onClick={handleSave} disabled={isSaving}>
-                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Verb speichern
-                </Button>
-              </div>
-            </>
-          )}
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4 pb-4 border-b flex-shrink-0">
+                    <div>
+                        <Label htmlFor="infinitive-display" className="text-sm font-medium text-muted-foreground">Infinitiv</Label>
+                        <p id="infinitive-display" className="text-lg font-semibold">{generatedData.infinitive}</p>
+                    </div>
+                     <div>
+                        <Label htmlFor="translation" className="text-sm font-medium text-muted-foreground">Deutsche Übersetzung</Label>
+                        <Input
+                            id="translation"
+                            value={generatedData.translation}
+                            onChange={(e) => handleTranslationChange(e.target.value)}
+                            className="mt-1"
+                        />
+                    </div>
+                </div>
+                
+                <div className="flex-grow min-h-0">
+                    <ScrollArea className="h-full pr-6" type="always">
+                        <Tabs defaultValue="foreign" className="mt-2">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="foreign">{displayLanguage}</TabsTrigger>
+                                <TabsTrigger value="german">Deutsch</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="foreign" className="mt-4">
+                                <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
+                            </TabsContent>
+                            <TabsContent value="german" className="mt-4">
+                                <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
+                            </TabsContent>
+                        </Tabs>
+                    </ScrollArea>
+                </div>
+                
+                <div className="pt-4 mt-auto flex-shrink-0 flex justify-end">
+                   <Button onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Verb speichern
+                  </Button>
+                </div>
+              </>
+            )}
+          </fieldset>
         </DialogContent>
       </Dialog>
     </>
