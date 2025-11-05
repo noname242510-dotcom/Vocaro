@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useMemo, useEffect, useContext } from 'react';
-import { useParams } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -16,11 +15,9 @@ import { Loader2, Wand2, AlertTriangle, Save, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { generateVerbForms, type GenerateVerbFormsOutput } from '@/ai/flows/generate-verb-forms';
 import type { Verb, VerbTense } from '@/lib/types';
-import { z } from 'zod';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
 import { TaskContext } from '@/contexts/task-context';
 
 
@@ -101,9 +98,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { runTask, isRunning, taskResult } = useContext(TaskContext);
-  const params = useParams();
-  const subjectId = params.subjectId as string;
+  const { runTask, isRunning } = useContext(TaskContext);
 
   useEffect(() => {
     if (isOpen) {
@@ -119,13 +114,6 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     }
   }, [isOpen, existingVerb]);
 
-  useEffect(() => {
-    if (taskResult && 'infinitive' in taskResult && taskResult.infinitive === infinitive) {
-        setGeneratedData(taskResult as GenerateVerbFormsOutput);
-    }
-  }, [taskResult, infinitive]);
-
-
   const handleGenerate = async () => {
     if (!infinitive.trim()) {
       toast({ variant: 'destructive', title: 'Fehlender Infinitiv', description: 'Bitte gib ein Verb ein.' });
@@ -134,28 +122,26 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     
     setError(null);
     setGeneratedData(null);
-
+    
     runTask(
-      () => generateVerbForms({ verb: infinitive, language }),
-      {
-        name: `Verbformen für "${infinitive}" generieren`,
-        type: 'verb-generation',
-        context: { subjectId },
-        onSuccess: (result) => {
-            setGeneratedData(result);
-            toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert.` });
-        },
-        onError: (error) => {
-            setError(error.message || 'Die Verbformen konnten nicht generiert werden.');
+        () => generateVerbForms({ verb: infinitive, language }),
+        {
+            name: `Verbformen für "${infinitive}" generieren`,
+            onSuccess: (result) => {
+                setGeneratedData(result);
+                toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert.` });
+            },
+            onError: (e) => {
+                setError(e.message || 'Die Verbformen konnten nicht generiert werden.');
+                toast({ variant: 'destructive', title: 'Fehler', description: e.message || 'Die Verbformen konnten nicht generiert werden.' });
+            }
         }
-      }
     );
   };
 
   const handleFormChange = (tense: string, pronoun: string, value: string, formType: 'forms' | 'germanForms') => {
     setGeneratedData(prevData => {
         if (!prevData) return null;
-        // Deep copy to ensure re-render
         const newData = JSON.parse(JSON.stringify(prevData));
         const formsToUpdate = formType === 'germanForms' ? newData.germanForms : newData.forms;
         if (formsToUpdate && formsToUpdate[tense]) {
@@ -263,13 +249,11 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                       <Info className="h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80" onOpenAutoFocus={(e) => e.preventDefault()} onInteractOutside={(e) => {
-                    // Prevent closing if the interaction is within the dialog itself
-                    const target = e.target as HTMLElement;
-                    if (target.closest('.sm\\:max-w-4xl')) {
-                      e.preventDefault();
-                    }
-                  }}>
+                  <PopoverContent 
+                    className="w-80" 
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                    onInteractOutside={(e) => e.preventDefault()}
+                  >
                     <div className="space-y-2">
                       <h4 className="font-medium leading-none">{tense}</h4>
                       <div className="text-sm text-muted-foreground space-y-2 mt-2">
@@ -383,7 +367,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                 <div className="pt-4 mt-auto flex-shrink-0 flex justify-end">
                    <Button onClick={handleSave} disabled={isSaving}>
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Verb speichern
+                    {existingVerb ? 'Änderungen speichern' : 'Verb speichern'}
                   </Button>
                 </div>
               </>

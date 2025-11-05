@@ -4,25 +4,19 @@ import React, { createContext, useState, ReactNode, useCallback } from 'react';
 import type { GenerateVerbFormsOutput } from '@/ai/flows/generate-verb-forms';
 
 type TaskResult = GenerateVerbFormsOutput | { [key: string]: any } | null;
-type TaskContextData = { subjectId?: string; [key: string]: any };
 
 interface TaskState {
   isRunning: boolean;
   taskName: string | null;
   progress: number;
   error: Error | null;
-  taskResult: TaskResult;
-  taskType: string | null;
-  taskContext: TaskContextData | null;
 }
 
 interface TaskRunnerOptions<T> {
   name: string;
-  type: string;
-  context?: TaskContextData;
-  onSuccess?: (result: T, context?: TaskContextData) => void;
-  onError?: (error: Error, context?: TaskContextData) => void;
-  onFinally?: (context?: TaskContextData) => void;
+  onSuccess?: (result: T) => void;
+  onError?: (error: Error) => void;
+  onFinally?: () => void;
 }
 
 interface TaskContextType extends TaskState {
@@ -30,7 +24,6 @@ interface TaskContextType extends TaskState {
     task: () => Promise<T>,
     options: TaskRunnerOptions<T>
   ) => void;
-  clearTaskResult: () => void;
 }
 
 export const TaskContext = createContext<TaskContextType>({
@@ -38,14 +31,8 @@ export const TaskContext = createContext<TaskContextType>({
   taskName: null,
   progress: 0,
   error: null,
-  taskResult: null,
-  taskType: null,
-  taskContext: null,
   runTask: () => {
     throw new Error('runTask function must be overridden by TaskProvider');
-  },
-  clearTaskResult: () => {
-    throw new Error('clearTaskResult function must be overridden by TaskProvider');
   },
 });
 
@@ -59,9 +46,6 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
     taskName: null,
     progress: 0,
     error: null,
-    taskResult: null,
-    taskType: null,
-    taskContext: null,
   });
 
   const runTask = useCallback(
@@ -76,15 +60,12 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
         taskName: options.name,
         progress: 0,
         error: null,
-        taskResult: null,
-        taskType: options.type,
-        taskContext: options.context || null,
       });
 
       try {
         const result = await task();
-        setTaskState(prev => ({ ...prev, progress: 100, taskResult: result as TaskResult }));
-        options.onSuccess?.(result, options.context);
+        setTaskState(prev => ({ ...prev, progress: 100 }));
+        options.onSuccess?.(result);
         
         setTimeout(() => {
           setTaskState(prev => ({ ...prev, isRunning: false, taskName: null, progress: 0, error: null }));
@@ -92,25 +73,21 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
 
       } catch (error: any) {
         setTaskState(prev => ({ ...prev, error, isRunning: false }));
-        options.onError?.(error, options.context);
+        options.onError?.(error);
         
         setTimeout(() => {
             setTaskState(prev => ({ ...prev, isRunning: false, taskName: null, progress: 0, error: null }));
         }, 5000);
 
       } finally {
-        options.onFinally?.(options.context);
+        options.onFinally?.();
       }
     },
     [taskState.isRunning]
   );
-  
-  const clearTaskResult = useCallback(() => {
-    setTaskState(prev => ({ ...prev, taskResult: null, taskType: null, taskContext: null }));
-  }, []);
 
   return (
-    <TaskContext.Provider value={{ ...taskState, runTask, clearTaskResult }}>
+    <TaskContext.Provider value={{ ...taskState, runTask }}>
       {children}
     </TaskContext.Provider>
   );
