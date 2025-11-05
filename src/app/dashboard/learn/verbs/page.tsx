@@ -120,7 +120,6 @@ export default function VerbPracticePage() {
     const [incorrectlyAnsweredIds, setIncorrectlyAnsweredIds] = useState<Set<string>>(new Set());
     const [answeredIds, setAnsweredIds] = useState<Map<string, AnswerStatus>>(new Map());
     const [showResults, setShowResults] = useState(false);
-    const [isNewCard, setIsNewCard] = useState(false);
     const [isExiting, setIsExiting] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
     
@@ -222,7 +221,6 @@ export default function VerbPracticePage() {
             setPracticeItems(shuffledItems);
             setInitialItems(shuffledItems);
             setTotalItemCount(shuffledItems.length);
-            setIsNewCard(true);
 
         } catch (e) {
             console.error(e);
@@ -234,16 +232,10 @@ export default function VerbPracticePage() {
     }, []);
 
     useEffect(() => {
-        if (isNewCard) {
-            const timer = setTimeout(() => {
-                setIsNewCard(false);
-                if (isTypedMode && inputRef.current) {
-                    inputRef.current.focus();
-                }
-            }, 300); // Duration of the animation
-            return () => clearTimeout(timer);
+        if (!isExiting && isTypedMode && inputRef.current) {
+            inputRef.current.focus();
         }
-    }, [isNewCard, isTypedMode]);
+    }, [currentIndex, isExiting, isTypedMode]);
     
     const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted').length;
     const progress = totalItemCount > 0 ? (correctAnswersCount / totalItemCount) * 100 : 0;
@@ -261,7 +253,6 @@ export default function VerbPracticePage() {
           
           setAnswerStatus('unanswered');
           setIsFlipped(false);
-          setIsNewCard(true);
           setShowContinueButton(false);
         }
     };
@@ -306,7 +297,6 @@ export default function VerbPracticePage() {
           
           setPracticeItems(remainingCards);
           setCurrentIndex(newIndex);
-          setIsNewCard(true);
         }
     };
     
@@ -334,7 +324,7 @@ export default function VerbPracticePage() {
           goToNextCard(knewIt);
           setIsFlipped(false);
           setIsExiting(false);
-        }, 200); // Duration of fade-out animation
+        }, 300); // Duration of fade-out animation
     };
     
       const handleCheckAnswer = () => {
@@ -345,7 +335,7 @@ export default function VerbPracticePage() {
             goToNextCard(isCorrect);
             setIsFlipped(false);
             setIsExiting(false);
-          }, 200);
+          }, 300);
           return;
         }
 
@@ -388,7 +378,6 @@ export default function VerbPracticePage() {
         setHistory([]);
         setUserInput('');
         setAnswerStatus('unanswered');
-        setIsNewCard(true);
         setShowContinueButton(false);
         setShowClassicButtonsInTypedMode(false);
     };
@@ -528,18 +517,20 @@ export default function VerbPracticePage() {
                 <Card
                     className={cn(
                         "relative w-full h-full flex flex-col items-center justify-center p-6 rounded-2xl glass-effect",
-                        isNewCard && 'animate-pop-in',
+                        !isExiting && 'animate-fade-in',
                         isExiting && 'animate-fade-out',
                     )}
                     onClick={() => !isTypedMode && setIsFlipped(f => !f)}
                 >
-                     {/* Front and Back Text Container */}
-                    <div className="relative text-center">
-                        <div className={cn("transition-opacity duration-300", isFlipped ? 'opacity-0' : 'opacity-100')}>
+                     {/* Using a key forces a re-render from scratch, preventing state leakage */}
+                    <div key={currentCard.id} className="relative text-center w-full h-full flex items-center justify-center">
+                        {/* Front of the card */}
+                        <div className={cn("absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300", isFlipped ? 'opacity-0' : 'opacity-100')}>
                             {shouldShowHints && currentCard.isConjugation && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
                             <p className="text-4xl font-bold text-center">{currentCard.front}</p>
                         </div>
-                        <div className={cn("absolute inset-0 transition-opacity duration-300 flex flex-col items-center justify-center", isFlipped ? 'opacity-100' : 'opacity-0')}>
+                        {/* Back of the card */}
+                        <div className={cn("absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300", isFlipped ? 'opacity-100' : 'opacity-0')}>
                             {isTypedMode && answerStatus === 'incorrect' && (
                                 <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
                             )}
@@ -623,3 +614,5 @@ export default function VerbPracticePage() {
         </div>
     );
 }
+
+    
