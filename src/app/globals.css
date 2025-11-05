@@ -92,6 +92,14 @@
       opacity: 0.8;
     }
   }
+  @keyframes flip-to-back {
+    from { transform: rotateX(0deg); }
+    to { transform: rotateX(180deg); }
+  }
+  @keyframes flip-to-front {
+    from { transform: rotateX(180deg); }
+    to { transform: rotateX(0deg); }
+  }
 }
 
 @layer components {
@@ -103,5 +111,11 @@
   }
   .animate-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  .animate-flip-to-back {
+    animation: flip-to-back 0.7s forwards;
+  }
+  .animate-flip-to-front {
+    animation: flip-to-front 0.7s forwards;
   }
 }
