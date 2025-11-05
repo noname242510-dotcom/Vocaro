@@ -524,22 +524,28 @@ export default function VerbPracticePage() {
                 </p>
             </div>
 
-            <div className="w-full max-w-2xl h-80 [perspective:1000px] relative mt-4">
+            <div className="w-full max-w-2xl h-80 relative mt-4">
                 <div
                     className={cn(
-                        "relative w-full h-full duration-700 [transform-style:preserve-3d]",
+                        "relative w-full h-full",
                         isNewCard && 'animate-pop-in',
                         isExiting && 'animate-fade-out',
-                        isFlipped && '[transform:rotateX(180deg)]'
                     )}
+                    onClick={() => !isTypedMode && setIsFlipped(f => !f)}
                 >
                     {/* Front of the card */}
-                    <Card className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect" onClick={() => !isTypedMode && setIsFlipped(f => !f)}>
+                    <Card className={cn(
+                        "absolute w-full h-full flex flex-col items-center justify-center p-6 rounded-2xl glass-effect transition-opacity duration-500",
+                        isFlipped ? 'opacity-0' : 'opacity-100'
+                    )}>
                         {shouldShowHints && currentCard.isConjugation && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
                         <p className="text-4xl font-bold text-center">{currentCard.front}</p>
                     </Card>
                     {/* Back of the card */}
-                    <Card className={cn("absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect")} onClick={() => !isTypedMode && setIsFlipped(f => !f)}>
+                    <Card className={cn(
+                        "absolute w-full h-full flex flex-col items-center justify-center p-6 rounded-2xl glass-effect transition-opacity duration-500",
+                        isFlipped ? 'opacity-100' : 'opacity-0'
+                    )}>
                         <div className="flex flex-col items-center justify-center gap-4">
                             {isTypedMode && answerStatus === 'incorrect' && (
                                 <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
