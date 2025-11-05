@@ -272,10 +272,10 @@ export default function LearnPage() {
         triggerHapticFeedback('heavy');
     }
     
+    setIsFlipped(false);
     setIsExiting(true);
     setTimeout(() => {
       goToNextCard(knewIt);
-      setIsFlipped(false);
       setIsExiting(false);
     }, 300); // Duration of fade-out animation
   };
@@ -283,10 +283,10 @@ export default function LearnPage() {
   const handleCheckAnswer = () => {
     if (isFlipped) {
       const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
+      setIsFlipped(false);
       setIsExiting(true);
       setTimeout(() => {
         goToNextCard(isCorrect);
-        setIsFlipped(false);
         setIsExiting(false);
       }, 300);
       return;
@@ -492,13 +492,10 @@ export default function LearnPage() {
           )}
           onClick={() => !isTypedMode && setIsFlipped(f => !f)}
         >
-          {/* Using a key forces a re-render from scratch, preventing state leakage */}
           <div key={currentCard.id} className="relative text-center w-full h-full flex items-center justify-center">
-              {/* Front of the card */}
               <div className={cn("absolute inset-0 flex items-center justify-center transition-opacity duration-300", isFlipped ? 'opacity-0' : 'opacity-100')}>
                 <p className="text-4xl font-bold">{isTermFirst ? currentCard.term : currentCard.definition}</p>
               </div>
-              {/* Back of the card */}
               <div className={cn("absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300", isFlipped ? 'opacity-100' : 'opacity-0')}>
                   {isTypedMode && answerStatus === 'incorrect' && (
                       <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
@@ -543,70 +540,60 @@ export default function LearnPage() {
       
        <div className="mt-8 w-full max-w-2xl min-h-[6rem] relative">
           {isTypedMode ? (
-            showClassicButtonsInTypedMode ? (
-                <div className={cn("flex gap-2 w-full transition-opacity duration-300", isExiting && "opacity-0")}>
-                    <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(false)}>
-                        <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                    </Button>
-                    <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(true)}>
-                        <Check className="mr-2 h-4 w-4" /> Wusste ich
-                    </Button>
+            <div className="relative w-full h-12">
+              <div
+                className={cn(
+                  'absolute inset-0 flex justify-center items-center transition-all duration-300',
+                  isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
+                )}
+              >
+                <div className="flex gap-2 w-full">
+                  <Input
+                    ref={inputRef}
+                    placeholder="Antwort tippen..."
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
+                    className="text-center text-lg h-12 rounded-full"
+                    autoFocus
+                  />
+                  <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
                 </div>
-            ) : (
-                <div className={cn("relative w-full h-12", isExiting && "opacity-0")}>
-                  <div className={cn(
-                      "absolute inset-0 flex gap-2 transition-all duration-300", 
-                      isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
-                  )}>
-                    <Input
-                      ref={inputRef}
-                      placeholder="Antwort tippen..."
-                      value={userInput}
-                      onChange={(e) => setUserInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                      className="text-center text-lg h-12 rounded-full"
-                      autoFocus
-                    />
-                    <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
-                  </div>
-                  <div className={cn(
-                      "absolute inset-0 flex gap-2 transition-all duration-300", 
-                      !isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
-                  )}>
-                    <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
-                      {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
-                    </Button>
-                  </div>
-                </div>
-            )
+              </div>
+              <div
+                className={cn(
+                  'absolute inset-0 flex justify-center items-center transition-all duration-300',
+                  !isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
+                )}
+              >
+                <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
+                  {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
+                </Button>
+              </div>
+            </div>
           ) : (
-            <div className={cn("relative w-full h-12", isExiting && "opacity-0")}>
-                {/* "Umdrehen" button */}
-                <div className={cn(
-                    "absolute inset-0 flex justify-center items-center transition-all duration-300", 
-                    isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
-                )}>
-                    <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
-                </div>
-
-                {/* "Wusste ich nicht" / "Wusste ich" buttons */}
-                <div className={cn(
-                    "absolute inset-0 flex justify-center items-center gap-2 transition-all duration-300",
-                    !isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
-                )}>
-                    {showContinueButton ? (
-                        <Button size="lg" className="w-full" onClick={() => { setIsFlipped(false); goToNextCard(true); }}>Weiter</Button>
-                    ) : (
-                        <>
-                            <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(false)}>
-                                <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                            </Button>
-                            <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(true)}>
-                                <Check className="mr-2 h-4 w-4" /> Wusste ich
-                            </Button>
-                        </>
-                    )}
-                </div>
+            <div className="relative w-full h-12">
+              <div
+                className={cn(
+                  'absolute inset-0 flex justify-center items-center transition-all duration-300',
+                  isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
+                )}
+              >
+                <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+              </div>
+              <div
+                className={cn(
+                  'absolute inset-0 flex justify-center items-center gap-2 transition-all duration-300',
+                  !isFlipped ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 scale-100'
+                )}
+              >
+                <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(false)}>
+                  <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+                </Button>
+                <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(true)}>
+                  <Check className="mr-2 h-4 w-4" /> Wusste ich
+                </Button>
+              </div>
             </div>
           )}
        </div>
@@ -621,3 +608,5 @@ export default function LearnPage() {
     </div>
   );
 }
+
+    
