@@ -521,14 +521,14 @@ export default function LearnPage() {
             </>
           ) : (
             <>
-               <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')}>
+              <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')}>
                 <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
               </div>
-              <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
-                <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(false)}>
+              <div className={cn("flex gap-2 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
+                <Button variant="outline" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(false)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
                   <X className="mr-2 h-4 w-4" /> Wusste ich nicht
                 </Button>
-                <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(true)}>
+                <Button variant="default" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(true)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(-50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
                   <Check className="mr-2 h-4 w-4" /> Wusste ich
                 </Button>
               </div>
@@ -546,3 +546,5 @@ export default function LearnPage() {
     </div>
   );
 }
+
+    
