@@ -1,13 +1,12 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Check, Loader2, RotateCcw, X, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, RotateCcw, X, Lightbulb, Pencil, ChevronLeft, Smile, Frown, Meh } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Verb, VerbTense } from '@/lib/types';
 import {
@@ -22,20 +21,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Confetti } from '@/components/confetti';
-
-
-interface PracticeItem {
-    id: string;
-    verbInfinitive: string;
-    front: string;
-    back: string;
-}
-
-interface VerbLearnState {
-  practiceItems: PracticeItem[];
-  currentIndex: number;
-  incorrectlyAnsweredIds: Set<string>;
-}
+import { Input } from '@/components/ui/input';
+import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 
 // Function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -46,6 +33,47 @@ function shuffleArray<T>(array: T[]): T[] {
   }
   return newArray;
 }
+
+interface PracticeItem {
+    id: string;
+    verbInfinitive: string;
+    front: string;
+    back: string;
+}
+
+type AnswerStatus = 'unanswered' | 'correct' | 'incorrect' | 'accepted';
+
+interface VerbLearnState {
+  practiceItems: PracticeItem[];
+  currentIndex: number;
+  incorrectlyAnsweredIds: Set<string>;
+  answeredIds: Map<string, AnswerStatus>;
+  userInput: string;
+}
+
+
+const DiffHighlight = ({userInput, correctAnswer}: {userInput: string, correctAnswer: string}) => {
+    const userChars = userInput.trim().split('');
+    const correctChars = correctAnswer.trim().split('');
+
+    return (
+        <p className="text-xl font-mono text-center mb-1">
+        {userChars.map((char, index) => (
+            <span 
+                key={index}
+                className={cn(
+                    "border-b-2",
+                    index < correctChars.length && char.toLowerCase() === correctChars[index].toLowerCase()
+                        ? 'border-transparent'
+                        : 'border-destructive'
+                )}
+            >
+                {char}
+            </span>
+        ))}
+        </p>
+    );
+};
 
 const germanPronounMap: Record<string, string> = {
     "ich": "ich",
@@ -75,15 +103,20 @@ const germanPronounMap: Record<string, string> = {
 
 export default function VerbPracticePage() {
     const router = useRouter();
+    const inputRef = useRef<HTMLInputElement>(null);
+    const { triggerHapticFeedback } = useHapticFeedback();
+    
     const [practiceItems, setPracticeItems] = useState<PracticeItem[]>([]);
     const [initialItems, setInitialItems] = useState<PracticeItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [subjectId, setSubjectId] = useState<string | null>(null);
+    const [totalItemCount, setTotalItemCount] = useState(0);
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [incorrectlyAnsweredIds, setIncorrectlyAnsweredIds] = useState<Set<string>>(new Set());
+    const [answeredIds, setAnsweredIds] = useState<Map<string, AnswerStatus>>(new Map());
     const [showResults, setShowResults] = useState(false);
     const [isNewCard, setIsNewCard] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
@@ -92,6 +125,12 @@ export default function VerbPracticePage() {
     const [shouldShowHints, setShouldShowHints] = useState(true);
 
     const [history, setHistory] = useState<VerbLearnState[]>([]);
+    
+    // Typed Input Mode State
+    const [isTypedMode, setIsTypedMode] = useState(false);
+    const [userInput, setUserInput] = useState('');
+    const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
+
 
     useEffect(() => {
         const germanFirstSetting = localStorage.getItem('query-direction-verbs') === 'true';
@@ -99,6 +138,9 @@ export default function VerbPracticePage() {
 
         const showHintsSetting = localStorage.getItem('show-verb-hints') !== 'false';
         setShouldShowHints(showHintsSetting);
+        
+        const typedModeSetting = localStorage.getItem('learn-mode-typed') === 'true';
+        setIsTypedMode(typedModeSetting);
 
         const sessionData = sessionStorage.getItem('verb-practice-session');
         const subjectIdData = sessionStorage.getItem('verb-practice-subject-id');
@@ -138,7 +180,7 @@ export default function VerbPracticePage() {
                                 if (germanFirstSetting && germanTenseForms) {
                                     const germanForm = germanTenseForms[germanPronoun];
                                     if(germanForm) {
-                                        front = `${germanPronoun} ${germanForm}`;
+                                        front = `${germanPronoun}, ${tense}`;
                                         back = `${pronoun} ${form}`;
                                     } else {
                                         // Fallback if no German form is found
@@ -172,6 +214,7 @@ export default function VerbPracticePage() {
             const shuffledItems = shuffleArray(items);
             setPracticeItems(shuffledItems);
             setInitialItems(shuffledItems);
+            setTotalItemCount(shuffledItems.length);
             setIsNewCard(true);
 
         } catch (e) {
@@ -185,13 +228,17 @@ export default function VerbPracticePage() {
 
     useEffect(() => {
         if (isNewCard) {
-            const timer = setTimeout(() => setIsNewCard(false), 300); // Animation duration
+            const timer = setTimeout(() => {
+                setIsNewCard(false);
+                if (isTypedMode && inputRef.current) {
+                    inputRef.current.focus();
+                }
+            }, 300); // Duration of the animation
             return () => clearTimeout(timer);
         }
-    }, [isNewCard]);
+    }, [isNewCard, isTypedMode]);
     
-    const totalItemCount = initialItems.length;
-    const correctAnswersCount = totalItemCount > 0 ? totalItemCount - practiceItems.length : 0;
+    const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted').length;
     const progress = totalItemCount > 0 ? (correctAnswersCount / totalItemCount) * 100 : 0;
 
     const handleGoBack = () => {
@@ -200,55 +247,116 @@ export default function VerbPracticePage() {
           setPracticeItems(lastState.practiceItems);
           setCurrentIndex(lastState.currentIndex);
           setIncorrectlyAnsweredIds(lastState.incorrectlyAnsweredIds);
+          setAnsweredIds(lastState.answeredIds);
+          setUserInput(lastState.userInput);
+
           setHistory(prev => prev.slice(0, -1));
+          
+          setAnswerStatus('unanswered');
           setIsFlipped(false);
           setIsNewCard(true);
         }
     };
 
 
-    const handleAnswer = (knewIt: boolean) => {
-        if (!isFlipped) return;
+    const finishSession = () => {
+        const incorrectCount = incorrectlyAnsweredIds.size;
+        const correctCount = totalItemCount - incorrectCount;
+        const finalScore = totalItemCount > 0 ? Math.round((correctCount / totalItemCount) * 100) : 0;
+        
+        const confettiEnabled = localStorage.getItem('enable-confetti') !== 'false';
+        if (finalScore >= 90 && confettiEnabled) {
+            setShowConfetti(true);
+        }
+        setShowResults(true);
+    };
 
-        setHistory(prev => [...prev, { practiceItems, currentIndex, incorrectlyAnsweredIds }]);
-    
+
+    const goToNextCard = (isCorrect: boolean) => {
         const currentCard = practiceItems[currentIndex];
         let remainingCards = [...practiceItems];
+      
+        if (isCorrect) {
+          remainingCards.splice(currentIndex, 1);
+           if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
+              setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+           }
+        } else {
+          const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
+          remainingCards.push(cardToRepeat);
+        }
+      
+        if (remainingCards.length === 0) {
+          finishSession();
+        } else {
+          const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
+          
+          setPracticeItems(remainingCards);
+          setCurrentIndex(newIndex);
+          
+          // Reset for next card
+          setIsNewCard(true);
+          setIsFlipped(false);
+          setAnswerStatus('unanswered');
+          setUserInput('');
+        }
+    };
     
-        if (!knewIt) {
-            // Mark as incorrect for this session
+    const handleClassicAnswer = (knewIt: boolean) => {
+        if (!isFlipped) return;
+
+        setHistory(prev => [...prev, { practiceItems, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
+    
+        const currentCard = practiceItems[currentIndex];
+
+        if (knewIt) {
+            setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+            triggerHapticFeedback('light');
+            goToNextCard(true);
+        } else {
             if (!incorrectlyAnsweredIds.has(currentCard.id)) {
                 setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
             }
-            
-            // Move card to the end of the queue for repetition
-            const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
-            remainingCards.push(cardToRepeat);
-        } else {
-            // Correct answer: remove the card from this session's queue
-            remainingCards.splice(currentIndex, 1);
+            setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
+            triggerHapticFeedback('heavy');
+            goToNextCard(false);
         }
+    };
     
-        if (remainingCards.length === 0) {
-            const incorrectCount = incorrectlyAnsweredIds.size;
-            const correctCount = totalItemCount - incorrectCount;
-            const finalScore = totalItemCount > 0 ? Math.round((correctCount / totalItemCount) * 100) : 0;
-            
-            const confettiEnabled = localStorage.getItem('enable-confetti') !== 'false';
-            if (finalScore >= 90 && confettiEnabled) {
-                setShowConfetti(true);
-            }
-            setShowResults(true);
-        } else {
-            // If we removed the last item, the new index should be 0
-            const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
-            
-            setPracticeItems(remainingCards);
-            setCurrentIndex(newIndex);
-            setIsNewCard(true);
-            // Delay flipping back the card to prevent animation clash
-            setTimeout(() => setIsFlipped(false), 0);
+      const handleCheckAnswer = () => {
+        if (isFlipped) {
+          const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
+          goToNextCard(isCorrect);
+          return;
         }
+
+        setHistory(prev => [...prev, { practiceItems, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
+        setIsFlipped(true);
+
+        const currentCard = practiceItems[currentIndex];
+        const expectedAnswer = currentCard.back;
+
+        const isCorrect = userInput.trim().toLowerCase() === expectedAnswer.trim().toLowerCase();
+
+        if (isCorrect) {
+          setAnswerStatus('correct');
+          setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+          triggerHapticFeedback('light');
+        } else {
+          setAnswerStatus('incorrect');
+          if (!incorrectlyAnsweredIds.has(currentCard.id)) {
+            setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
+          }
+          setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
+          triggerHapticFeedback('heavy', 'heavy'); // Double tap
+        }
+    };
+    
+    const handleMarkAsCorrect = () => {
+        setAnswerStatus('accepted');
+        const currentCard = practiceItems[currentIndex];
+        setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'accepted'));
+        triggerHapticFeedback('light');
     };
     
     const resetSession = () => {
@@ -258,7 +366,10 @@ export default function VerbPracticePage() {
         setShowResults(false);
         setShowConfetti(false);
         setIncorrectlyAnsweredIds(new Set());
+        setAnsweredIds(new Map());
         setHistory([]);
+        setUserInput('');
+        setAnswerStatus('unanswered');
         setIsNewCard(true);
     };
 
@@ -268,6 +379,16 @@ export default function VerbPracticePage() {
         } else {
             router.push('/dashboard');
         }
+    };
+
+    const toggleInputMode = () => {
+        const newMode = !isTypedMode;
+        setIsTypedMode(newMode);
+        localStorage.setItem('learn-mode-typed', String(newMode));
+        
+        setUserInput('');
+        setAnswerStatus('unanswered');
+        setIsFlipped(false);
     };
 
     const getMotivationMessage = (score: number) => {
@@ -322,11 +443,20 @@ export default function VerbPracticePage() {
             </div>
         );
       }
+      
+    const FeedbackIcon = ({ status }: { status: AnswerStatus }) => {
+        switch (status) {
+            case 'correct': return <Smile className="h-10 w-10" />;
+            case 'incorrect': return <Frown className="h-10 w-10" />;
+            case 'accepted': return <Meh className="h-10 w-10" />;
+            default: return <div className="h-10 w-10" />;
+        }
+    };
     
     return (
         <div className="flex flex-col items-center">
             <div className="w-full max-w-2xl px-4 sm:px-0">
-                <div className="flex items-center justify-start mb-2">
+                <div className="flex items-center justify-between mb-2">
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -346,6 +476,9 @@ export default function VerbPracticePage() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
+                    <Button variant={isTypedMode ? 'default' : 'ghost'} size="icon" onClick={toggleInputMode}>
+                        <Pencil className="h-5 w-5" />
+                    </Button>
                 </div>
                 <Progress value={progress} className="h-2 w-full mb-1" />
                 <p className="text-sm text-muted-foreground text-center">
@@ -360,40 +493,82 @@ export default function VerbPracticePage() {
                         isFlipped && "[transform:rotateX(-180deg)]",
                         isNewCard && 'animate-pop-in'
                     )}
-                    onClick={() => setIsFlipped(!isFlipped)}
+                    onClick={() => !isTypedMode && setIsFlipped(!isFlipped)}
                 >
                     {/* Front of the card */}
-                    <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
+                    <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect">
                         {shouldShowHints && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
                         <p className="text-4xl font-bold text-center">{currentCard.front}</p>
                     </div>
                     {/* Back of the card */}
-                    <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
-                         <p className="text-4xl font-bold text-center">{currentCard.back}</p>
+                    <div className={cn("absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect")}>
+                        <div className="flex flex-col items-center justify-center gap-4">
+                            {isTypedMode && answerStatus === 'incorrect' && (
+                                <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
+                            )}
+                            <p className="text-4xl font-bold text-center">{currentCard.back}</p>
+                            {isTypedMode && <div className="mt-2"><FeedbackIcon status={answerStatus} /></div>}
+                        </div>
+                         {isTypedMode && answerStatus === 'incorrect' && (
+                           <div className="absolute bottom-4 text-center opacity-75 transition-opacity duration-300">
+                              <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
+                                  Ich hab's gewusst
+                              </Button>
+                          </div>
+                        )}
                     </div>
                 </Card>
             </div>
 
-            <div className="mt-8 w-full max-w-2xl relative min-h-[3rem]">
-                <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')}>
+            <div className="mt-8 w-full max-w-2xl min-h-[6rem] relative">
+              {isTypedMode ? (
+                <>
+                  <div className={cn("flex gap-2 transition-opacity duration-300 w-full", isFlipped && 'opacity-0 pointer-events-none')}>
+                    <Input
+                      ref={inputRef}
+                      placeholder="Antwort tippen..."
+                      value={userInput}
+                      onChange={(e) => setUserInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
+                      className="text-center text-lg h-11 rounded-full"
+                      autoFocus
+                    />
+                    <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
+                  </div>
+                  <div className={cn("absolute inset-0 flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
+                    <Button size="lg" className="w-full" onClick={() => {
+                        const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
+                        goToNextCard(isCorrect);
+                    }}>
+                      {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')}>
                     <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
-                </div>
-                <div className={cn("flex gap-2 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
-                    <Button variant="outline" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleAnswer(false)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
-                        <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+                  </div>
+                  <div className={cn("flex gap-2 w-full transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
+                    <Button variant="outline" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(false)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
+                      <X className="mr-2 h-4 w-4" /> Wusste ich nicht
                     </Button>
-                    <Button variant="default" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleAnswer(true)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(-50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
-                        <Check className="mr-2 h-4 w-4" /> Wusste ich
+                    <Button variant="default" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(true)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(-50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
+                      <Check className="mr-2 h-4 w-4" /> Wusste ich
                     </Button>
-                </div>
+                  </div>
+                </>
+              )}
             </div>
-            {history.length > 0 && !isFlipped && (
-                <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
-                    Zurück
-                </Button>
-            )}
+
+            <div className="w-full max-w-2xl flex justify-center">
+                 {history.length > 0 && (
+                     <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
+                         <ChevronLeft className="mr-1 h-4 w-4" />
+                         Zurück
+                     </Button>
+                 )}
+            </div>
         </div>
     );
 }
-
-    
