@@ -130,17 +130,21 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-2xl bg-card">
         <div className="w-full p-4 flex items-center justify-between group">
            <div className="flex items-center gap-4 flex-1">
-             <Checkbox 
-                checked={allVisibleInStackSelected}
-                onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
-             />
-            <div className="cursor-pointer flex-1" onClick={() => setIsOpen(!isOpen)}>
-              <h3 className="font-headline text-lg">{stack.name}</h3>
-              <Badge variant="secondary">
-                {vocabulary.length || 0}
-                <span className="hidden sm:inline">&nbsp;Vokabeln</span>
-              </Badge>
-            </div>
+              <div onClick={(e) => e.stopPropagation()}>
+                <Checkbox 
+                    checked={allVisibleInStackSelected}
+                    onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
+                />
+              </div>
+              <CollapsibleTrigger asChild>
+                <div className="cursor-pointer flex-1">
+                    <h3 className="font-headline text-lg">{stack.name}</h3>
+                    <Badge variant="secondary">
+                        {vocabulary.length || 0}
+                        <span className="hidden sm:inline">&nbsp;Vokabeln</span>
+                    </Badge>
+                </div>
+              </CollapsibleTrigger>
           </div>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100" onClick={() => onAddVocab(stack)}>
@@ -206,9 +210,11 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsOpen(!isOpen)}>
-                <ChevronDown className={cn('h-5 w-5 transition-transform duration-300', isOpen && 'rotate-180')} />
-            </Button>
+             <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <ChevronDown className={cn('h-5 w-5 transition-transform duration-300', isOpen && 'rotate-180')} />
+                </Button>
+            </CollapsibleTrigger>
           </div>
         </div>
         <CollapsibleContent>
