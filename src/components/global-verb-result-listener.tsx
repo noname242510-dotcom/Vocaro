@@ -1,43 +1,57 @@
 'use client';
 
 import { useContext, useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import { TaskContext } from '@/contexts/task-context';
 import { VerbDialog } from '@/app/dashboard/subjects/[subjectId]/_components/verb-dialog';
 import type { GenerateVerbFormsOutput } from '@/ai/flows/generate-verb-forms';
 import { useFirebase } from '@/firebase';
-import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Verb } from '@/lib/types';
 
 
-// This is a client component that will be used in a client context,
-// but it needs to perform server-side actions through server actions.
-// This is a common pattern in Next.js App Router.
-
 export function GlobalVerbResultListener() {
-  const { taskResult, taskType, clearTaskResult } = useContext(TaskContext);
+  const { taskResult, taskType, taskContext, clearTaskResult } = useContext(TaskContext);
   const [isOpen, setIsOpen] = useState(false);
   const [verbData, setVerbData] = useState<GenerateVerbFormsOutput | null>(null);
-  const [editingVerb, setEditingVerb] = useState<Verb | null>(null); // Assuming you might edit
+  const [editingVerb, setEditingVerb] = useState<Verb | null>(null);
   const { toast } = useToast();
   const { firestore, user } = useFirebase();
-  const params = useParams();
-  const subjectId = params.subjectId as string;
+  
+  const [activeSubjectId, setActiveSubjectId] = useState<string | null>(null);
+  const [activeLanguage, setActiveLanguage] = useState<string>('English');
+
 
   useEffect(() => {
-    if (taskResult && taskType === 'verb-generation') {
+    if (taskResult && taskType === 'verb-generation' && taskContext?.subjectId) {
       setVerbData(taskResult as GenerateVerbFormsOutput);
+      setActiveSubjectId(taskContext.subjectId);
       setIsOpen(true);
     }
-  }, [taskResult, taskType]);
+  }, [taskResult, taskType, taskContext]);
+  
+  // Effect to determine language based on subjectId
+  useEffect(() => {
+    if (activeSubjectId && firestore && user) {
+        const getLanguage = async () => {
+            const subjectDocRef = doc(firestore, 'users', user.uid, 'subjects', activeSubjectId);
+            const subjectDoc = await getDoc(subjectDocRef);
+            if (subjectDoc.exists()) {
+                const subjectData = subjectDoc.data();
+                setActiveLanguage(getLanguageFromSubject(subjectData?.name));
+            }
+        };
+        getLanguage();
+    }
+  }, [activeSubjectId, firestore, user]);
+
 
   const handleSave = async (data: Omit<Verb, 'id' | 'subjectId' | 'language'>) => {
-    if (!firestore || !user || !subjectId) {
+    if (!firestore || !user || !activeSubjectId) {
         toast({ variant: 'destructive', title: 'Error', description: 'Cannot save verb. Context is missing.' });
         return;
     }
-    const verbsCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subjectId, 'verbs');
+    const verbsCollectionRef = collection(firestore, 'users', user.uid, 'subjects', activeSubjectId, 'verbs');
     
     try {
         if (editingVerb) {
@@ -45,14 +59,10 @@ export function GlobalVerbResultListener() {
             await updateDoc(verbDocRef, data);
             toast({ title: 'Success', description: 'Verb updated.' });
         } else {
-            const subjectDoc = await doc(firestore, 'users', user.uid, 'subjects', subjectId).get();
-            const subjectData = subjectDoc.data();
-            const language = getLanguageFromSubject(subjectData?.name);
-            
             await addDoc(verbsCollectionRef, {
                 ...data,
-                subjectId: subjectId,
-                language: language,
+                subjectId: activeSubjectId,
+                language: activeLanguage,
                 createdAt: serverTimestamp(),
             });
             toast({ title: 'Success', description: 'Verb saved.' });
@@ -78,24 +88,20 @@ export function GlobalVerbResultListener() {
     setIsOpen(false);
     setVerbData(null);
     setEditingVerb(null);
+    setActiveSubjectId(null);
     clearTaskResult();
   };
 
-  // The language prop needs to be determined. 
-  // This could come from the subject, or be a fixed value for now.
-  // For this example, let's assume we can get it from context or pass it down.
-  // If not available, we can't render the dialog.
-  if (!verbData) {
+  if (!isOpen || !verbData) {
     return null;
   }
 
   return (
     <VerbDialog
       isOpen={isOpen}
-      onOpenChange={setIsOpen}
-      language={getLanguageFromSubject()} // This needs a proper source
+      onOpenChange={(open) => !open && handleClose()}
+      language={activeLanguage}
       onSave={handleSave}
-      initialData={verbData}
       existingVerb={editingVerb}
     />
   );

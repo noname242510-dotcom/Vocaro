@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useContext } from 'react';
+import { useParams } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -29,14 +30,7 @@ interface VerbDialogProps {
   language: string;
   onSave: (verbData: Omit<Verb, 'id' | 'subjectId' | 'language'>) => Promise<void>;
   existingVerb?: Verb | null;
-  initialData?: GenerateVerbFormsOutput | null;
 }
-
-const GenerateVerbFormsInputSchema = z.object({
-  verb: z.string().describe('The infinitive form of the verb to be conjugated.'),
-  language: z.string().describe("The language of the verb, e.g., 'French', 'English'."),
-});
-type GenerateVerbFormsInput = z.infer<typeof GenerateVerbFormsInputSchema>;
 
 const tenseOrder: { [key: string]: string[] } = {
   'Indicatif': [
@@ -101,21 +95,19 @@ const languageDisplayNames: { [key: string]: string } = {
     'German': 'Deutsch',
 };
 
-export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVerb, initialData }: VerbDialogProps) {
+export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVerb }: VerbDialogProps) {
   const [infinitive, setInfinitive] = useState('');
   const [generatedData, setGeneratedData] = useState<GenerateVerbFormsOutput | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { runTask, isRunning, clearTaskResult } = useContext(TaskContext);
-
+  const { runTask, isRunning, taskResult } = useContext(TaskContext);
+  const params = useParams();
+  const subjectId = params.subjectId as string;
 
   useEffect(() => {
     if (isOpen) {
-      if (initialData) {
-        setInfinitive(initialData.infinitive);
-        setGeneratedData(initialData);
-      } else if (existingVerb) {
+      if (existingVerb) {
         setInfinitive(existingVerb.infinitive);
         setGeneratedData({ 
           infinitive: existingVerb.infinitive,
@@ -123,11 +115,15 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
           forms: existingVerb.forms,
           germanForms: existingVerb.germanForms
         });
-      } else {
-        closeAndReset();
       }
     }
-  }, [isOpen, existingVerb, initialData]);
+  }, [isOpen, existingVerb]);
+
+  useEffect(() => {
+    if (taskResult && 'infinitive' in taskResult) {
+      setGeneratedData(taskResult as GenerateVerbFormsOutput);
+    }
+  }, [taskResult]);
 
 
   const handleGenerate = async () => {
@@ -137,14 +133,15 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     }
     
     setError(null);
-    onOpenChange(false); // Close the dialog to let the background task run
 
     runTask(
       () => generateVerbForms({ verb: infinitive, language }),
       {
         name: `Verbformen für "${infinitive}" generieren`,
         type: 'verb-generation',
+        context: { subjectId },
         onSuccess: (result) => {
+            setGeneratedData(result);
             toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert.` });
         },
         onError: (error) => {
@@ -155,19 +152,22 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
   };
 
   const handleFormChange = (tense: string, pronoun: string, value: string, formType: 'forms' | 'germanForms') => {
-    if (!generatedData) return;
-    const newData = { ...generatedData };
-    const formsToUpdate = formType === 'germanForms' ? newData.germanForms : newData.forms;
-    if (formsToUpdate && formsToUpdate[tense]) {
-      (formsToUpdate[tense] as VerbTense)[pronoun] = value;
-       setGeneratedData(newData);
-    }
+    setGeneratedData(prevData => {
+        if (!prevData) return null;
+        const newData = { ...prevData };
+        const formsToUpdate = formType === 'germanForms' ? newData.germanForms : newData.forms;
+        if (formsToUpdate && formsToUpdate[tense]) {
+            (formsToUpdate[tense] as VerbTense)[pronoun] = value;
+        }
+        return newData;
+    });
   };
   
   const handleTranslationChange = (value: string) => {
-    if (!generatedData) return;
-    const newData = { ...generatedData, translation: value };
-    setGeneratedData(newData);
+    setGeneratedData(prevData => {
+        if (!prevData) return null;
+        return { ...prevData, translation: value };
+    });
   };
 
   const handleSave = async () => {
@@ -175,7 +175,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     setIsSaving(true);
     try {
       await onSave({
-        infinitive: generatedData.infinitive, // Use infinitive from generatedData
+        infinitive: generatedData.infinitive,
         translation: generatedData.translation,
         forms: generatedData.forms,
         germanForms: generatedData.germanForms,
@@ -193,7 +193,6 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     setGeneratedData(null);
     setError(null);
     setIsSaving(false);
-    clearTaskResult();
   };
   
   const handleOpenChange = (open: boolean) => {
@@ -322,7 +321,7 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                     className="col-span-3"
                     placeholder={language === 'French' ? 'z.B. aller' : 'z.B. to go'}
                     onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
-                    disabled={!!existingVerb}
+                    disabled={!!existingVerb || isRunning}
                   />
                 </div>
                  {error && (

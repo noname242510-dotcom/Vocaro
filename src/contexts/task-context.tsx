@@ -4,6 +4,7 @@ import React, { createContext, useState, ReactNode, useCallback } from 'react';
 import type { GenerateVerbFormsOutput } from '@/ai/flows/generate-verb-forms';
 
 type TaskResult = GenerateVerbFormsOutput | { [key: string]: any } | null;
+type TaskContextData = { subjectId?: string; [key: string]: any };
 
 interface TaskState {
   isRunning: boolean;
@@ -12,14 +13,16 @@ interface TaskState {
   error: Error | null;
   taskResult: TaskResult;
   taskType: string | null;
+  taskContext: TaskContextData | null;
 }
 
 interface TaskRunnerOptions<T> {
   name: string;
   type: string;
-  onSuccess?: (result: T) => void;
-  onError?: (error: Error) => void;
-  onFinally?: () => void;
+  context?: TaskContextData;
+  onSuccess?: (result: T, context?: TaskContextData) => void;
+  onError?: (error: Error, context?: TaskContextData) => void;
+  onFinally?: (context?: TaskContextData) => void;
 }
 
 interface TaskContextType extends TaskState {
@@ -37,6 +40,7 @@ export const TaskContext = createContext<TaskContextType>({
   error: null,
   taskResult: null,
   taskType: null,
+  taskContext: null,
   runTask: () => {
     throw new Error('runTask function must be overridden by TaskProvider');
   },
@@ -57,6 +61,7 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
     error: null,
     taskResult: null,
     taskType: null,
+    taskContext: null,
   });
 
   const runTask = useCallback(
@@ -73,12 +78,13 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
         error: null,
         taskResult: null,
         taskType: options.type,
+        taskContext: options.context || null,
       });
 
       try {
         const result = await task();
         setTaskState(prev => ({ ...prev, progress: 100, taskResult: result as TaskResult }));
-        options.onSuccess?.(result);
+        options.onSuccess?.(result, options.context);
         
         setTimeout(() => {
           setTaskState(prev => ({ ...prev, isRunning: false, taskName: null, progress: 0, error: null }));
@@ -86,21 +92,21 @@ export const TaskProvider = ({ children }: TaskProviderProps) => {
 
       } catch (error: any) {
         setTaskState(prev => ({ ...prev, error, isRunning: false }));
-        options.onError?.(error);
+        options.onError?.(error, options.context);
         
         setTimeout(() => {
             setTaskState(prev => ({ ...prev, isRunning: false, taskName: null, progress: 0, error: null }));
         }, 5000);
 
       } finally {
-        options.onFinally?.();
+        options.onFinally?.(options.context);
       }
     },
     [taskState.isRunning]
   );
   
   const clearTaskResult = useCallback(() => {
-    setTaskState(prev => ({ ...prev, taskResult: null, taskType: null }));
+    setTaskState(prev => ({ ...prev, taskResult: null, taskType: null, taskContext: null }));
   }, []);
 
   return (
