@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -496,7 +497,6 @@ export default function VerbPracticePage() {
                         isFlipped && "[transform:rotateX(-180deg)]",
                         isNewCard && 'animate-pop-in'
                     )}
-                    onClick={() => !isTypedMode && setIsFlipped(!isFlipped)}
                 >
                     {/* Front of the card */}
                     <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect">

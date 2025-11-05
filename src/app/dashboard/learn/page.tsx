@@ -428,14 +428,6 @@ export default function LearnPage() {
   
   const expectedAnswer = isTermFirst ? currentCard.definition : currentCard.term;
 
-  const handleCardClick = () => {
-    if (isTypedMode || isHintPopoverOpen) {
-      return;
-    }
-    setIsFlipped(!isFlipped);
-  };
-
-
   return (
     <div className="flex flex-col items-center">
       <div className="w-full max-w-2xl px-4 sm:px-0">
@@ -477,7 +469,6 @@ export default function LearnPage() {
             isFlipped && "[transform:rotateX(-180deg)]",
             isNewCard && 'animate-pop-in'
           )}
-          onClick={handleCardClick}
         >
           {/* Front of the card */}
           <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect">
