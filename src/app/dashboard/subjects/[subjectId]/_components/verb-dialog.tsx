@@ -92,6 +92,88 @@ const languageDisplayNames: { [key: string]: string } = {
     'German': 'Deutsch',
 };
 
+
+const TensePopover = ({ tense, forms, formType, pronounKey, onFormChange }: { tense: string, forms?: Record<string, VerbTense>, formType: 'forms' | 'germanForms', pronounKey: keyof typeof pronounOrder, onFormChange: (tense: string, pronoun: string, value: string, formType: 'forms' | 'germanForms') => void }) => {
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+    const getSortedPronouns = (tenseForms: VerbTense, langKey: keyof typeof pronounOrder) => {
+        const currentPronounOrder = pronounOrder[langKey] || pronounOrder.default;
+        return Object.keys(tenseForms).sort((a, b) => {
+            const indexA = currentPronounOrder.indexOf(a);
+            const indexB = currentPronounOrder.indexOf(b);
+            if (indexA === -1 && indexB === -1) return 0;
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+    };
+    
+    return (
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6 ml-2 text-muted-foreground hover:text-foreground">
+                    <Info className="h-4 w-4" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent
+                className="w-80"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+                onInteractOutside={(e) => {
+                     // We allow interaction with other popover triggers
+                    if ((e.target as HTMLElement).closest('[data-radix-collection-item]')) {
+                        e.preventDefault();
+                    }
+                }}
+            >
+                <div className="space-y-2">
+                    <h4 className="font-medium leading-none">{tense}</h4>
+                    <div className="text-sm text-muted-foreground space-y-2 mt-2">
+                        {forms?.[tense] && getSortedPronouns(forms[tense], pronounKey).map(pronoun => (
+                            <div key={pronoun} className="grid grid-cols-[1fr,2fr] items-center gap-2">
+                                <Label htmlFor={`${formType}-${tense}-${pronoun}`} className="text-right text-xs">
+                                    {pronoun}
+                                </Label>
+                                <Input
+                                    id={`${formType}-${tense}-${pronoun}`}
+                                    value={forms[tense][pronoun]}
+                                    onChange={(e) => onFormChange(tense, pronoun, e.target.value, formType)}
+                                    className="h-8 text-sm"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+};
+
+
+const TenseList = ({ groupedTenses, forms, formType, pronounKey, onFormChange }: { groupedTenses: Record<string, string[]>, forms?: Record<string, VerbTense>, formType: 'forms' | 'germanForms', pronounKey: keyof typeof pronounOrder, onFormChange: (tense: string, pronoun: string, value: string, formType: 'forms' | 'germanForms') => void }) => (
+    <div style={{ columnCount: 3, columnGap: '2rem' }}>
+      {Object.entries(groupedTenses).map(([group, tenses]) => (
+        <div key={group} className='mb-4' style={{ breakInside: 'avoid' }}>
+          <h4 className="font-semibold text-sm text-muted-foreground mb-2 px-1">{group}</h4>
+          <div className="flex flex-col gap-1">
+            {tenses.map((tense) => (
+              <div key={tense} className="flex items-center">
+                <span className="text-sm">{tense}</span>
+                <TensePopover 
+                  tense={tense}
+                  forms={forms}
+                  formType={formType}
+                  pronounKey={pronounKey}
+                  onFormChange={onFormChange}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+
 export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVerb }: VerbDialogProps) {
   const [infinitive, setInfinitive] = useState('');
   const [generatedData, setGeneratedData] = useState<GenerateVerbFormsOutput | null>(null);
@@ -127,13 +209,6 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
         {
             name: `Verbformen für "${infinitive}" generieren`,
             onSuccess: (result) => {
-                // Automatically save the verb in the background
-                onSave({
-                  infinitive: result.infinitive,
-                  translation: result.translation,
-                  forms: result.forms,
-                  germanForms: result.germanForms,
-                });
                 toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert und gespeichert.` });
             },
             onError: (e) => {
@@ -142,7 +217,6 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
             }
         }
     );
-    // Close the dialog immediately after starting the task
     handleOpenChange(false);
   };
 
@@ -224,73 +298,11 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     return grouped;
   }
 
-  const getSortedPronouns = (tenseForms: VerbTense, langKey: keyof typeof pronounOrder) => {
-    const currentPronounOrder = pronounOrder[langKey] || pronounOrder.default;
-    return Object.keys(tenseForms).sort((a, b) => {
-        const indexA = currentPronounOrder.indexOf(a);
-        const indexB = currentPronounOrder.indexOf(b);
-        if (indexA === -1 && indexB === -1) return 0;
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
-        return indexA - indexB;
-    });
-  };
-
   const groupedForeignTenses = useMemo(() => getGroupedTenses(generatedData?.forms), [generatedData]);
   const groupedGermanTenses = useMemo(() => getGroupedTenses(generatedData?.germanForms), [generatedData]);
 
   const displayLanguage = languageDisplayNames[language] || language;
   const foreignPronounKey = language.toLowerCase() as keyof typeof pronounOrder;
-
-  const TenseList = ({ groupedTenses, forms, formType, pronounKey }: { groupedTenses: Record<string, string[]>, forms?: Record<string, VerbTense>, formType: 'forms' | 'germanForms', pronounKey: keyof typeof pronounOrder }) => (
-    <div style={{ columnCount: 3, columnGap: '2rem' }}>
-      {Object.entries(groupedTenses).map(([group, tenses]) => (
-        <div key={group} className='mb-4' style={{ breakInside: 'avoid' }}>
-          <h4 className="font-semibold text-sm text-muted-foreground mb-2 px-1">{group}</h4>
-          <div className="flex flex-col gap-1">
-            {tenses.map((tense) => (
-              <div key={tense} className="flex items-center">
-                <span className="text-sm">{tense}</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 ml-2 text-muted-foreground hover:text-foreground">
-                      <Info className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent 
-                    className="w-80" 
-                    onOpenAutoFocus={(e) => e.preventDefault()}
-                    onInteractOutside={(e) => {
-                        e.preventDefault();
-                    }}
-                  >
-                    <div className="space-y-2">
-                      <h4 className="font-medium leading-none">{tense}</h4>
-                      <div className="text-sm text-muted-foreground space-y-2 mt-2">
-                        {forms?.[tense] && getSortedPronouns(forms[tense], pronounKey).map(pronoun => (
-                          <div key={pronoun} className="grid grid-cols-[1fr,2fr] items-center gap-2">
-                            <Label htmlFor={`${formType}-${tense}-${pronoun}`} className="text-right text-xs">
-                              {pronoun}
-                            </Label>
-                            <Input
-                              id={`${formType}-${tense}-${pronoun}`}
-                              value={forms[tense][pronoun]}
-                              onChange={(e) => handleFormChange(tense, pronoun, e.target.value, formType)}
-                              className="h-8 text-sm"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 
 
   return (
@@ -365,10 +377,10 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                                 <TabsTrigger value="german">Deutsch</TabsTrigger>
                             </TabsList>
                             <TabsContent value="foreign" className="mt-4">
-                                <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} />
+                                <TenseList groupedTenses={groupedForeignTenses} forms={generatedData.forms} formType="forms" pronounKey={foreignPronounKey} onFormChange={handleFormChange} />
                             </TabsContent>
                             <TabsContent value="german" className="mt-4">
-                                <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" />
+                                <TenseList groupedTenses={groupedGermanTenses} forms={generatedData.germanForms} formType="germanForms" pronounKey="german" onFormChange={handleFormChange} />
                             </TabsContent>
                         </Tabs>
                     </ScrollArea>
