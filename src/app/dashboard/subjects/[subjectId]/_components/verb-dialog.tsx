@@ -103,7 +103,6 @@ const languageDisplayNames: { [key: string]: string } = {
 export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVerb }: VerbDialogProps) {
   const [infinitive, setInfinitive] = useState('');
   const [generatedData, setGeneratedData] = useState<GenerateVerbFormsOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -197,7 +196,6 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
     setInfinitive('');
     setGeneratedData(null);
     setError(null);
-    setIsLoading(false);
     setIsSaving(false);
   };
   
@@ -334,8 +332,8 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                   </div>
               )}
               <div className="flex justify-end">
-                  <Button onClick={handleGenerate} disabled={isLoading || isRunning}>
-                  {isLoading || isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                  <Button onClick={handleGenerate} disabled={isRunning}>
+                  {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                   Formen generieren
                 </Button>
               </div>
