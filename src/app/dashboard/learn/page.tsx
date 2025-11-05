@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // Function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -233,8 +234,6 @@ export default function LearnPage() {
   
     if (isCorrect) {
       remainingCards.splice(currentIndex, 1);
-      // In typed mode, if the card was accepted after being incorrect, it's now considered "correct"
-      // for the session and should not be repeated. But the initial incorrect mark remains for final score.
        if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
           setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
        }
@@ -487,9 +486,22 @@ export default function LearnPage() {
             </div>
 
             {shouldShowHints && currentCard.notes && (
-                <div className="absolute bottom-16 flex items-start gap-2 text-base text-center text-muted-foreground mt-4 px-6">
-                  <Lightbulb className="h-5 w-5 flex-shrink-0" />
-                  <p>{currentCard.notes}</p>
+                <div className="absolute bottom-6 left-6">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground">
+                                <Lightbulb className="h-5 w-5" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto max-w-xs sm:max-w-sm" side="top">
+                            <div className="relative">
+                                <div className="flex items-start gap-2 pr-8">
+                                    <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
+                                    <p className="text-sm">{currentCard.notes}</p>
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 </div>
             )}
             {isTypedMode && answerStatus === 'incorrect' && (
@@ -529,7 +541,7 @@ export default function LearnPage() {
             </>
           ) : (
             <>
-              <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')}>
+              <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(0) scale(1)', opacity: isFlipped ? 0 : 1 }}>
                 <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
               </div>
               <div className={cn("flex gap-2 w-full transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
