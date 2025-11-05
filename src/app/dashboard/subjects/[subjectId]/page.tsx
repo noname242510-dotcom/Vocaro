@@ -794,21 +794,26 @@ export default function SubjectDetailPage() {
           )}
         </TabsContent>
         <TabsContent value="verbs" className="mt-6">
-             <div className="flex justify-between items-center mb-4 gap-2">
-                 <div className="flex-1 flex justify-start">
+            <div className="flex justify-between items-center mb-4 gap-2">
+                <div className="flex-1 flex justify-start">
                     <div
                         className={cn(
-                            'relative flex items-center border rounded-full transition-all duration-300 md:bg-background',
-                            'has-[input:focus]:ring-2 has-[input:focus]:ring-ring has-[input:focus]:ring-offset-2 has-[input:focus]:ring-offset-background',
-                            isSearchExpanded ? 'w-full bg-background' : 'w-10 bg-transparent md:w-full',
+                        'relative flex items-center border rounded-full transition-all duration-300',
+                        'md:bg-background md:w-full',
+                        'has-[input:focus]:ring-2 has-[input:focus]:ring-ring has-[input:focus]:ring-offset-2 has-[input:focus]:ring-offset-background',
+                        isSearchExpanded ? 'w-full bg-background' : 'w-10 bg-transparent'
                         )}
-                        >
+                    >
                         <Search
-                            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 cursor-pointer"
-                            onClick={() => {
-                                setIsSearchExpanded(!isSearchExpanded);
+                            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 md:cursor-text cursor-pointer"
+                            onMouseDown={(e) => {
+                                // Prevent the input's onBlur from firing immediately
+                                e.preventDefault();
+                                setIsSearchExpanded(prev => !prev);
                                 if (!isSearchExpanded) {
-                                  searchInputRef.current?.focus();
+                                    searchInputRef.current?.focus();
+                                } else {
+                                    searchInputRef.current?.blur();
                                 }
                             }}
                         />
@@ -817,20 +822,14 @@ export default function SubjectDetailPage() {
                             placeholder="Verben durchsuchen..."
                             className={cn(
                                 'h-10 pl-10 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300',
-                                isSearchExpanded ? 'w-full opacity-100' : 'w-0 opacity-0 md:w-full md:opacity-100'
+                                'md:w-full md:opacity-100',
+                                isSearchExpanded ? 'w-full opacity-100' : 'w-0 opacity-0'
                             )}
                             value={verbSearchQuery}
-                            onChange={(e) => {
-                                setVerbSearchQuery(e.target.value)
-                                if (e.target.value === '' && !isSearchExpanded) {
-                                    // allows search to stay expanded on desktop while clearing
-                                } else if (e.target.value === '') {
-                                    setIsSearchExpanded(false);
-                                }
-                            }}
+                            onChange={(e) => setVerbSearchQuery(e.target.value)}
                             onBlur={() => {
-                                // On mobile, close if empty. On desktop, it stays.
-                                if (window.innerWidth < 768 && verbSearchQuery === '') {
+                                // Close only if search query is empty on mobile
+                                if (verbSearchQuery === '') {
                                     setIsSearchExpanded(false);
                                 }
                             }}
@@ -1069,3 +1068,5 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
+    
