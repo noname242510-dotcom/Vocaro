@@ -103,6 +103,7 @@ export default function LearnPage() {
   const [userInput, setUserInput] = useState('');
   const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
   const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
+  const [showContinueButton, setShowContinueButton] = useState(false);
 
 
   useEffect(() => {
@@ -226,6 +227,7 @@ export default function LearnPage() {
       setAnswerStatus('unanswered');
       setIsFlipped(false);
       setIsNewCard(true);
+      setShowContinueButton(false);
     }
   };
   
@@ -256,11 +258,12 @@ export default function LearnPage() {
       setIsFlipped(false);
       setAnswerStatus('unanswered');
       setUserInput('');
+      setShowContinueButton(false);
     }
   };
 
   const handleClassicAnswer = (knewIt: boolean) => {
-    if (!isFlipped || !user || !firestore) return;
+    if (!isFlipped || showContinueButton) return;
 
     setHistory(prev => [...prev, { vocabulary, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
 
@@ -293,12 +296,11 @@ export default function LearnPage() {
     const currentCard = vocabulary[currentIndex];
     const expectedAnswer = isTermFirst ? currentCard.definition : currentCard.term;
 
-    // Simple case-insensitive and trimming comparison
     const isCorrect = userInput.trim().toLowerCase() === expectedAnswer.trim().toLowerCase();
 
     if (isCorrect) {
       setAnswerStatus('correct');
-      setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+      // No need to add to answeredIds here, handled in goToNextCard
       triggerHapticFeedback('light');
     } else {
       setAnswerStatus('incorrect');
@@ -341,6 +343,7 @@ export default function LearnPage() {
     setUserInput('');
     setAnswerStatus('unanswered');
     setIsNewCard(true);
+    setShowContinueButton(false);
   };
   
   const handleBackToSelection = () => {
@@ -356,10 +359,17 @@ export default function LearnPage() {
     setIsTypedMode(newMode);
     localStorage.setItem('learn-mode-typed', String(newMode));
     
-    // Reset only the state for the current card view
-    setUserInput('');
-    setAnswerStatus('unanswered');
-    setIsFlipped(false);
+    // If we switch from typed mode *after* a correct answer, show the continue button
+    if (!newMode && answerStatus === 'correct') {
+      setIsFlipped(true); // Keep card flipped
+      setShowContinueButton(true);
+    } else {
+      setShowContinueButton(false);
+      // Reset only the state for the current card view
+      setUserInput('');
+      setAnswerStatus('unanswered');
+      setIsFlipped(false);
+    }
   };
 
 
@@ -481,7 +491,7 @@ export default function LearnPage() {
                     <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
                 )}
                 <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
-                {isTypedMode && <div className="mt-2"><FeedbackIcon status={answerStatus} /></div>}
+                {isTypedMode && !showContinueButton && <div className="mt-2"><FeedbackIcon status={answerStatus} /></div>}
             </div>
 
             {shouldShowHints && currentCard.notes && (
@@ -497,8 +507,12 @@ export default function LearnPage() {
                             side="top"
                             onOpenAutoFocus={(e) => e.preventDefault()}
                             onClick={(e) => e.stopPropagation()}
+                             onInteractOutside={(e) => {
+                                // This prevents the card from flipping when clicking outside
+                                e.preventDefault();
+                            }}
                         >
-                            <div className="flex items-start gap-2">
+                            <div className="flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
                                 <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
                                 <p className="text-sm">{currentCard.notes}</p>
                             </div>
@@ -543,16 +557,22 @@ export default function LearnPage() {
             </>
           ) : (
             <>
-              <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')} style={{ opacity: isFlipped ? 0 : 1 }}>
+              <div className={cn("absolute inset-0 flex transition-opacity duration-300", (isFlipped || showContinueButton) && 'opacity-0 pointer-events-none')} style={{ opacity: isFlipped ? 0 : 1 }}>
                 <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
               </div>
               <div className={cn("flex gap-2 w-full transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
-                <Button variant="outline" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(false)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
-                  <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                </Button>
-                <Button variant="default" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(true)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(-50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
-                  <Check className="mr-2 h-4 w-4" /> Wusste ich
-                </Button>
+                 {showContinueButton ? (
+                    <Button size="lg" className="w-full" onClick={() => goToNextCard(true)}>Weiter</Button>
+                ) : (
+                    <>
+                        <Button variant="outline" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(false)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
+                            <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+                        </Button>
+                        <Button variant="default" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(true)} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(-50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
+                            <Check className="mr-2 h-4 w-4" /> Wusste ich
+                        </Button>
+                    </>
+                )}
               </div>
             </>
           )}
