@@ -155,7 +155,8 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
   const handleFormChange = (tense: string, pronoun: string, value: string, formType: 'forms' | 'germanForms') => {
     setGeneratedData(prevData => {
         if (!prevData) return null;
-        const newData = { ...prevData };
+        // Deep copy to ensure re-render
+        const newData = JSON.parse(JSON.stringify(prevData));
         const formsToUpdate = formType === 'germanForms' ? newData.germanForms : newData.forms;
         if (formsToUpdate && formsToUpdate[tense]) {
             (formsToUpdate[tense] as VerbTense)[pronoun] = value;
@@ -262,7 +263,13 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
                       <Info className="h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-80" onOpenAutoFocus={(e) => e.preventDefault()}>
+                  <PopoverContent className="w-80" onOpenAutoFocus={(e) => e.preventDefault()} onInteractOutside={(e) => {
+                    // Prevent closing if the interaction is within the dialog itself
+                    const target = e.target as HTMLElement;
+                    if (target.closest('.sm\\:max-w-4xl')) {
+                      e.preventDefault();
+                    }
+                  }}>
                     <div className="space-y-2">
                       <h4 className="font-medium leading-none">{tense}</h4>
                       <div className="text-sm text-muted-foreground space-y-2 mt-2">
