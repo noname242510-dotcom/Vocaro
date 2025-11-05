@@ -327,7 +327,6 @@ export default function SubjectDetailPage() {
       },
       {
         name: `Vokabeln für "${newStackName}" erkennen`,
-        type: 'ocr',
         onSuccess: (result: any) => {
             toast({ title: 'Erfolg!', description: `${result.count} Vokabeln im Stapel "${newStackName}" gespeichert.` });
             forceUpdate();
@@ -797,25 +796,24 @@ export default function SubjectDetailPage() {
               <div className="flex-1 flex justify-start">
                   <div
                     className={cn(
-                      'relative flex items-center transition-all duration-300',
-                      isSearchExpanded ? 'w-full' : 'w-10'
+                      'relative flex items-center border rounded-full transition-all duration-300',
+                      'has-[input:focus]:ring-2 has-[input:focus]:ring-ring has-[input:focus]:ring-offset-2 has-[input:focus]:ring-offset-background',
+                      isSearchExpanded ? 'w-full bg-background' : 'w-10 bg-transparent md:bg-background',
                     )}
                   >
                     <Search
-                      className={cn(
-                        'absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10',
-                        !isSearchExpanded && 'cursor-pointer'
-                      )}
-                      onClick={() => !isSearchExpanded && setIsSearchExpanded(true)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10 cursor-pointer"
+                      onClick={() => {
+                        setIsSearchExpanded(true);
+                        searchInputRef.current?.focus();
+                      }}
                     />
                     <Input
                       ref={searchInputRef}
                       placeholder="Verben durchsuchen..."
                       className={cn(
-                        'h-10 pl-10 absolute left-0 top-0 transition-all duration-300 md:relative',
-                        isSearchExpanded
-                          ? 'w-full opacity-100'
-                          : 'w-0 opacity-0 md:w-full md:opacity-100'
+                        'h-10 pl-10 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-all duration-300',
+                        isSearchExpanded ? 'w-full opacity-100' : 'w-0 opacity-0 md:w-full md:opacity-100'
                       )}
                       value={verbSearchQuery}
                       onChange={(e) => setVerbSearchQuery(e.target.value)}
