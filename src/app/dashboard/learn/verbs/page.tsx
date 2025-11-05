@@ -282,6 +282,13 @@ export default function VerbPracticePage() {
     const goToNextCard = (isCorrect: boolean) => {
         const currentCard = practiceItems[currentIndex];
         let remainingCards = [...practiceItems];
+
+        // Reset for next card first
+        setIsFlipped(false);
+        setAnswerStatus('unanswered');
+        setUserInput('');
+        setShowContinueButton(false);
+        setShowClassicButtonsInTypedMode(false);
       
         if (isCorrect) {
           remainingCards.splice(currentIndex, 1);
@@ -298,13 +305,6 @@ export default function VerbPracticePage() {
         } else {
           const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
           
-          // Reset for next card
-          setIsFlipped(false);
-          setAnswerStatus('unanswered');
-          setUserInput('');
-          setShowContinueButton(false);
-          setShowClassicButtonsInTypedMode(false);
-          
           // THEN update data
           setPracticeItems(remainingCards);
           setCurrentIndex(newIndex);
@@ -313,7 +313,7 @@ export default function VerbPracticePage() {
     };
     
     const handleClassicAnswer = (knewIt: boolean) => {
-        if ((!isFlipped && !isTypedMode) || showContinueButton) return;
+        if (showContinueButton) return;
 
         setHistory(prev => [...prev, { practiceItems, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
     
@@ -594,10 +594,10 @@ export default function VerbPracticePage() {
                         <Button size="lg" className="w-full" onClick={() => goToNextCard(true)}>Weiter</Button>
                     ) : (
                         <>
-                            <Button variant="outline" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(false)} style={{ transform: isFlipped && !showClassicButtonsInTypedMode ? 'translateX(0)' : 'translateX(50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
+                            <Button variant="outline" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(false)} style={{ transform: 'translateX(0) scale(1)', opacity: isFlipped && !showClassicButtonsInTypedMode ? 1 : 0}}>
                             <X className="mr-2 h-4 w-4" /> Wusste ich nicht
                             </Button>
-                            <Button variant="default" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(true)} style={{ transform: isFlipped && !showClassicButtonsInTypedMode ? 'translateX(0)' : 'translateX(-50%) scale(0.9)', opacity: isFlipped ? 1 : 0}}>
+                            <Button variant="default" size="default" className="flex-1 h-12 text-base transition-all duration-300" onClick={() => handleClassicAnswer(true)} style={{ transform: 'translateX(0) scale(1)', opacity: isFlipped && !showClassicButtonsInTypedMode ? 1 : 0}}>
                             <Check className="mr-2 h-4 w-4" /> Wusste ich
                             </Button>
                         </>
@@ -618,7 +618,5 @@ export default function VerbPracticePage() {
         </div>
     );
 }
-
-    
 
     
