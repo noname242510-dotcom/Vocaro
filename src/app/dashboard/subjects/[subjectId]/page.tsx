@@ -795,33 +795,34 @@ export default function SubjectDetailPage() {
         <TabsContent value="verbs" className="mt-6">
             <div className="flex justify-between items-center mb-4 gap-2">
               <div className="flex-1 flex justify-start">
-                  <div className="relative flex items-center md:w-full">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className={cn("md:hidden h-10 w-10 transition-all duration-300", isSearchExpanded && "w-0 opacity-0 p-0")}
-                      onClick={() => setIsSearchExpanded(true)}
-                    >
-                      <Search className="h-5 w-5" />
-                    </Button>
-                    <div className={cn(
-                      "relative w-0 md:w-full transition-all duration-300",
-                      isSearchExpanded && "w-[calc(100vw-10rem)]"
-                    )}>
-                      <Search className={cn(
-                          "absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-opacity duration-300",
-                          !isSearchExpanded && "md:block",
-                          isSearchExpanded && "opacity-100"
-                      )} />
-                      <Input 
-                        ref={searchInputRef}
-                        placeholder="Verben durchsuchen..."
-                        className={cn("h-10 pl-10 md:w-full")}
-                        value={verbSearchQuery}
-                        onChange={e => setVerbSearchQuery(e.target.value)}
-                        onBlur={() => {if (verbSearchQuery === '') setIsSearchExpanded(false)}}
-                      />
-                    </div>
+                  <div
+                    className={cn(
+                      'relative flex items-center transition-all duration-300',
+                      isSearchExpanded ? 'w-full' : 'w-10'
+                    )}
+                  >
+                    <Search
+                      className={cn(
+                        'absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10',
+                        !isSearchExpanded && 'cursor-pointer'
+                      )}
+                      onClick={() => !isSearchExpanded && setIsSearchExpanded(true)}
+                    />
+                    <Input
+                      ref={searchInputRef}
+                      placeholder="Verben durchsuchen..."
+                      className={cn(
+                        'h-10 pl-10 absolute left-0 top-0 transition-all duration-300 md:relative',
+                        isSearchExpanded
+                          ? 'w-full opacity-100'
+                          : 'w-0 opacity-0 md:w-full md:opacity-100'
+                      )}
+                      value={verbSearchQuery}
+                      onChange={(e) => setVerbSearchQuery(e.target.value)}
+                      onBlur={() => {
+                        if (verbSearchQuery === '') setIsSearchExpanded(false);
+                      }}
+                    />
                   </div>
               </div>
               <div className="flex items-center gap-2 justify-end">
