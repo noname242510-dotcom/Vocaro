@@ -288,7 +288,6 @@ export default function VerbPracticePage() {
         setUserInput('');
         setShowContinueButton(false);
         setShowClassicButtonsInTypedMode(false);
-        setIsFlipped(false);
       
         if (isCorrect) {
           remainingCards.splice(currentIndex, 1);
@@ -330,6 +329,7 @@ export default function VerbPracticePage() {
             triggerHapticFeedback('heavy');
         }
         
+        setIsFlipped(false);
         setIsExiting(true);
         setTimeout(() => {
           goToNextCard(knewIt);
@@ -340,6 +340,7 @@ export default function VerbPracticePage() {
       const handleCheckAnswer = () => {
         if (isFlipped) {
           const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
+          setIsFlipped(false);
           setIsExiting(true);
           setTimeout(() => {
             goToNextCard(isCorrect);
@@ -596,7 +597,7 @@ export default function VerbPracticePage() {
                   </div>
                   <div className={cn("flex gap-2 w-full transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')} style={{ opacity: isFlipped ? 1 : 0}}>
                     {showContinueButton ? (
-                        <Button size="lg" className="w-full" onClick={() => goToNextCard(true)}>Weiter</Button>
+                        <Button size="lg" className="w-full" onClick={() => { setIsFlipped(false); goToNextCard(true); }}>Weiter</Button>
                     ) : (
                         <>
                             <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(false)}>
