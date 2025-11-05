@@ -237,6 +237,8 @@ export default function LearnPage() {
     const currentCard = vocabulary[currentIndex];
     let remainingCards = [...vocabulary];
   
+    // Reset all temporary card states before determining the next card
+    setIsFlipped(false);
     setAnswerStatus('unanswered');
     setUserInput('');
     setShowContinueButton(false);
@@ -259,7 +261,7 @@ export default function LearnPage() {
       
       setVocabulary(remainingCards);
       setCurrentIndex(newIndex);
-      setIsNewCard(true);
+      setIsNewCard(true); // Trigger pop-in animation for the new card
     }
   };
 
@@ -282,7 +284,6 @@ export default function LearnPage() {
         triggerHapticFeedback('heavy');
     }
     
-    setIsFlipped(false);
     setIsExiting(true);
     setTimeout(() => {
       goToNextCard(knewIt);
@@ -293,7 +294,6 @@ export default function LearnPage() {
   const handleCheckAnswer = () => {
     if (isFlipped) {
       const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
-      setIsFlipped(false);
       setIsExiting(true);
       setTimeout(() => {
         goToNextCard(isCorrect);

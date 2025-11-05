@@ -284,6 +284,8 @@ export default function VerbPracticePage() {
         const currentCard = practiceItems[currentIndex];
         let remainingCards = [...practiceItems];
 
+        // Reset all temporary card states before determining the next card
+        setIsFlipped(false);
         setAnswerStatus('unanswered');
         setUserInput('');
         setShowContinueButton(false);
@@ -329,7 +331,6 @@ export default function VerbPracticePage() {
             triggerHapticFeedback('heavy');
         }
         
-        setIsFlipped(false);
         setIsExiting(true);
         setTimeout(() => {
           goToNextCard(knewIt);
@@ -340,7 +341,6 @@ export default function VerbPracticePage() {
       const handleCheckAnswer = () => {
         if (isFlipped) {
           const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
-          setIsFlipped(false);
           setIsExiting(true);
           setTimeout(() => {
             goToNextCard(isCorrect);
