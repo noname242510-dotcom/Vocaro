@@ -37,6 +37,7 @@ function shuffleArray<T>(array: T[]): T[] {
 interface PracticeItem {
     id: string;
     verbInfinitive: string;
+    isConjugation: boolean; // Flag to identify if it's a conjugation or infinitive translation
     front: string;
     back: string;
 }
@@ -163,6 +164,7 @@ export default function VerbPracticePage() {
                     items.push({
                         id: `${verb.id}-infinitive`,
                         verbInfinitive: verb.infinitive,
+                        isConjugation: false,
                         front: germanFirstSetting ? verb.translation : verb.infinitive,
                         back: germanFirstSetting ? verb.infinitive : verb.translation,
                     });
@@ -196,6 +198,7 @@ export default function VerbPracticePage() {
                                 items.push({
                                     id: `${verb.id}-${tense}-${pronoun}`,
                                     verbInfinitive: verb.infinitive,
+                                    isConjugation: true,
                                     front,
                                     back,
                                 });
@@ -497,7 +500,7 @@ export default function VerbPracticePage() {
                 >
                     {/* Front of the card */}
                     <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-6 rounded-2xl glass-effect">
-                        {shouldShowHints && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
+                        {shouldShowHints && currentCard.isConjugation && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
                         <p className="text-4xl font-bold text-center">{currentCard.front}</p>
                     </div>
                     {/* Back of the card */}
@@ -546,7 +549,7 @@ export default function VerbPracticePage() {
                 </>
               ) : (
                 <>
-                  <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')}>
+                  <div className={cn("absolute inset-0 flex transition-opacity duration-300", isFlipped && 'opacity-0 pointer-events-none')} style={{ transform: isFlipped ? 'translateX(0)' : 'translateX(0) scale(1)', opacity: isFlipped ? 0 : 1 }}>
                     <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
                   </div>
                   <div className={cn("flex gap-2 w-full transition-opacity duration-300", !isFlipped && 'opacity-0 pointer-events-none')}>
