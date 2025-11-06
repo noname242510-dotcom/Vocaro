@@ -132,7 +132,9 @@ export default function LearnPage() {
       }
 
       setSubjectId(storedSubjectId);
-      if (storedSubjectEmoji) setSubjectEmoji(storedSubjectEmoji);
+      if (storedSubjectEmoji) {
+        setSubjectEmoji(storedSubjectEmoji);
+      }
 
       let vocabIds: string[] = [];
       try {
@@ -362,11 +364,11 @@ export default function LearnPage() {
     setIsTypedMode(newMode);
     localStorage.setItem('learn-mode-typed', String(newMode));
     
-    // Only reset the card flip state if the answer hasn't been checked yet in typed mode.
+    // Only reset if the answer hasn't been checked yet
     if (answerStatus === 'unanswered') {
-        setUserInput('');
-        setAnswerStatus('unanswered');
-        setIsFlipped(false);
+      setUserInput('');
+      setAnswerStatus('unanswered');
+      setIsFlipped(false);
     }
   };
 
@@ -509,11 +511,11 @@ export default function LearnPage() {
           
           {shouldShowHints && currentCard.notes && (
             <div className="absolute bottom-6 right-6 [perspective:1000px]">
-              <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+               <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                   <div className="[backface-visibility:hidden]">
                     {/* Empty on the front */}
                   </div>
-                  <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                  <div className="absolute top-0 left-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
                       <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
                           <PopoverTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setIsHintPopoverOpen(true); }}>
@@ -552,7 +554,9 @@ export default function LearnPage() {
             <div
                 className={cn(
                     'absolute inset-0 flex justify-center items-center transition-all duration-300',
-                    (isFlipped || isExiting) && 'opacity-0 scale-90 pointer-events-none'
+                    isFlipped && 'opacity-0 scale-90',
+                    !isFlipped && 'opacity-100 scale-100',
+                    (isFlipped || isExiting) && 'hidden'
                 )}
             >
                 {isTypedMode ? (
@@ -575,7 +579,9 @@ export default function LearnPage() {
             <div
                 className={cn(
                     'absolute inset-0 flex justify-center items-center gap-2 transition-all duration-300',
-                   (!isFlipped || isExiting) && 'opacity-0 scale-90 pointer-events-none'
+                    !isFlipped && 'opacity-0 scale-90',
+                    isFlipped && 'opacity-100 scale-100',
+                    (!isFlipped || isExiting) && 'hidden'
                 )}
             >
                 {isTypedMode || (!isTypedMode && (answerStatus === 'correct' || answerStatus === 'accepted')) ? (
@@ -605,15 +611,19 @@ export default function LearnPage() {
             </div>
         </div>
         {history.length > 0 && !isExiting && (
-          <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              Zurück
-          </Button>
+          <div className="w-full text-center mt-2">
+            <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Zurück
+            </Button>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
+
+    
 
     
