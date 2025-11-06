@@ -270,10 +270,10 @@ export default function LearnPage() {
     
     setIsExiting(true);
     setTimeout(() => {
-      setIsFlipped(false);
-      goToNextCard(knewIt);
-      setIsExiting(false);
-    }, 450); // Fade-out duration (300) + pause (150)
+        setIsFlipped(false);
+        goToNextCard(knewIt);
+        setIsExiting(false);
+    }, 300);
   };
 
   const handleCheckAnswer = () => {
@@ -284,7 +284,7 @@ export default function LearnPage() {
         setIsFlipped(false);
         goToNextCard(isCorrect);
         setIsExiting(false);
-      }, 450); // Fade-out duration (300) + pause (150)
+      }, 300);
       return;
     }
 
@@ -471,26 +471,23 @@ export default function LearnPage() {
             !isExiting ? 'opacity-100' : 'opacity-0',
           )}
         >
-            <div
-                className={cn(
-                'absolute inset-0 flex flex-col items-center justify-center p-6 transition-opacity duration-500',
-                isFlipped ? 'opacity-0' : 'opacity-100'
-                )}
-            >
-                <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
+          <div className="relative w-full h-full flex items-center justify-center [perspective:1000px]">
+            <div className={cn("absolute transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                <div className="[backface-visibility:hidden]">
+                    <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
+                </div>
+                <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                    <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
+                </div>
             </div>
-            <div
-                className={cn(
-                'absolute inset-0 flex flex-col items-center justify-center p-6 transition-opacity duration-500',
-                isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                )}
-            >
-                {isTypedMode && answerStatus === 'incorrect' && (
-                <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
-                )}
-                <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
-                {isTypedMode && <div className="mt-2"><FeedbackIcon status={answerStatus} /></div>}
+          </div>
+          
+          {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
+            <div className="absolute top-1/2 -translate-y-1/2 mt-12">
+              <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
             </div>
+          )}
+          {isTypedMode && <div className="absolute top-1/2 -translate-y-1/2 mt-24"><FeedbackIcon status={answerStatus} /></div>}
           
           {shouldShowHints && currentCard.notes && isFlipped && (
               <div className="absolute bottom-6 left-6">
@@ -532,7 +529,7 @@ export default function LearnPage() {
                     className={cn(
                         'absolute inset-0 flex justify-center items-center transition-all duration-500',
                         isFlipped || isExiting
-                        ? 'opacity-0 scale-90 pointer-events-none'
+                        ? 'opacity-0 scale-90'
                         : 'opacity-100 scale-100'
                     )}
                 >
@@ -572,10 +569,7 @@ export default function LearnPage() {
                         <Button
                             variant="outline"
                             size="default"
-                            className={cn(
-                                'absolute left-0 w-[calc(50%-0.25rem)] h-12 text-base transition-transform duration-500',
-                                isFlipped ? 'scale-100' : 'scale-x-0'
-                            )}
+                            className="w-[calc(50%-0.25rem)] h-12 text-base"
                             onClick={() => handleClassicAnswer(false)}
                         >
                             <X className="mr-2 h-4 w-4" /> Wusste ich nicht
@@ -583,10 +577,7 @@ export default function LearnPage() {
                         <Button
                             variant="default"
                             size="default"
-                            className={cn(
-                                'absolute right-0 w-[calc(50%-0.25rem)] h-12 text-base transition-transform duration-500',
-                                isFlipped ? 'scale-100' : 'scale-x-0'
-                            )}
+                            className="w-[calc(50%-0.25rem)] h-12 text-base"
                             onClick={() => handleClassicAnswer(true)}
                         >
                             <Check className="mr-2 h-4 w-4" /> Wusste ich

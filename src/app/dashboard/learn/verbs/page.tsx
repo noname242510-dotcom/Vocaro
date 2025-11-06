@@ -320,7 +320,7 @@ export default function VerbPracticePage() {
           setIsFlipped(false);
           goToNextCard(knewIt);
           setIsExiting(false);
-        }, 450); // Fade-out duration (300) + pause (150)
+        }, 300);
     };
     
       const handleCheckAnswer = () => {
@@ -331,7 +331,7 @@ export default function VerbPracticePage() {
             setIsFlipped(false);
             goToNextCard(isCorrect);
             setIsExiting(false);
-          }, 450); // Fade-out duration (300) + pause (150)
+          }, 300);
           return;
         }
 
@@ -501,27 +501,28 @@ export default function VerbPracticePage() {
                          !isExiting ? 'opacity-100' : 'opacity-0'
                     )}
                 >
-                    <div
-                      className={cn(
-                        'absolute inset-0 flex flex-col items-center justify-center p-6 transition-opacity duration-500',
-                        isFlipped ? 'opacity-0' : 'opacity-100'
-                      )}
-                    >
-                        {shouldShowHints && currentCard.isConjugation && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
-                        <p className="text-4xl font-bold text-center">{currentCard.front}</p>
+                    {shouldShowHints && currentCard.isConjugation && (
+                        <div className="absolute top-6">
+                            <p className="text-xl text-muted-foreground font-light">{currentCard.verbInfinitive}</p>
+                        </div>
+                    )}
+                    <div className="relative w-full h-full flex items-center justify-center [perspective:1000px]">
+                      <div className={cn("absolute transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                          <div className="[backface-visibility:hidden]">
+                              <p className="text-4xl font-bold text-center">{currentCard.front}</p>
+                          </div>
+                          <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
+                              <p className="text-4xl font-bold text-center">{currentCard.back}</p>
+                          </div>
+                      </div>
                     </div>
-                    <div
-                      className={cn(
-                        'absolute inset-0 flex flex-col items-center justify-center p-6 transition-opacity duration-500',
-                        isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                      )}
-                    >
-                        {isTypedMode && answerStatus === 'incorrect' && (
+                     {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
+                        <div className="absolute top-1/2 -translate-y-1/2 mt-12">
                             <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
-                        )}
-                        <p className="text-4xl font-bold text-center">{currentCard.back}</p>
-                        {isTypedMode && <div className="mt-2"><FeedbackIcon status={answerStatus} /></div>}
-                    </div>
+                        </div>
+                    )}
+                    {isTypedMode && isFlipped && <div className="absolute top-1/2 -translate-y-1/2 mt-24"><FeedbackIcon status={answerStatus} /></div>}
+
                     {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
                         <div className="absolute bottom-4 text-center opacity-75 transition-opacity duration-300">
                             <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
@@ -539,7 +540,7 @@ export default function VerbPracticePage() {
                         className={cn(
                             'absolute inset-0 flex justify-center items-center transition-all duration-500',
                             isFlipped || isExiting
-                            ? 'opacity-0 scale-90 pointer-events-none'
+                            ? 'opacity-0 scale-90'
                             : 'opacity-100 scale-100'
                         )}
                     >
@@ -579,10 +580,7 @@ export default function VerbPracticePage() {
                                 <Button
                                     variant="outline"
                                     size="default"
-                                    className={cn(
-                                        'absolute left-0 w-[calc(50%-0.25rem)] h-12 text-base transition-transform duration-500',
-                                        isFlipped ? 'scale-100' : 'scale-x-0'
-                                    )}
+                                    className="w-[calc(50%-0.25rem)] h-12 text-base"
                                     onClick={() => handleClassicAnswer(false)}
                                 >
                                     <X className="mr-2 h-4 w-4" /> Wusste ich nicht
@@ -590,10 +588,7 @@ export default function VerbPracticePage() {
                                 <Button
                                     variant="default"
                                     size="default"
-                                    className={cn(
-                                        'absolute right-0 w-[calc(50%-0.25rem)] h-12 text-base transition-transform duration-500',
-                                        isFlipped ? 'scale-100' : 'scale-x-0'
-                                    )}
+                                    className="w-[calc(50%-0.25rem)] h-12 text-base"
                                     onClick={() => handleClassicAnswer(true)}
                                 >
                                     <Check className="mr-2 h-4 w-4" /> Wusste ich
