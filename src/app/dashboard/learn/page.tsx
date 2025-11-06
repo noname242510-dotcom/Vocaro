@@ -362,6 +362,7 @@ export default function LearnPage() {
     setIsTypedMode(newMode);
     localStorage.setItem('learn-mode-typed', String(newMode));
     
+    // Only reset the card flip state if the answer hasn't been checked yet in typed mode.
     if (answerStatus === 'unanswered') {
         setUserInput('');
         setAnswerStatus('unanswered');
@@ -507,7 +508,7 @@ export default function LearnPage() {
           {isTypedMode && isFlipped && <div className="absolute top-1/2 -translate-y-1/2 mt-24"><FeedbackIcon status={answerStatus} /></div>}
           
           {shouldShowHints && currentCard.notes && isFlipped && (
-              <div className="absolute bottom-6 left-6">
+              <div className="absolute bottom-6 right-6">
                   <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
                       <PopoverTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setIsHintPopoverOpen(true); }}>
