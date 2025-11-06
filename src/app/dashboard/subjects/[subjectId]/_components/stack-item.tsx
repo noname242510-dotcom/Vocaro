@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronDown, Pen, Trash2, Loader2, Plus } from 'lucide-react';
+import { ChevronDown, Pen, Trash2, Loader2, Plus, MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import {
@@ -22,7 +22,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
   Dialog,
@@ -31,13 +30,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Textarea } from '@/components/ui/textarea';
 
 
 interface StackItemProps {
@@ -60,7 +63,6 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
   const [isTermFirst, setIsTermFirst] = useState(true);
   
   const { toast } = useToast();
-  const router = useRouter();
   
   useEffect(() => {
     // query-direction-overview: false = German word first, true = foreign term first
@@ -147,69 +149,32 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
               </CollapsibleTrigger>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100" onClick={() => onAddVocab(stack)}>
-                <Plus className="h-4 w-4" />
-            </Button>
-
-            <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-              <DialogTrigger asChild>
-                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100">
-                  <Pen className="h-4 w-4" />
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100">
+                  <MoreVertical className="h-4 w-4" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Stapel umbenennen</DialogTitle>
-                  <DialogDescription>
-                    Gib einen neuen Namen für den Stapel ein.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="stack-name" className="text-right">
-                      Name
-                    </Label>
-                    <Input
-                      id="stack-name"
-                      value={newStackName}
-                      onChange={(e) => setNewStackName(e.target.value)}
-                      className="col-span-3"
-                      onKeyDown={(e) => e.key === 'Enter' && handleRenameStack()}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>Abbrechen</Button>
-                  <Button onClick={handleRenameStack}>Speichern</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onAddVocab(stack)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  <span>Hinzufügen</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  setNewStackName(stack.name);
+                  setIsRenameDialogOpen(true)
+                }}>
+                  <Pen className="mr-2 h-4 w-4" />
+                  <span>Umbenennen</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Löschen</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-              <AlertDialogTrigger asChild>
-                  <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100"
-                  >
-                      <Trash2 className="h-4 w-4" />
-                  </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Bist du absolut sicher?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird der Stapel und alle zugehörigen Vokabeln dauerhaft gelöscht.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteStack} disabled={isDeleting}>
-                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Löschen"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
              <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                     <ChevronDown className={cn('h-5 w-5 transition-transform duration-300', isOpen && 'rotate-180')} />
@@ -242,6 +207,52 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
           </div>
         </CollapsibleContent>
       </Collapsible>
+      
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Stapel umbenennen</DialogTitle>
+            <DialogDescription>
+              Gib einen neuen Namen für den Stapel ein.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="stack-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="stack-name"
+                value={newStackName}
+                onChange={(e) => setNewStackName(e.target.value)}
+                className="col-span-3"
+                onKeyDown={(e) => e.key === 'Enter' && handleRenameStack()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>Abbrechen</Button>
+            <Button onClick={handleRenameStack}>Speichern</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bist du absolut sicher?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird der Stapel und alle zugehörigen Vokabeln dauerhaft gelöscht.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteStack} disabled={isDeleting}>
+              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Löschen"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
@@ -252,7 +263,3 @@ declare module '@/lib/types' {
         isSelected?: boolean;
     }
 }
-
-    
-
-    
