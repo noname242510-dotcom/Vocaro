@@ -10,7 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronDown, Pen, Trash2, Loader2, Plus, MoreVertical } from 'lucide-react';
+import { ChevronDown, Pen, Trash2, Loader2, Plus, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import {
@@ -139,7 +139,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                 />
               </div>
               <CollapsibleTrigger asChild>
-                <div className="cursor-pointer flex-1">
+                <div className="cursor-pointer flex-1 flex items-center gap-2">
                     <h3 className="font-headline text-lg">{stack.name}</h3>
                     <Badge variant="secondary">
                         {vocabulary.length || 0}
@@ -171,7 +171,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                    <MoreVertical className="h-4 w-4" />
+                    <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
