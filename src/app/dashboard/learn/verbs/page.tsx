@@ -60,21 +60,24 @@ const DiffHighlight = ({userInput, correctAnswer}: {userInput: string, correctAn
     const correctChars = correctAnswer.trim().split('');
 
     return (
-        <p className="text-xl font-mono text-center mb-1">
-        {userChars.map((char, index) => (
-            <span 
-                key={index}
-                className={cn(
-                    "border-b-2",
-                    index < correctChars.length && char.toLowerCase() === correctChars[index].toLowerCase()
-                        ? 'border-transparent'
-                        : 'border-destructive'
-                )}
-            >
-                {char}
-            </span>
-        ))}
-        </p>
+        <div className="text-center">
+            <p className="text-muted-foreground text-sm mb-1">Deine Antwort</p>
+            <p className="text-xl font-mono text-center mb-1">
+            {userChars.map((char, index) => (
+                <span 
+                    key={index}
+                    className={cn(
+                        "border-b-2",
+                        index < correctChars.length && char.toLowerCase() === correctChars[index].toLowerCase()
+                            ? 'border-transparent'
+                            : 'border-destructive'
+                    )}
+                >
+                    {char}
+                </span>
+            ))}
+            </p>
+        </div>
     );
 };
 
@@ -555,28 +558,32 @@ export default function VerbPracticePage() {
                         
                         <div className={cn(
                             "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
-                            isFlipped && (answerStatus === 'incorrect') ? 'mb-12' : '',
                             isFlipped && "[transform:rotateY(180deg)]"
                         )}>
-                            <div className="[backface-visibility:hidden]">
+                            <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
                                 <p className="text-4xl font-bold text-center">{currentCard.front}</p>
                             </div>
-                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
-                                <p className="text-4xl font-bold text-center">{currentCard.back}</p>
+                           <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
+                                {isTypedMode && answerStatus === 'incorrect' ? (
+                                    <>
+                                    <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
+                                    <p className="text-4xl font-bold text-center mt-4">{currentCard.back}</p>
+                                    <div className="mt-4">
+                                        <FeedbackIcon status={answerStatus} />
+                                    </div>
+                                    </>
+                                ) : (
+                                    <p className="text-4xl font-bold text-center">{currentCard.back}</p>
+                                )}
+                                {isTypedMode && (answerStatus === 'correct' || answerStatus === 'accepted') && (
+                                    <div className="mt-4">
+                                        <FeedbackIcon status={answerStatus} />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
-                    {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
-                        <div className="absolute top-1/2 -translate-y-1/2 -mt-12">
-                            <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
-                        </div>
-                    )}
-                    {isTypedMode && isFlipped && (
-                        <div className="flex justify-center mt-8">
-                            <FeedbackIcon status={answerStatus} />
-                        </div>
-                    )}
-
+                    
                     {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
                         <div className="absolute bottom-4 text-center opacity-75 transition-opacity duration-300">
                             <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
@@ -592,9 +599,7 @@ export default function VerbPracticePage() {
                     <div
                         className={cn(
                             'absolute inset-0 flex justify-center items-center transition-all duration-300',
-                            isFlipped && 'opacity-0 scale-90',
-                            !isFlipped && 'opacity-100 scale-100',
-                            (isFlipped || isExiting) && 'hidden'
+                            (isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
                         )}
                     >
                         {isTypedMode ? (
@@ -617,12 +622,10 @@ export default function VerbPracticePage() {
                     <div
                         className={cn(
                             'absolute inset-0 flex justify-center items-center gap-2 transition-all duration-300',
-                            !isFlipped && 'opacity-0 scale-90',
-                            isFlipped && 'opacity-100 scale-100',
-                            (!isFlipped || isExiting) && 'hidden'
+                            (!isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
                         )}
                     >
-                        {isTypedMode || (answerStatus === 'correct' || answerStatus === 'accepted') ? (
+                        {isTypedMode ? (
                             <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
                                 Weiter
                             </Button>
@@ -658,5 +661,3 @@ export default function VerbPracticePage() {
         </div>
     );
 }
-
-    
