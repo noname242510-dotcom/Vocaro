@@ -395,7 +395,7 @@ export default function VerbPracticePage() {
         setIsTypedMode(newMode);
         localStorage.setItem('learn-mode-typed', String(newMode));
         
-        if (answerStatus !== 'correct' && answerStatus !== 'accepted') {
+        if (answerStatus === 'unanswered') {
             setUserInput('');
             setAnswerStatus('unanswered');
             setIsFlipped(false);
@@ -550,13 +550,12 @@ export default function VerbPracticePage() {
 
             <div className="mt-8 w-full max-w-2xl flex flex-col items-center">
                 <div className="w-full h-12 relative">
-                    {/* Container for the "Umdrehen" button */}
                     <div
                         className={cn(
-                            'absolute inset-0 flex justify-center items-center transition-all duration-500',
-                            isFlipped || isExiting
-                            ? 'opacity-0 scale-90 pointer-events-none'
-                            : 'opacity-100 scale-100'
+                            'absolute inset-0 flex justify-center items-center transition-all duration-300',
+                            isFlipped && 'opacity-0 scale-90',
+                            !isFlipped && 'opacity-100 scale-100',
+                            (isFlipped || isExiting) && 'hidden'
                         )}
                     >
                         {isTypedMode ? (
@@ -576,43 +575,37 @@ export default function VerbPracticePage() {
                             <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
                         )}
                     </div>
-
-                    {/* Container for the answer buttons */}
                     <div
                         className={cn(
-                            'absolute inset-0 flex justify-center items-center gap-2 transition-opacity duration-500',
-                            isFlipped && !isExiting
-                            ? 'opacity-100'
-                            : 'opacity-0 pointer-events-none'
+                            'absolute inset-0 flex justify-center items-center gap-2 transition-all duration-300',
+                            !isFlipped && 'opacity-0 scale-90',
+                            isFlipped && 'opacity-100 scale-100',
+                            (!isFlipped || isExiting) && 'hidden'
                         )}
                     >
                         {isTypedMode ? (
-                            <Button size="lg" className="w-full pointer-events-auto" onClick={handleCheckAnswer}>
+                            <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
                                 {(answerStatus === 'correct' || answerStatus === 'accepted') ? 'Weiter' : 'Verstanden'}
                             </Button>
                         ) : (
-                           (answerStatus === 'correct' || answerStatus === 'accepted') ? (
-                               <Button size="lg" className="w-full pointer-events-auto" onClick={handleCheckAnswer}>Weiter</Button>
-                           ) : (
-                                <>
-                                    <Button
-                                        variant="outline"
-                                        size="default"
-                                        className="w-[calc(50%-0.25rem)] h-12 text-base pointer-events-auto"
-                                        onClick={() => handleClassicAnswer(false)}
-                                    >
-                                        <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                                    </Button>
-                                    <Button
-                                        variant="default"
-                                        size="default"
-                                        className="w-[calc(50%-0.25rem)] h-12 text-base pointer-events-auto"
-                                        onClick={() => handleClassicAnswer(true)}
-                                    >
-                                        <Check className="mr-2 h-4 w-4" /> Wusste ich
-                                    </Button>
-                                </>
-                           )
+                           <>
+                                <Button
+                                    variant="outline"
+                                    size="default"
+                                    className="w-[calc(50%-0.25rem)] h-12 text-base"
+                                    onClick={() => handleClassicAnswer(false)}
+                                >
+                                    <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+                                </Button>
+                                <Button
+                                    variant="default"
+                                    size="default"
+                                    className="w-[calc(50%-0.25rem)] h-12 text-base"
+                                    onClick={() => handleClassicAnswer(true)}
+                                >
+                                    <Check className="mr-2 h-4 w-4" /> Wusste ich
+                                </Button>
+                            </>
                         )}
                     </div>
                 </div>
