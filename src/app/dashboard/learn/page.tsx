@@ -510,32 +510,32 @@ export default function LearnPage() {
           {isTypedMode && isFlipped && <div className="absolute top-1/2 -translate-y-1/2 mt-24"><FeedbackIcon status={answerStatus} /></div>}
           
           {shouldShowHints && currentCard.notes && (
-            <div className="absolute bottom-6 right-6 [perspective:1000px]">
-               <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                  <div className="[backface-visibility:hidden]">
-                    {/* Empty on the front */}
-                  </div>
-                  <div className="absolute top-0 left-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                      <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
-                          <PopoverTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setIsHintPopoverOpen(true); }}>
-                                  <Lightbulb className="h-5 w-5" />
-                              </Button>
-                          </PopoverTrigger>
-                          <PopoverContent 
-                              className="w-auto max-w-xs sm:max-w-sm" 
-                              side="top"
-                              onOpenAutoFocus={(e) => e.preventDefault()}
-                              onClick={(e) => e.stopPropagation()}
-                              onInteractOutside={(e) => { e.preventDefault(); }}
-                          >
-                              <div className="flex items-start gap-2">
-                                  <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
-                                  <p className="text-sm">{currentCard.notes}</p>
-                              </div>
-                          </PopoverContent>
-                      </Popover>
-                  </div>
+            <div className="absolute bottom-6 right-6 h-10 w-10 [perspective:1000px]">
+              <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                <div className="[backface-visibility:hidden]">
+                  {/* Empty on the front */}
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                  <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setIsHintPopoverOpen(true); }}>
+                        <Lightbulb className="h-5 w-5" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-auto max-w-xs sm:max-w-sm"
+                      side="top"
+                      onOpenAutoFocus={(e) => e.preventDefault()}
+                      onClick={(e) => e.stopPropagation()}
+                      onInteractOutside={(e) => { e.preventDefault(); }}
+                    >
+                      <div className="flex items-start gap-2">
+                        <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
+                        <p className="text-sm">{currentCard.notes}</p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
             </div>
           )}
@@ -584,7 +584,7 @@ export default function LearnPage() {
                     (!isFlipped || isExiting) && 'hidden'
                 )}
             >
-                {isTypedMode || (!isTypedMode && (answerStatus === 'correct' || answerStatus === 'accepted')) ? (
+                {isTypedMode || (answerStatus === 'correct' || answerStatus === 'accepted') ? (
                    <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
                     {(answerStatus === 'correct' || answerStatus === 'accepted') ? 'Weiter' : 'Verstanden'}
                    </Button>

@@ -583,7 +583,7 @@ export default function VerbPracticePage() {
                             (!isFlipped || isExiting) && 'hidden'
                         )}
                     >
-                        {isTypedMode ? (
+                        {isTypedMode || (answerStatus === 'correct' || answerStatus === 'accepted') ? (
                             <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
                                 {(answerStatus === 'correct' || answerStatus === 'accepted') ? 'Weiter' : 'Verstanden'}
                             </Button>
