@@ -363,7 +363,7 @@ export default function LearnPage() {
     localStorage.setItem('learn-mode-typed', String(newMode));
     
     // Reset card-specific state on mode toggle, unless an answer was just marked
-    if (answerStatus === 'unanswered') {
+    if (answerStatus !== 'correct' && answerStatus !== 'accepted') {
         setUserInput('');
         setAnswerStatus('unanswered');
         setIsFlipped(false);
@@ -505,7 +505,7 @@ export default function LearnPage() {
               <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
             </div>
           )}
-          {isTypedMode && <div className="absolute top-1/2 -translate-y-1/2 mt-24"><FeedbackIcon status={answerStatus} /></div>}
+          {isTypedMode && isFlipped && <div className="absolute top-1/2 -translate-y-1/2 mt-24"><FeedbackIcon status={answerStatus} /></div>}
           
           {shouldShowHints && currentCard.notes && isFlipped && (
               <div className="absolute bottom-6 left-6">
@@ -545,14 +545,14 @@ export default function LearnPage() {
               {/* Container for the "Umdrehen" button */}
               <div
                   className={cn(
-                      'absolute inset-0 flex justify-center items-center transition-all duration-500',
+                      'absolute inset-0 flex justify-center items-center transition-all duration-500 pointer-events-none',
                       isFlipped || isExiting
-                      ? 'opacity-0 scale-90 pointer-events-none'
+                      ? 'opacity-0 scale-90'
                       : 'opacity-100 scale-100'
                   )}
               >
                   {isTypedMode ? (
-                      <div className="flex gap-2 w-full">
+                      <div className="flex gap-2 w-full pointer-events-auto">
                           <Input
                               ref={inputRef}
                               placeholder="Antwort tippen..."
@@ -565,42 +565,46 @@ export default function LearnPage() {
                           <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
                       </div>
                   ) : (
-                      <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+                      <Button size="lg" className="w-full pointer-events-auto" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
                   )}
               </div>
 
               {/* Container for the answer buttons */}
               <div
                   className={cn(
-                      'absolute inset-0 flex justify-center items-center gap-2 transition-opacity duration-500',
+                      'absolute inset-0 flex justify-center items-center gap-2 transition-opacity duration-500 pointer-events-none',
                       isFlipped && !isExiting
                       ? 'opacity-100'
-                      : 'opacity-0 pointer-events-none'
+                      : 'opacity-0'
                   )}
               >
                   {isTypedMode ? (
-                  <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
-                      {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
+                     <Button size="lg" className="w-full pointer-events-auto" onClick={handleCheckAnswer}>
+                      {(answerStatus === 'correct' || answerStatus === 'accepted') ? 'Weiter' : 'Verstanden'}
                   </Button>
                   ) : (
-                  <>
-                      <Button
-                          variant="outline"
-                          size="default"
-                          className="w-[calc(50%-0.25rem)] h-12 text-base"
-                          onClick={() => handleClassicAnswer(false)}
-                      >
-                          <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                      </Button>
-                      <Button
-                          variant="default"
-                          size="default"
-                          className="w-[calc(50%-0.25rem)] h-12 text-base"
-                          onClick={() => handleClassicAnswer(true)}
-                      >
-                          <Check className="mr-2 h-4 w-4" /> Wusste ich
-                      </Button>
-                  </>
+                    (answerStatus === 'correct' || answerStatus === 'accepted') ? (
+                        <Button size="lg" className="w-full pointer-events-auto" onClick={handleCheckAnswer}>Weiter</Button>
+                    ) : (
+                      <>
+                          <Button
+                              variant="outline"
+                              size="default"
+                              className="w-[calc(50%-0.25rem)] h-12 text-base pointer-events-auto"
+                              onClick={() => handleClassicAnswer(false)}
+                          >
+                              <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+                          </Button>
+                          <Button
+                              variant="default"
+                              size="default"
+                              className="w-[calc(50%-0.25rem)] h-12 text-base pointer-events-auto"
+                              onClick={() => handleClassicAnswer(true)}
+                          >
+                              <Check className="mr-2 h-4 w-4" /> Wusste ich
+                          </Button>
+                      </>
+                    )
                   )}
               </div>
           </div>
@@ -614,5 +618,8 @@ export default function LearnPage() {
     </div>
   );
 }
+
+    
+
 
     
