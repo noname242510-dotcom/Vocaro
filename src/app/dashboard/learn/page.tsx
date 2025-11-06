@@ -363,13 +363,16 @@ export default function LearnPage() {
     const newMode = !isTypedMode;
     setIsTypedMode(newMode);
     localStorage.setItem('learn-mode-typed', String(newMode));
-    
-    // Only reset if the answer hasn't been checked yet
-    if (answerStatus === 'unanswered') {
-      setUserInput('');
-      setAnswerStatus('unanswered');
-      setIsFlipped(false);
+  
+    // If we switch modes while the answer is already shown and correct, stay flipped.
+    if (isFlipped && (answerStatus === 'correct' || answerStatus === 'accepted')) {
+        return;
     }
+  
+    // Otherwise, reset to the front of the card.
+    setUserInput('');
+    setAnswerStatus('unanswered');
+    setIsFlipped(false);
   };
 
 
@@ -518,7 +521,7 @@ export default function LearnPage() {
                 <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
                   <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
                     <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); setIsHintPopoverOpen(true); }}>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); }}>
                         <Lightbulb className="h-5 w-5" />
                       </Button>
                     </PopoverTrigger>
@@ -527,7 +530,6 @@ export default function LearnPage() {
                       side="top"
                       onOpenAutoFocus={(e) => e.preventDefault()}
                       onClick={(e) => e.stopPropagation()}
-                      onInteractOutside={(e) => { e.preventDefault(); }}
                     >
                       <div className="flex items-start gap-2">
                         <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
@@ -586,7 +588,7 @@ export default function LearnPage() {
             >
                 {isTypedMode || (answerStatus === 'correct' || answerStatus === 'accepted') ? (
                    <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
-                    {(answerStatus === 'correct' || answerStatus === 'accepted') ? 'Weiter' : 'Verstanden'}
+                    Weiter
                    </Button>
                 ) : (
                   <>
@@ -627,3 +629,4 @@ export default function LearnPage() {
     
 
     
+

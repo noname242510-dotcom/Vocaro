@@ -24,6 +24,7 @@ import {
 import { Confetti } from '@/components/confetti';
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // Function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -133,6 +134,7 @@ export default function VerbPracticePage() {
     const [isTypedMode, setIsTypedMode] = useState(false);
     const [userInput, setUserInput] = useState('');
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
+    const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
 
 
     useEffect(() => {
@@ -395,11 +397,15 @@ export default function VerbPracticePage() {
         setIsTypedMode(newMode);
         localStorage.setItem('learn-mode-typed', String(newMode));
         
-        if (answerStatus === 'unanswered') {
-            setUserInput('');
-            setAnswerStatus('unanswered');
-            setIsFlipped(false);
+        // If we switch modes while the answer is already shown and correct, stay flipped.
+        if (isFlipped && (answerStatus === 'correct' || answerStatus === 'accepted')) {
+            return;
         }
+
+        // Otherwise, reset to the front of the card.
+        setUserInput('');
+        setAnswerStatus('unanswered');
+        setIsFlipped(false);
     };
 
     const getMotivationMessage = (score: number) => {
@@ -517,8 +523,32 @@ export default function VerbPracticePage() {
                     </div>
 
                     {shouldShowHints && currentCard.isConjugation && (
-                        <div className="absolute top-6">
-                            <p className="text-xl text-muted-foreground font-light">{currentCard.verbInfinitive}</p>
+                        <div className="absolute top-6 h-10 w-10 [perspective:1000px]">
+                            <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                                 <div className="[backface-visibility:hidden] flex items-center justify-center">
+                                    <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
+                                        <PopoverTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); }}>
+                                            <Lightbulb className="h-5 w-5" />
+                                        </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                            className="w-auto max-w-xs sm:max-w-sm"
+                                            side="top"
+                                            onOpenAutoFocus={(e) => e.preventDefault()}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <div className="flex items-start gap-2">
+                                                <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
+                                                <p className="text-sm">{currentCard.verbInfinitive}</p>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                 </div>
+                                 <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                                    {/* Empty on the back */}
+                                 </div>
+                            </div>
                         </div>
                     )}
                     <div className="relative w-full h-full flex items-center justify-center [perspective:1000px]">
@@ -585,7 +615,7 @@ export default function VerbPracticePage() {
                     >
                         {isTypedMode || (answerStatus === 'correct' || answerStatus === 'accepted') ? (
                             <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
-                                {(answerStatus === 'correct' || answerStatus === 'accepted') ? 'Weiter' : 'Verstanden'}
+                                Weiter
                             </Button>
                         ) : (
                            <>
