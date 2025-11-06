@@ -362,7 +362,6 @@ export default function LearnPage() {
     setIsTypedMode(newMode);
     localStorage.setItem('learn-mode-typed', String(newMode));
     
-    // Reset card-specific state on mode toggle, unless an answer was just marked
     if (answerStatus !== 'correct' && answerStatus !== 'accepted') {
         setUserInput('');
         setAnswerStatus('unanswered');
@@ -545,9 +544,9 @@ export default function LearnPage() {
               {/* Container for the "Umdrehen" button */}
               <div
                   className={cn(
-                      'absolute inset-0 flex justify-center items-center transition-all duration-500 pointer-events-none',
+                      'absolute inset-0 flex justify-center items-center transition-all duration-500',
                       isFlipped || isExiting
-                      ? 'opacity-0 scale-90'
+                      ? 'opacity-0 scale-90 pointer-events-none'
                       : 'opacity-100 scale-100'
                   )}
               >
@@ -572,10 +571,10 @@ export default function LearnPage() {
               {/* Container for the answer buttons */}
               <div
                   className={cn(
-                      'absolute inset-0 flex justify-center items-center gap-2 transition-opacity duration-500 pointer-events-none',
+                      'absolute inset-0 flex justify-center items-center gap-2 transition-opacity duration-500',
                       isFlipped && !isExiting
                       ? 'opacity-100'
-                      : 'opacity-0'
+                      : 'opacity-0 pointer-events-none'
                   )}
               >
                   {isTypedMode ? (
@@ -618,8 +617,3 @@ export default function LearnPage() {
     </div>
   );
 }
-
-    
-
-
-    

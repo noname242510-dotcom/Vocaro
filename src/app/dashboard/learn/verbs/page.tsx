@@ -395,8 +395,7 @@ export default function VerbPracticePage() {
         setIsTypedMode(newMode);
         localStorage.setItem('learn-mode-typed', String(newMode));
         
-        // Reset card-specific state on mode toggle, unless an answer was just marked
-        if (answerStatus === 'unanswered') {
+        if (answerStatus !== 'correct' && answerStatus !== 'accepted') {
             setUserInput('');
             setAnswerStatus('unanswered');
             setIsFlipped(false);
@@ -588,28 +587,32 @@ export default function VerbPracticePage() {
                         )}
                     >
                         {isTypedMode ? (
-                            <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
-                                {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
+                            <Button size="lg" className="w-full pointer-events-auto" onClick={handleCheckAnswer}>
+                                {(answerStatus === 'correct' || answerStatus === 'accepted') ? 'Weiter' : 'Verstanden'}
                             </Button>
                         ) : (
-                            <>
-                                <Button
-                                    variant="outline"
-                                    size="default"
-                                    className="w-[calc(50%-0.25rem)] h-12 text-base"
-                                    onClick={() => handleClassicAnswer(false)}
-                                >
-                                    <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                                </Button>
-                                <Button
-                                    variant="default"
-                                    size="default"
-                                    className="w-[calc(50%-0.25rem)] h-12 text-base"
-                                    onClick={() => handleClassicAnswer(true)}
-                                >
-                                    <Check className="mr-2 h-4 w-4" /> Wusste ich
-                                </Button>
-                            </>
+                           (answerStatus === 'correct' || answerStatus === 'accepted') ? (
+                               <Button size="lg" className="w-full pointer-events-auto" onClick={handleCheckAnswer}>Weiter</Button>
+                           ) : (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        size="default"
+                                        className="w-[calc(50%-0.25rem)] h-12 text-base pointer-events-auto"
+                                        onClick={() => handleClassicAnswer(false)}
+                                    >
+                                        <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+                                    </Button>
+                                    <Button
+                                        variant="default"
+                                        size="default"
+                                        className="w-[calc(50%-0.25rem)] h-12 text-base pointer-events-auto"
+                                        onClick={() => handleClassicAnswer(true)}
+                                    >
+                                        <Check className="mr-2 h-4 w-4" /> Wusste ich
+                                    </Button>
+                                </>
+                           )
                         )}
                     </div>
                 </div>
@@ -623,5 +626,3 @@ export default function VerbPracticePage() {
         </div>
     );
 }
-
-    
