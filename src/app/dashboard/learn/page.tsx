@@ -90,7 +90,7 @@ export default function LearnPage() {
   const [answeredIds, setAnsweredIds] = useState<Map<string, AnswerStatus>>(new Map());
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
-  const [subjectEmoji, setSubjectEmoji] = useState<string>('🌐');
+  const [subjectEmoji, setSubjectEmoji] = useState<string>('');
   const [isExiting, setIsExiting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
@@ -540,77 +540,77 @@ export default function LearnPage() {
         </div>
       </div>
       
-       <div className="mt-8 w-full max-w-2xl flex flex-col items-center">
-            <div className="w-full h-12 relative">
-                {/* Container for the "Umdrehen" button */}
-                <div
-                    className={cn(
-                        'absolute inset-0 flex justify-center items-center transition-all duration-500',
-                        isFlipped || isExiting
-                        ? 'opacity-0 scale-90 pointer-events-none'
-                        : 'opacity-100 scale-100'
-                    )}
-                >
-                    {isTypedMode ? (
-                        <div className="flex gap-2 w-full">
-                            <Input
-                                ref={inputRef}
-                                placeholder="Antwort tippen..."
-                                value={userInput}
-                                onChange={(e) => setUserInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                                className="text-center text-lg h-12 rounded-full"
-                                autoFocus
-                            />
-                            <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
-                        </div>
-                    ) : (
-                        <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
-                    )}
-                </div>
+      <div className="mt-8 w-full max-w-2xl flex flex-col items-center">
+          <div className="w-full h-12 relative">
+              {/* Container for the "Umdrehen" button */}
+              <div
+                  className={cn(
+                      'absolute inset-0 flex justify-center items-center transition-all duration-500',
+                      isFlipped || isExiting
+                      ? 'opacity-0 scale-90 pointer-events-none'
+                      : 'opacity-100 scale-100'
+                  )}
+              >
+                  {isTypedMode ? (
+                      <div className="flex gap-2 w-full">
+                          <Input
+                              ref={inputRef}
+                              placeholder="Antwort tippen..."
+                              value={userInput}
+                              onChange={(e) => setUserInput(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
+                              className="text-center text-lg h-12 rounded-full"
+                              autoFocus
+                          />
+                          <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
+                      </div>
+                  ) : (
+                      <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+                  )}
+              </div>
 
-                {/* Container for the answer buttons */}
-                <div
-                    className={cn(
-                        'absolute inset-0 flex justify-center items-center gap-2 transition-opacity duration-500',
-                        isFlipped && !isExiting
-                        ? 'opacity-100'
-                        : 'opacity-0 pointer-events-none'
-                    )}
-                >
-                    {isTypedMode ? (
-                    <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
-                        {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
-                    </Button>
-                    ) : (
-                    <>
-                        <Button
-                            variant="outline"
-                            size="default"
-                            className="w-[calc(50%-0.25rem)] h-12 text-base"
-                            onClick={() => handleClassicAnswer(false)}
-                        >
-                            <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                        </Button>
-                        <Button
-                            variant="default"
-                            size="default"
-                            className="w-[calc(50%-0.25rem)] h-12 text-base"
-                            onClick={() => handleClassicAnswer(true)}
-                        >
-                            <Check className="mr-2 h-4 w-4" /> Wusste ich
-                        </Button>
-                    </>
-                    )}
-                </div>
-            </div>
-            {history.length > 0 && !isExiting && (
-            <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                Zurück
-            </Button>
-            )}
-        </div>
+              {/* Container for the answer buttons */}
+              <div
+                  className={cn(
+                      'absolute inset-0 flex justify-center items-center gap-2 transition-opacity duration-500',
+                      isFlipped && !isExiting
+                      ? 'opacity-100'
+                      : 'opacity-0 pointer-events-none'
+                  )}
+              >
+                  {isTypedMode ? (
+                  <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
+                      {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
+                  </Button>
+                  ) : (
+                  <>
+                      <Button
+                          variant="outline"
+                          size="default"
+                          className="w-[calc(50%-0.25rem)] h-12 text-base"
+                          onClick={() => handleClassicAnswer(false)}
+                      >
+                          <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+                      </Button>
+                      <Button
+                          variant="default"
+                          size="default"
+                          className="w-[calc(50%-0.25rem)] h-12 text-base"
+                          onClick={() => handleClassicAnswer(true)}
+                      >
+                          <Check className="mr-2 h-4 w-4" /> Wusste ich
+                      </Button>
+                  </>
+                  )}
+              </div>
+          </div>
+          {history.length > 0 && !isExiting && (
+          <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
+              <ChevronLeft className="mr-1 h-4 w-4" />
+              Zurück
+          </Button>
+          )}
+      </div>
     </div>
   );
 }

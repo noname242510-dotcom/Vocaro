@@ -113,7 +113,7 @@ export default function VerbPracticePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [subjectId, setSubjectId] = useState<string | null>(null);
-    const [subjectEmoji, setSubjectEmoji] = useState<string>('🌐');
+    const [subjectEmoji, setSubjectEmoji] = useState<string>('');
     const [totalItemCount, setTotalItemCount] = useState(0);
 
     const [currentIndex, setCurrentIndex] = useState(0);
