@@ -495,26 +495,31 @@ export default function LearnPage() {
           </div>
           
           <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-12">
-              <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
-              <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
-              
-              <div className={cn("col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                  <div className="[backface-visibility:hidden]">
-                      <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
-                  </div>
-                  <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
-                      <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
-                  </div>
-              </div>
+            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
+            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
+            
+            <div className={cn(
+                "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
+                isFlipped && (answerStatus === 'incorrect') ? 'mb-12' : '',
+                isFlipped && "[transform:rotateY(180deg)]"
+            )}>
+                <div className="[backface-visibility:hidden]">
+                    <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
+                </div>
+                <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
+                    <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
+                </div>
+            </div>
           </div>
-          
+
           {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
-            <div className="absolute top-1/2 -translate-y-1/2 mt-12">
+            <div className="absolute top-1/2 -translate-y-1/2 -mt-12">
               <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
             </div>
           )}
+
           {isTypedMode && isFlipped && (
-            <div className="flex justify-center mt-4">
+             <div className="flex justify-center mt-8">
               <FeedbackIcon status={answerStatus} />
             </div>
           )}
@@ -535,6 +540,11 @@ export default function LearnPage() {
                     <PopoverContent
                       className="w-auto max-w-xs sm:max-w-sm"
                       side="top"
+                      onInteractOutside={(e) => {
+                         if ((e.target as HTMLElement).closest('[data-radix-collection-item]')) {
+                             e.preventDefault();
+                         }
+                      }}
                     >
                       <div className="flex items-start gap-2">
                         <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
@@ -629,3 +639,5 @@ export default function LearnPage() {
     </div>
   );
 }
+
+    

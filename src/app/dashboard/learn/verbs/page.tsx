@@ -535,11 +535,6 @@ export default function VerbPracticePage() {
                                         <PopoverContent
                                             className="w-auto max-w-xs sm:max-w-sm"
                                             side="top"
-                                            onInteractOutside={(e) => {
-                                                if ((e.target as HTMLElement).closest('[data-radix-collection-item]')) {
-                                                    e.preventDefault();
-                                                }
-                                            }}
                                         >
                                             <div className="flex items-start gap-2">
                                                 <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
@@ -558,7 +553,11 @@ export default function VerbPracticePage() {
                         <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{currentCard.front}</p>
                         <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{currentCard.back}</p>
                         
-                        <div className={cn("col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                        <div className={cn(
+                            "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
+                            isFlipped && (answerStatus === 'incorrect') ? 'mb-12' : '',
+                            isFlipped && "[transform:rotateY(180deg)]"
+                        )}>
                             <div className="[backface-visibility:hidden]">
                                 <p className="text-4xl font-bold text-center">{currentCard.front}</p>
                             </div>
@@ -567,13 +566,13 @@ export default function VerbPracticePage() {
                             </div>
                         </div>
                     </div>
-                     {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
-                        <div className="absolute top-1/2 -translate-y-1/2 mt-12">
+                    {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
+                        <div className="absolute top-1/2 -translate-y-1/2 -mt-12">
                             <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
                         </div>
                     )}
                     {isTypedMode && isFlipped && (
-                        <div className="flex justify-center mt-4">
+                        <div className="flex justify-center mt-8">
                             <FeedbackIcon status={answerStatus} />
                         </div>
                     )}
@@ -659,3 +658,5 @@ export default function VerbPracticePage() {
         </div>
     );
 }
+
+    
