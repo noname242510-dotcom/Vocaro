@@ -113,6 +113,7 @@ export default function VerbPracticePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [subjectId, setSubjectId] = useState<string | null>(null);
+    const [subjectEmoji, setSubjectEmoji] = useState<string>('🌐');
     const [totalItemCount, setTotalItemCount] = useState(0);
 
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -146,6 +147,7 @@ export default function VerbPracticePage() {
 
         const sessionData = sessionStorage.getItem('verb-practice-session');
         const subjectIdData = sessionStorage.getItem('verb-practice-subject-id');
+        const storedSubjectEmoji = sessionStorage.getItem('learn-session-emoji');
 
         if (!sessionData || !subjectIdData) {
             setError('Keine Übungsdaten gefunden. Bitte gehe zurück und wähle Verben aus.');
@@ -154,6 +156,7 @@ export default function VerbPracticePage() {
         }
 
         setSubjectId(subjectIdData);
+        if (storedSubjectEmoji) setSubjectEmoji(storedSubjectEmoji);
 
         try {
             const verbs: (Verb & { selectedTenses: string[] })[] = JSON.parse(sessionData);
@@ -320,7 +323,7 @@ export default function VerbPracticePage() {
           setIsFlipped(false);
           goToNextCard(knewIt);
           setIsExiting(false);
-        }, 300);
+        }, 500); // Duration matches animation
     };
     
       const handleCheckAnswer = () => {
@@ -331,7 +334,7 @@ export default function VerbPracticePage() {
             setIsFlipped(false);
             goToNextCard(isCorrect);
             setIsExiting(false);
-          }, 300);
+          }, 500); // Duration matches animation
           return;
         }
 
@@ -392,10 +395,12 @@ export default function VerbPracticePage() {
         setIsTypedMode(newMode);
         localStorage.setItem('learn-mode-typed', String(newMode));
         
-        // Reset card-specific state on mode toggle
-        setUserInput('');
-        setAnswerStatus('unanswered');
-        setIsFlipped(false);
+        // Reset card-specific state on mode toggle, unless an answer was just marked
+        if (answerStatus === 'unanswered') {
+            setUserInput('');
+            setAnswerStatus('unanswered');
+            setIsFlipped(false);
+        }
     };
 
     const getMotivationMessage = (score: number) => {
@@ -501,13 +506,24 @@ export default function VerbPracticePage() {
                          !isExiting ? 'opacity-100' : 'opacity-0'
                     )}
                 >
+                    <div className="absolute top-4 left-4 text-3xl [perspective:1000px]">
+                        <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                            <div className="[backface-visibility:hidden]">
+                                <span>{isGermanFirst ? '🇩🇪' : subjectEmoji}</span>
+                            </div>
+                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                                <span>{isGermanFirst ? subjectEmoji : '🇩🇪'}</span>
+                            </div>
+                        </div>
+                    </div>
+
                     {shouldShowHints && currentCard.isConjugation && (
                         <div className="absolute top-6">
                             <p className="text-xl text-muted-foreground font-light">{currentCard.verbInfinitive}</p>
                         </div>
                     )}
                     <div className="relative w-full h-full flex items-center justify-center [perspective:1000px]">
-                      <div className={cn("absolute transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                      <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                           <div className="[backface-visibility:hidden]">
                               <p className="text-4xl font-bold text-center">{currentCard.front}</p>
                           </div>
@@ -540,7 +556,7 @@ export default function VerbPracticePage() {
                         className={cn(
                             'absolute inset-0 flex justify-center items-center transition-all duration-500',
                             isFlipped || isExiting
-                            ? 'opacity-0 scale-90'
+                            ? 'opacity-0 scale-90 pointer-events-none'
                             : 'opacity-100 scale-100'
                         )}
                     >
@@ -607,3 +623,5 @@ export default function VerbPracticePage() {
         </div>
     );
 }
+
+    

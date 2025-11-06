@@ -410,9 +410,10 @@ export default function SubjectDetailPage() {
 
 
   const handleStartLearning = () => {
-    if (selectedVocab.length > 0) {
+    if (selectedVocab.length > 0 && subject) {
       sessionStorage.setItem('learn-session-vocab', JSON.stringify(selectedVocab));
       sessionStorage.setItem('learn-session-subject', subjectId);
+      sessionStorage.setItem('learn-session-emoji', subject.emoji);
       router.push(`/dashboard/learn`);
     }
   };
@@ -661,7 +662,7 @@ export default function SubjectDetailPage() {
   
   const handleStartVerbPractice = () => {
     const selectedVerbs = localVerbs.filter(v => v.isSelected);
-    if (selectedVerbs.length > 0) {
+    if (selectedVerbs.length > 0 && subject) {
       const practiceData = selectedVerbs.map(v => ({
         ...v,
         // Convert Set to Array for JSON serialization
@@ -669,6 +670,7 @@ export default function SubjectDetailPage() {
       }));
       sessionStorage.setItem('verb-practice-session', JSON.stringify(practiceData));
       sessionStorage.setItem('verb-practice-subject-id', subjectId);
+      sessionStorage.setItem('learn-session-emoji', subject.emoji);
       router.push('/dashboard/learn/verbs');
     }
   };
@@ -1065,6 +1067,8 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+
+    
 
     
 

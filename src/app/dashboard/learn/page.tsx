@@ -90,6 +90,7 @@ export default function LearnPage() {
   const [answeredIds, setAnsweredIds] = useState<Map<string, AnswerStatus>>(new Map());
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
+  const [subjectEmoji, setSubjectEmoji] = useState<string>('🌐');
   const [isExiting, setIsExiting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
@@ -121,6 +122,8 @@ export default function LearnPage() {
     const fetchVocab = async () => {
       const vocabIdsJson = sessionStorage.getItem('learn-session-vocab');
       const storedSubjectId = sessionStorage.getItem('learn-session-subject');
+      const storedSubjectEmoji = sessionStorage.getItem('learn-session-emoji');
+
 
       if (!vocabIdsJson || !storedSubjectId) {
         setError('Keine Vokabeln für die Lernsitzung gefunden.');
@@ -129,6 +132,8 @@ export default function LearnPage() {
       }
 
       setSubjectId(storedSubjectId);
+      if (storedSubjectEmoji) setSubjectEmoji(storedSubjectEmoji);
+
       let vocabIds: string[] = [];
       try {
         vocabIds = JSON.parse(vocabIdsJson);
@@ -273,7 +278,7 @@ export default function LearnPage() {
         setIsFlipped(false);
         goToNextCard(knewIt);
         setIsExiting(false);
-    }, 300);
+    }, 500); // Duration matches animation
   };
 
   const handleCheckAnswer = () => {
@@ -284,7 +289,7 @@ export default function LearnPage() {
         setIsFlipped(false);
         goToNextCard(isCorrect);
         setIsExiting(false);
-      }, 300);
+      }, 500); // Duration matches animation
       return;
     }
 
@@ -357,10 +362,12 @@ export default function LearnPage() {
     setIsTypedMode(newMode);
     localStorage.setItem('learn-mode-typed', String(newMode));
     
-    // Reset card-specific state on mode toggle
-    setUserInput('');
-    setAnswerStatus('unanswered');
-    setIsFlipped(false);
+    // Reset card-specific state on mode toggle, unless an answer was just marked
+    if (answerStatus === 'unanswered') {
+        setUserInput('');
+        setAnswerStatus('unanswered');
+        setIsFlipped(false);
+    }
   };
 
 
@@ -471,12 +478,23 @@ export default function LearnPage() {
             !isExiting ? 'opacity-100' : 'opacity-0',
           )}
         >
+          <div className="absolute top-4 left-4 text-3xl [perspective:1000px]">
+            <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                <div className="[backface-visibility:hidden]">
+                    <span>{isTermFirst ? subjectEmoji : '🇩🇪'}</span>
+                </div>
+                <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                    <span>{isTermFirst ? '🇩🇪' : subjectEmoji}</span>
+                </div>
+            </div>
+          </div>
+          
           <div className="relative w-full h-full flex items-center justify-center [perspective:1000px]">
-            <div className={cn("absolute transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+            <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                 <div className="[backface-visibility:hidden]">
                     <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
                 </div>
-                <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
                     <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
                 </div>
             </div>
@@ -529,7 +547,7 @@ export default function LearnPage() {
                     className={cn(
                         'absolute inset-0 flex justify-center items-center transition-all duration-500',
                         isFlipped || isExiting
-                        ? 'opacity-0 scale-90'
+                        ? 'opacity-0 scale-90 pointer-events-none'
                         : 'opacity-100 scale-100'
                     )}
                 >
@@ -596,3 +614,5 @@ export default function LearnPage() {
     </div>
   );
 }
+
+    
