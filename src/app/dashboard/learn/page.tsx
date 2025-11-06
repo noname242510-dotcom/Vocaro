@@ -54,7 +54,7 @@ const DiffHighlight = ({userInput, correctAnswer}: {userInput: string, correctAn
 
     return (
         <div className="text-center">
-            <p className="text-muted-foreground text-sm mb-1">Deine Antwort</p>
+            
             <p className="text-xl font-mono text-center mb-1">
             {userChars.map((char, index) => (
                 <span 
@@ -511,13 +511,13 @@ export default function LearnPage() {
                 </div>
                 <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                     {isTypedMode && answerStatus === 'incorrect' ? (
-                        <>
+                        <div className="flex flex-col items-center justify-center">
                            <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
                            <p className="text-4xl font-bold text-center mt-4">{expectedAnswer}</p>
                            <div className="mt-4">
                                <FeedbackIcon status={answerStatus} />
                            </div>
-                        </>
+                        </div>
                     ) : (
                         <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
                     )}
