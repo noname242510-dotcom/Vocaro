@@ -323,7 +323,7 @@ export default function VerbPracticePage() {
           setIsFlipped(false);
           goToNextCard(knewIt);
           setIsExiting(false);
-        }, 300); // Duration of fade-out animation
+        }, 450); // Fade-out duration (300) + pause (150)
     };
     
       const handleCheckAnswer = () => {
@@ -334,7 +334,7 @@ export default function VerbPracticePage() {
             setIsFlipped(false);
             goToNextCard(isCorrect);
             setIsExiting(false);
-          }, 300);
+          }, 450); // Fade-out duration (300) + pause (150)
           return;
         }
 
@@ -516,23 +516,30 @@ export default function VerbPracticePage() {
                 <div
                     key={currentCard.id}
                     className={cn(
-                        "relative w-full h-full flex flex-col items-center justify-center p-6 rounded-2xl glass-effect",
-                        !isExiting && 'animate-fade-in',
-                        isExiting && 'animate-fade-out',
+                        "relative w-full h-full flex flex-col items-center justify-center p-6 rounded-2xl glass-effect transition-opacity duration-300",
+                         !isExiting ? 'opacity-100' : 'opacity-0'
                     )}
                 >
-                    <div className="relative text-center w-full h-full flex items-center justify-center">
-                        <div className={cn("absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300", isFlipped ? 'opacity-0' : 'opacity-100')}>
-                            {shouldShowHints && currentCard.isConjugation && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
-                            <p className="text-4xl font-bold text-center">{currentCard.front}</p>
-                        </div>
-                        <div className={cn("absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-300", isFlipped ? 'opacity-100' : 'opacity-0')}>
-                            {isTypedMode && answerStatus === 'incorrect' && (
-                                <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
-                            )}
-                            <p className="text-4xl font-bold text-center">{currentCard.back}</p>
-                            {isTypedMode && !showContinueButton && !showClassicButtonsInTypedMode && <div className="mt-2"><FeedbackIcon status={answerStatus} /></div>}
-                        </div>
+                    <div
+                      className={cn(
+                        'absolute inset-0 flex flex-col items-center justify-center p-6 transition-opacity duration-700',
+                        isFlipped ? 'opacity-0' : 'opacity-100'
+                      )}
+                    >
+                        {shouldShowHints && currentCard.isConjugation && <p className="text-xl text-muted-foreground font-light mb-2">{currentCard.verbInfinitive}</p>}
+                        <p className="text-4xl font-bold text-center">{currentCard.front}</p>
+                    </div>
+                    <div
+                      className={cn(
+                        'absolute inset-0 flex flex-col items-center justify-center p-6 transition-opacity duration-700',
+                        isFlipped ? 'opacity-100' : 'opacity-0'
+                      )}
+                    >
+                        {isTypedMode && answerStatus === 'incorrect' && (
+                            <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
+                        )}
+                        <p className="text-4xl font-bold text-center">{currentCard.back}</p>
+                        {isTypedMode && !showContinueButton && !showClassicButtonsInTypedMode && <div className="mt-2"><FeedbackIcon status={answerStatus} /></div>}
                     </div>
                     {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
                         <div className="absolute bottom-4 text-center opacity-75 transition-opacity duration-300">
@@ -548,10 +555,11 @@ export default function VerbPracticePage() {
               <div className="w-full h-12 relative">
                 <div
                   className={cn(
-                    'absolute inset-0 flex justify-center items-center transition-all duration-300',
+                    'absolute inset-0 flex justify-center items-center transition-all duration-700',
                     isFlipped || isExiting
                       ? 'opacity-0 scale-90 pointer-events-none'
-                      : 'opacity-100 scale-100'
+                      : 'opacity-100 scale-100',
+                    !isExiting && 'delay-150'
                   )}
                 >
                   {isTypedMode ? (
@@ -573,10 +581,10 @@ export default function VerbPracticePage() {
                 </div>
                 <div
                   className={cn(
-                    'absolute inset-0 flex justify-center items-center gap-2 transition-all duration-300',
-                    !isFlipped || isExiting
-                      ? 'opacity-0 scale-90 pointer-events-none'
-                      : 'opacity-100 scale-100'
+                    'absolute inset-0 flex justify-center items-center gap-2 transition-all duration-700',
+                    isFlipped && !isExiting
+                      ? 'opacity-100 scale-100'
+                      : 'opacity-0 scale-90 pointer-events-none'
                   )}
                 >
                   {isTypedMode ? (
