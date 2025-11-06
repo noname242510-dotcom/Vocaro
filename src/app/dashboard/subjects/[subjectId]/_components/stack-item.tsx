@@ -150,30 +150,49 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
           </div>
           <div className="flex items-center gap-1">
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100">
-                  <MoreVertical className="h-4 w-4" />
+            {/* Desktop Buttons */}
+            <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onAddVocab(stack)}>
+                    <Plus className="h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onAddVocab(stack)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  <span>Hinzufügen</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => {
                   setNewStackName(stack.name);
                   setIsRenameDialogOpen(true)
                 }}>
-                  <Pen className="mr-2 h-4 w-4" />
-                  <span>Umbenennen</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  <span>Löschen</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <Pen className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
+
+            {/* Mobile Dropdown */}
+            <div className="md:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onAddVocab(stack)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    <span>Hinzufügen</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    setNewStackName(stack.name);
+                    setIsRenameDialogOpen(true)
+                  }}>
+                    <Pen className="mr-2 h-4 w-4" />
+                    <span>Umbenennen</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Löschen</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
 
              <CollapsibleTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
