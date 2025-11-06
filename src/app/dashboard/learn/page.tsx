@@ -513,7 +513,11 @@ export default function LearnPage() {
               <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
             </div>
           )}
-          {isTypedMode && isFlipped && <div className="absolute top-1/2 -translate-y-1/2 mt-24"><FeedbackIcon status={answerStatus} /></div>}
+          {isTypedMode && isFlipped && (
+            <div className="flex justify-center mt-4">
+              <FeedbackIcon status={answerStatus} />
+            </div>
+          )}
           
           {shouldShowHints && currentCard.notes && (
             <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">
@@ -531,11 +535,6 @@ export default function LearnPage() {
                     <PopoverContent
                       className="w-auto max-w-xs sm:max-w-sm"
                       side="top"
-                      onInteractOutside={(e) => {
-                          if ((e.target as HTMLElement).closest('[data-radix-collection-item]')) {
-                              e.preventDefault();
-                          }
-                      }}
                     >
                       <div className="flex items-start gap-2">
                         <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -561,7 +562,7 @@ export default function VerbPracticePage() {
                             <div className="[backface-visibility:hidden]">
                                 <p className="text-4xl font-bold text-center">{currentCard.front}</p>
                             </div>
-                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
                                 <p className="text-4xl font-bold text-center">{currentCard.back}</p>
                             </div>
                         </div>
@@ -571,7 +572,11 @@ export default function VerbPracticePage() {
                             <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
                         </div>
                     )}
-                    {isTypedMode && isFlipped && <div className="absolute top-1/2 -translate-y-1/2 mt-24"><FeedbackIcon status={answerStatus} /></div>}
+                    {isTypedMode && isFlipped && (
+                        <div className="flex justify-center mt-4">
+                            <FeedbackIcon status={answerStatus} />
+                        </div>
+                    )}
 
                     {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
                         <div className="absolute bottom-4 text-center opacity-75 transition-opacity duration-300">
