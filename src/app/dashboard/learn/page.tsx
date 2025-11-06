@@ -495,17 +495,12 @@ export default function LearnPage() {
           </div>
           
           <div className="relative flex justify-center items-center [perspective:1000px]">
-              {/* Sizer elements - invisible but define the container width */}
-              <p className="text-4xl font-bold text-center invisible whitespace-nowrap">{isTermFirst ? currentCard.term : currentCard.definition}</p>
-              <p className="text-4xl font-bold text-center invisible whitespace-nowrap">{isTermFirst ? currentCard.definition : currentCard.term}</p>
-
-              {/* Animated content */}
               <div className={cn("absolute transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                   <div className="[backface-visibility:hidden]">
-                      <p className="text-4xl font-bold text-center whitespace-nowrap">{isTermFirst ? currentCard.term : currentCard.definition}</p>
+                      <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
                   </div>
                   <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                      <p className="text-4xl font-bold text-center whitespace-nowrap">{isTermFirst ? currentCard.definition : currentCard.term}</p>
+                      <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
                   </div>
               </div>
           </div>
