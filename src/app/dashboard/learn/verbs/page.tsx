@@ -549,12 +549,17 @@ export default function VerbPracticePage() {
                             </div>
                         </div>
                     </div>
-                    <div className="relative w-full h-full flex items-center justify-center [perspective:1000px]">
-                      <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d] flex items-center justify-center", isFlipped && "[transform:rotateY(180deg)]")}>
-                          <div className="[backface-visibility:hidden] col-start-1 row-start-1">
+                    <div className="relative flex justify-center items-center [perspective:1000px]">
+                      {/* Sizer elements - invisible but define the container width */}
+                      <p className="text-4xl font-bold text-center invisible whitespace-nowrap">{currentCard.front}</p>
+                      <p className="text-4xl font-bold text-center invisible whitespace-nowrap">{currentCard.back}</p>
+
+                      {/* Animated content */}
+                      <div className={cn("absolute transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                          <div className="[backface-visibility:hidden]">
                               <p className="text-4xl font-bold text-center whitespace-nowrap">{currentCard.front}</p>
                           </div>
-                          <div className="[backface-visibility:hidden] [transform:rotateY(180deg)] col-start-1 row-start-1">
+                          <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
                               <p className="text-4xl font-bold text-center whitespace-nowrap">{currentCard.back}</p>
                           </div>
                       </div>
