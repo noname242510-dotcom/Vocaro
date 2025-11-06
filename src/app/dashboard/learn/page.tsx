@@ -103,8 +103,6 @@ export default function LearnPage() {
   const [userInput, setUserInput] = useState('');
   const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
   const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
-  const [showContinueButton, setShowContinueButton] = useState(false);
-  const [showClassicButtonsInTypedMode, setShowClassicButtonsInTypedMode] = useState(false);
 
 
   useEffect(() => {
@@ -220,7 +218,6 @@ export default function LearnPage() {
       
       setAnswerStatus('unanswered');
       setIsFlipped(false);
-      setShowContinueButton(false);
     }
   };
   
@@ -230,8 +227,6 @@ export default function LearnPage() {
   
     setAnswerStatus('unanswered');
     setUserInput('');
-    setShowContinueButton(false);
-    setShowClassicButtonsInTypedMode(false);
   
     if (isCorrect) {
       remainingCards.splice(currentIndex, 1);
@@ -261,7 +256,9 @@ export default function LearnPage() {
     const currentCard = vocabulary[currentIndex];
     
     if (knewIt) {
-        setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+        if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
+            setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+        }
         triggerHapticFeedback('light');
     } else {
         if (!incorrectlyAnsweredIds.has(currentCard.id)) {
@@ -301,6 +298,9 @@ export default function LearnPage() {
 
     if (isCorrect) {
       setAnswerStatus('correct');
+      if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
+        setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+      }
       triggerHapticFeedback('light');
     } else {
       setAnswerStatus('incorrect');
@@ -342,8 +342,6 @@ export default function LearnPage() {
     setHistory([]);
     setUserInput('');
     setAnswerStatus('unanswered');
-    setShowContinueButton(false);
-    setShowClassicButtonsInTypedMode(false);
   };
   
   const handleBackToSelection = () => {
@@ -359,27 +357,10 @@ export default function LearnPage() {
     setIsTypedMode(newMode);
     localStorage.setItem('learn-mode-typed', String(newMode));
     
-    // Scenario: Typed -> Classic after correct answer
-    if (!newMode && (answerStatus === 'correct' || answerStatus === 'accepted')) {
-        setIsFlipped(true);
-        setShowContinueButton(true);
-    } else {
-        setShowContinueButton(false);
-    }
-
-    // Scenario: Classic -> Typed on a flipped card
-    if (newMode && isFlipped) {
-        setShowClassicButtonsInTypedMode(true);
-    } else {
-        setShowClassicButtonsInTypedMode(false);
-    }
-
-    // Reset card-specific state if not handling a special transition
-    if (answerStatus !== 'correct' && answerStatus !== 'accepted' && !isFlipped) {
-        setUserInput('');
-        setAnswerStatus('unanswered');
-        setIsFlipped(false);
-    }
+    // Reset card-specific state on mode toggle
+    setUserInput('');
+    setAnswerStatus('unanswered');
+    setIsFlipped(false);
   };
 
 
@@ -486,30 +467,30 @@ export default function LearnPage() {
         <div
           key={currentCard.id}
           className={cn(
-            "relative w-full h-full flex flex-col items-center justify-center p-6 rounded-2xl glass-effect transition-opacity duration-300",
+            "relative w-full h-full flex flex-col items-center justify-center p-6 rounded-2xl glass-effect border transition-opacity duration-300",
             !isExiting ? 'opacity-100' : 'opacity-0',
           )}
         >
-          <div
-            className={cn(
-              'absolute inset-0 flex flex-col items-center justify-center p-6 transition-opacity duration-700',
-              isFlipped ? 'opacity-0' : 'opacity-100'
-            )}
-          >
-            <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
-          </div>
-          <div
-            className={cn(
-              'absolute inset-0 flex flex-col items-center justify-center p-6 transition-opacity duration-700',
-              isFlipped ? 'opacity-100' : 'opacity-0'
-            )}
-          >
-            {isTypedMode && answerStatus === 'incorrect' && (
-              <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
-            )}
-            <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
-            {isTypedMode && !showContinueButton && !showClassicButtonsInTypedMode && <div className="mt-2"><FeedbackIcon status={answerStatus} /></div>}
-          </div>
+            <div
+                className={cn(
+                'absolute inset-0 flex flex-col items-center justify-center p-6 transition-opacity duration-500',
+                isFlipped ? 'opacity-0' : 'opacity-100'
+                )}
+            >
+                <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
+            </div>
+            <div
+                className={cn(
+                'absolute inset-0 flex flex-col items-center justify-center p-6 transition-opacity duration-500',
+                isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                )}
+            >
+                {isTypedMode && answerStatus === 'incorrect' && (
+                <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
+                )}
+                <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
+                {isTypedMode && <div className="mt-2"><FeedbackIcon status={answerStatus} /></div>}
+            </div>
           
           {shouldShowHints && currentCard.notes && isFlipped && (
               <div className="absolute bottom-6 left-6">
@@ -545,64 +526,82 @@ export default function LearnPage() {
       </div>
       
        <div className="mt-8 w-full max-w-2xl flex flex-col items-center">
-        <div className="w-full h-12 relative">
-          <div
-            className={cn(
-              'absolute inset-0 flex justify-center items-center transition-all duration-700',
-              isFlipped || isExiting
-                ? 'opacity-0 scale-90 pointer-events-none'
-                : 'opacity-100 scale-100',
-              !isExiting && 'delay-150'
+            <div className="w-full h-12 relative">
+                {/* Container for the "Umdrehen" button */}
+                <div
+                    className={cn(
+                        'absolute inset-0 flex justify-center items-center transition-all duration-500',
+                        isFlipped || isExiting
+                        ? 'opacity-0 scale-90 pointer-events-none'
+                        : 'opacity-100 scale-100'
+                    )}
+                >
+                    {isTypedMode ? (
+                        <div className="flex gap-2 w-full">
+                            <Input
+                                ref={inputRef}
+                                placeholder="Antwort tippen..."
+                                value={userInput}
+                                onChange={(e) => setUserInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
+                                className="text-center text-lg h-12 rounded-full"
+                                autoFocus
+                            />
+                            <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
+                        </div>
+                    ) : (
+                        <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+                    )}
+                </div>
+
+                {/* Container for the answer buttons */}
+                <div
+                    className={cn(
+                        'absolute inset-0 flex justify-center items-center gap-2 transition-opacity duration-500',
+                        isFlipped && !isExiting
+                        ? 'opacity-100'
+                        : 'opacity-0 pointer-events-none'
+                    )}
+                >
+                    {isTypedMode ? (
+                    <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
+                        {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
+                    </Button>
+                    ) : (
+                    <>
+                        <Button
+                            variant="outline"
+                            size="default"
+                            className={cn(
+                                'absolute left-0 w-[calc(50%-0.25rem)] h-12 text-base transition-transform duration-500',
+                                isFlipped ? 'scale-100' : 'scale-x-0'
+                            )}
+                            onClick={() => handleClassicAnswer(false)}
+                        >
+                            <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+                        </Button>
+                        <Button
+                            variant="default"
+                            size="default"
+                            className={cn(
+                                'absolute right-0 w-[calc(50%-0.25rem)] h-12 text-base transition-transform duration-500',
+                                isFlipped ? 'scale-100' : 'scale-x-0'
+                            )}
+                            onClick={() => handleClassicAnswer(true)}
+                        >
+                            <Check className="mr-2 h-4 w-4" /> Wusste ich
+                        </Button>
+                    </>
+                    )}
+                </div>
+            </div>
+            {history.length > 0 && !isExiting && (
+            <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Zurück
+            </Button>
             )}
-          >
-            {isTypedMode ? (
-              <div className="flex gap-2 w-full">
-                <Input
-                  ref={inputRef}
-                  placeholder="Antwort tippen..."
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                  className="text-center text-lg h-12 rounded-full"
-                  autoFocus
-                />
-                <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
-              </div>
-            ) : (
-              <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
-            )}
-          </div>
-          <div
-            className={cn(
-              'absolute inset-0 flex justify-center items-center gap-2 transition-all duration-700',
-              isFlipped && !isExiting
-                ? 'opacity-100 scale-100'
-                : 'opacity-0 scale-90 pointer-events-none'
-            )}
-          >
-            {isTypedMode ? (
-               <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
-                {answerStatus === 'incorrect' ? 'Verstanden' : 'Weiter'}
-              </Button>
-            ) : (
-              <>
-                <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(false)}>
-                  <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                </Button>
-                <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleClassicAnswer(true)}>
-                  <Check className="mr-2 h-4 w-4" /> Wusste ich
-                </Button>
-              </>
-            )}
-          </div>
         </div>
-        {history.length > 0 && !isExiting && (
-          <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Zurück
-          </Button>
-        )}
-      </div>
     </div>
   );
 }
