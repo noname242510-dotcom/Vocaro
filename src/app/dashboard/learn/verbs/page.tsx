@@ -522,10 +522,10 @@ export default function VerbPracticePage() {
                         </div>
                     </div>
 
-                    {shouldShowHints && currentCard.isConjugation && (
-                        <div className="absolute top-6 h-10 w-10 [perspective:1000px]">
-                            <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                                 <div className="[backface-visibility:hidden] flex items-center justify-center">
+                    <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
+                        <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                            <div className="[backface-visibility:hidden] w-full h-full flex items-center justify-center">
+                                {shouldShowHints && currentCard.isConjugation && (
                                     <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
                                         <PopoverTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); }}>
@@ -535,8 +535,6 @@ export default function VerbPracticePage() {
                                         <PopoverContent
                                             className="w-auto max-w-xs sm:max-w-sm"
                                             side="top"
-                                            onOpenAutoFocus={(e) => e.preventDefault()}
-                                            onClick={(e) => e.stopPropagation()}
                                         >
                                             <div className="flex items-start gap-2">
                                                 <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
@@ -544,20 +542,20 @@ export default function VerbPracticePage() {
                                             </div>
                                         </PopoverContent>
                                     </Popover>
-                                 </div>
-                                 <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                    {/* Empty on the back */}
-                                 </div>
+                                )}
+                            </div>
+                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                                {/* Empty on the back */}
                             </div>
                         </div>
-                    )}
+                    </div>
                     <div className="relative w-full h-full flex items-center justify-center [perspective:1000px]">
-                      <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                          <div className="[backface-visibility:hidden]">
-                              <p className="text-4xl font-bold text-center">{currentCard.front}</p>
+                      <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d] flex items-center justify-center", isFlipped && "[transform:rotateY(180deg)]")}>
+                          <div className="[backface-visibility:hidden] col-start-1 row-start-1">
+                              <p className="text-4xl font-bold text-center whitespace-nowrap">{currentCard.front}</p>
                           </div>
-                          <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
-                              <p className="text-4xl font-bold text-center">{currentCard.back}</p>
+                          <div className="[backface-visibility:hidden] [transform:rotateY(180deg)] col-start-1 row-start-1">
+                              <p className="text-4xl font-bold text-center whitespace-nowrap">{currentCard.back}</p>
                           </div>
                       </div>
                     </div>

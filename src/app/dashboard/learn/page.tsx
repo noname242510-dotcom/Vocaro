@@ -495,12 +495,12 @@ export default function LearnPage() {
           </div>
           
           <div className="relative w-full h-full flex items-center justify-center [perspective:1000px]">
-            <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                <div className="[backface-visibility:hidden]">
-                    <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
+            <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d] flex items-center justify-center", isFlipped && "[transform:rotateY(180deg)]")}>
+                <div className="[backface-visibility:hidden] col-start-1 row-start-1">
+                    <p className="text-4xl font-bold text-center whitespace-nowrap">{isTermFirst ? currentCard.term : currentCard.definition}</p>
                 </div>
-                <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
-                    <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
+                <div className="[backface-visibility:hidden] [transform:rotateY(180deg)] col-start-1 row-start-1">
+                    <p className="text-4xl font-bold text-center whitespace-nowrap">{isTermFirst ? currentCard.definition : currentCard.term}</p>
                 </div>
             </div>
           </div>
@@ -513,9 +513,9 @@ export default function LearnPage() {
           {isTypedMode && isFlipped && <div className="absolute top-1/2 -translate-y-1/2 mt-24"><FeedbackIcon status={answerStatus} /></div>}
           
           {shouldShowHints && currentCard.notes && (
-            <div className="absolute bottom-6 right-6 h-10 w-10 [perspective:1000px]">
+            <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">
               <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                <div className="[backface-visibility:hidden]">
+                <div className="[backface-visibility:hidden] w-full h-full">
                   {/* Empty on the front */}
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
@@ -528,8 +528,6 @@ export default function LearnPage() {
                     <PopoverContent
                       className="w-auto max-w-xs sm:max-w-sm"
                       side="top"
-                      onOpenAutoFocus={(e) => e.preventDefault()}
-                      onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-start gap-2">
                         <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
@@ -575,7 +573,7 @@ export default function LearnPage() {
                         <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
                     </div>
                 ) : (
-                    <Button size="lg" className="w-full pointer-events-auto" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+                    <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
                 )}
             </div>
             <div
@@ -624,9 +622,3 @@ export default function LearnPage() {
     </div>
   );
 }
-
-
-    
-
-    
-
