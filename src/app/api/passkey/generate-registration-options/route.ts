@@ -8,7 +8,7 @@ const RP_ID = 'vocaro-vocab.vercel.app';
 const ORIGIN = `https://${RP_ID}`;
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const username = searchParams.get('username');
 
   if (!username) {

@@ -5,9 +5,11 @@ import { firestoreAdmin, authAdmin } from '@/lib/firebase-admin';
 import type { Authenticator } from '@/lib/types';
 
 const RP_ID = 'vocaro-vocab.vercel.app';
+const ORIGIN = `https://${RP_ID}`;
+
 
 export async function GET(request: NextRequest) {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const username = searchParams.get('username');
 
     let userAuthenticators: Authenticator[] = [];
