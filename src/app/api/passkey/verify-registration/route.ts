@@ -1,11 +1,12 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
 import type { VerifiedRegistrationResponse, RegistrationResponseJSON } from '@simplewebauthn/server';
 import { authAdmin, firestoreAdmin } from '@/lib/firebase-admin';
 import type { Authenticator } from '@/lib/types';
 
-const RP_ID = process.env.NODE_ENV === 'development' ? 'localhost' : 'vocaro-vocab.vercel.app';
-const ORIGIN = process.env.NODE_ENV === 'development' ? `http://${RP_ID}:9002` : `https://${RP_ID}`;
+const RP_ID = 'vocaro-vocab.vercel.app';
+const ORIGIN = `https://${RP_ID}`;
 
 export async function POST(request: NextRequest) {
     const body: RegistrationResponseJSON & { username: string } = await request.json();

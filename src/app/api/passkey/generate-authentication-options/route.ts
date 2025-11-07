@@ -4,7 +4,7 @@ import { generateAuthenticationOptions } from '@simplewebauthn/server';
 import { firestoreAdmin, authAdmin } from '@/lib/firebase-admin';
 import type { Authenticator } from '@/lib/types';
 
-const RP_ID = process.env.NODE_ENV === 'development' ? 'localhost' : 'vocaro-vocab.vercel.app';
+const RP_ID = 'vocaro-vocab.vercel.app';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
