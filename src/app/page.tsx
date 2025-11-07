@@ -134,7 +134,6 @@ export default function LoginPage() {
       <main className="w-full max-w-sm px-4 flex-grow flex items-center">
         <Card className="mx-auto w-full shadow-lg">
           <CardHeader className="text-center">
-            <Logo className="mx-auto mb-4 text-3xl" />
             <CardTitle className="text-2xl font-headline">Willkommen zurück</CardTitle>
             <CardDescription>Melde dich bei deinem Konto an, um fortzufahren</CardDescription>
           </CardHeader>

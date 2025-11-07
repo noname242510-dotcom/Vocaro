@@ -142,7 +142,6 @@ export default function SignUpPage() {
       <main className="w-full max-w-sm px-4 flex-grow flex items-center">
         <Card className="mx-auto w-full shadow-lg">
           <CardHeader className="text-center">
-            <Logo className="mx-auto mb-4 text-3xl" />
             <CardTitle className="text-2xl font-headline">Konto erstellen</CardTitle>
             <CardDescription>Gib deine Informationen ein, um ein neues Konto zu erstellen</CardDescription>
           </CardHeader>
