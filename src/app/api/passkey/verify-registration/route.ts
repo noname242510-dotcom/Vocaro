@@ -1,30 +1,28 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
 import type { VerifiedRegistrationResponse, RegistrationResponseJSON } from '@simplewebauthn/server';
 import { authAdmin, firestoreAdmin } from '@/lib/firebase-admin';
 import type { Authenticator } from '@/lib/types';
 
-
-const RP_ID = process.env.NODE_ENV === 'development' ? 'localhost' : (new URL(process.env.NEXT_PUBLIC_BASE_URL!)).hostname;
-const ORIGIN = process.env.NEXT_PUBLIC_BASE_URL || `https://${RP_ID}`;
+const RP_ID = process.env.NODE_ENV === 'development' ? 'localhost' : 'vocaro-vocab.vercel.app';
+const ORIGIN = process.env.NODE_ENV === 'development' ? `http://${RP_ID}:9002` : `https://${RP_ID}`;
 
 export async function POST(request: NextRequest) {
     const body: RegistrationResponseJSON & { username: string } = await request.json();
     const { username } = body;
     const email = `${username}@vocaro.app`;
-    const tempUserId = `user_${username.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-
-
-    // 1. Hole die gespeicherte Challenge
-    const challengeRef = firestoreAdmin.collection('passkeyChallenges').doc(tempUserId);
-    const challengeDoc = await challengeRef.get();
     
-    if (!challengeDoc.exists) {
+    // 1. Hole die gespeicherte Challenge
+    // Wir müssen die ID finden, die wir in generate-options verwendet haben.
+    const challengesQuery = firestoreAdmin.collection('passkeyChallenges').where('username', '==', username);
+    const challengesSnapshot = await challengesQuery.get();
+
+    if (challengesSnapshot.empty) {
         return NextResponse.json({ error: 'Challenge nicht gefunden oder abgelaufen.' }, { status: 400 });
     }
-    const { challenge } = challengeDoc.data()!;
 
+    const challengeDoc = challengesSnapshot.docs[0];
+    const { challenge } = challengeDoc.data()!;
 
     // 2. Verifiziere die Antwort
     let verification: VerifiedRegistrationResponse;
@@ -37,8 +35,8 @@ export async function POST(request: NextRequest) {
             requireUserVerification: true,
         });
     } catch (error: any) {
-        console.error(error);
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        console.error("verifyRegistrationResponse error:", error);
+        return NextResponse.json({ error: `Verifizierung fehlgeschlagen: ${error.message}` }, { status: 400 });
     }
 
     const { verified, registrationInfo } = verification;
@@ -46,21 +44,19 @@ export async function POST(request: NextRequest) {
     if (verified && registrationInfo) {
         const { credentialPublicKey, credentialID, counter } = registrationInfo;
 
-        // 3. Erstelle Firebase User
+        // 3. Erstelle oder hole Firebase User
         let userRecord;
         try {
-            userRecord = await authAdmin.createUser({
-                email,
-                displayName: username,
-                // Kein Passwort, da Login via Passkey
-            });
+            userRecord = await authAdmin.getUserByEmail(email);
         } catch (error: any) {
-            if (error.code === 'auth/email-already-exists') {
-                 // Wenn der Benutzer bereits existiert (z.B. durch Passwort-Registrierung), hole den bestehenden Benutzer
-                userRecord = await authAdmin.getUserByEmail(email);
+            if (error.code === 'auth/user-not-found') {
+                userRecord = await authAdmin.createUser({
+                    email,
+                    displayName: username,
+                });
             } else {
-                 console.error('Fehler beim Erstellen des Firebase-Benutzers:', error);
-                return NextResponse.json({ error: 'Benutzer konnte nicht erstellt werden.' }, { status: 500 });
+                console.error('Fehler beim Abrufen/Erstellen des Firebase-Benutzers:', error);
+                return NextResponse.json({ error: 'Benutzer konnte nicht verarbeitet werden.' }, { status: 500 });
             }
         }
         
@@ -74,19 +70,20 @@ export async function POST(request: NextRequest) {
             transports: body.response.transports || [],
         };
         
+        // Der Dokumentenname ist die credentialID, um Duplikate zu vermeiden
         await firestoreAdmin
             .collection('users').doc(userId)
             .collection('authenticators').doc(newAuthenticator.credentialID)
             .set(newAuthenticator);
         
-        // Lösche die Challenge
-        await challengeRef.delete();
+        // Lösche die verbrauchte Challenge
+        await challengeDoc.ref.delete();
         
-        // 5. Erstelle Custom Token
+        // 5. Erstelle Custom Token für den Login
         const customToken = await authAdmin.createCustomToken(userId);
 
         return NextResponse.json({ verified: true, customToken });
     }
 
-    return NextResponse.json({ verified: false }, { status: 400 });
+    return NextResponse.json({ verified: false, error: 'Unbekannter Verifizierungsfehler.' }, { status: 400 });
 }

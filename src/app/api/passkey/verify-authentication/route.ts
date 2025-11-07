@@ -5,13 +5,14 @@ import type { VerifiedAuthenticationResponse, AuthenticationResponseJSON } from 
 import { firestoreAdmin, authAdmin } from '@/lib/firebase-admin';
 import type { Authenticator } from '@/lib/types';
 
-const RP_ID = process.env.NODE_ENV === 'development' ? 'localhost' : (new URL(process.env.NEXT_PUBLIC_BASE_URL!)).hostname;
+const RP_ID = process.env.NODE_ENV === 'development' ? 'localhost' : 'vocaro-vocab.vercel.app';
+const ORIGIN = process.env.NODE_ENV === 'development' ? `http://${RP_ID}:9002` : `https://${RP_ID}`;
 
 export async function POST(request: NextRequest) {
     const body: AuthenticationResponseJSON & { challengeId: string } = await request.json();
     const { challengeId } = body;
 
-    // 1. Get the challenge from Firestore
+    // 1. Hole die Challenge aus Firestore
     if (!challengeId) {
         return NextResponse.json({ error: 'ChallengeID fehlt.' }, { status: 400 });
     }
@@ -19,18 +20,19 @@ export async function POST(request: NextRequest) {
     const challengeDoc = await challengeRef.get();
 
     if (!challengeDoc.exists || (challengeDoc.data()!.expires < Date.now())) {
+        await challengeDoc.ref.delete().catch(() => {});
         return NextResponse.json({ error: 'Challenge nicht gefunden oder abgelaufen.' }, { status: 400 });
     }
     const { challenge } = challengeDoc.data()!;
     
-    // This is the username stored in the passkey itself.
+    // Der `userHandle` aus dem Passkey ist unser gespeicherter Benutzername
     const userHandle = body.response.userHandle;
     if (!userHandle) {
-        return NextResponse.json({ error: 'userHandle im Passkey nicht gefunden.' }, { status: 400 });
+        return NextResponse.json({ error: 'userHandle im Passkey nicht gefunden. Kann Benutzer nicht identifizieren.' }, { status: 400 });
     }
     const email = `${userHandle}@vocaro.app`;
 
-    // 2. Get the user from Firebase Auth
+    // 2. Hole den Benutzer aus Firebase Auth
     let userRecord;
     try {
         userRecord = await authAdmin.getUserByEmail(email);
@@ -39,26 +41,24 @@ export async function POST(request: NextRequest) {
     }
     const userId = userRecord.uid;
 
-    // 3. Get the specific authenticator used for this login
-    // The `id` from the response body is the credentialID (in base64url format)
+    // 3. Hole den spezifischen Authenticator, der für diesen Login verwendet wurde
+    // Die `id` aus dem Request-Body ist die credentialID im base64url-Format
     const authenticatorDoc = await firestoreAdmin
         .collection('users').doc(userId)
         .collection('authenticators').doc(body.id).get();
 
     if (!authenticatorDoc.exists) {
-        return NextResponse.json({ error: 'Passkey nicht für diesen Benutzer registriert.' }, { status: 404 });
+        return NextResponse.json({ error: 'Dieser Passkey ist nicht für den Benutzer registriert.' }, { status: 404 });
     }
     const authenticator = authenticatorDoc.data() as Authenticator;
     
-    // 4. Verify the authentication response
-    const expectedOrigin = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get('host')}`;
-
+    // 4. Verifiziere die Authentifizierungs-Antwort
     let verification: VerifiedAuthenticationResponse;
     try {
         verification = await verifyAuthenticationResponse({
             response: body,
             expectedChallenge: challenge,
-            expectedOrigin: expectedOrigin,
+            expectedOrigin: ORIGIN,
             expectedRPID: RP_ID,
             authenticator: {
                 credentialID: Buffer.from(authenticator.credentialID, 'base64'),
@@ -68,27 +68,27 @@ export async function POST(request: NextRequest) {
             },
             requireUserVerification: true,
         });
-    } catch (error: any) {
-        console.error("verifyAuthenticationResponse error:", error);
-        return NextResponse.json({ verified: false, error: `Verifizierung fehlgeschlagen: ${error.message}` }, { status: 400 });
-    }
+    } catch (error: any) Zod-Schema, und der Typ `any` in `z.infer` zu `z.ZodAny`.
+- **src/app/dashboard/learn/verbs/page.tsx**: Ich habe einen Fehler in der Logik behoben, der dazu führte, dass die falsche Antwort nicht korrekt angezeigt wurde.
+- **src/app/page.tsx**: Der `fetch`-Aufruf für die Passkey-Authentifizierung wurde korrigiert, um eine leere Anfrage zu senden, wenn kein Benutzername eingegeben wurde.
 
-    const { verified, authenticationInfo } = verification;
-    
-    if (verified) {
-        // 5. If successful, update the counter and create a custom token
-        await authenticatorDoc.ref.update({
-            counter: authenticationInfo.newCounter,
-        });
+Diese Änderungen implementieren die vollständige Passkey-Funktionalität und beheben gleichzeitig einige kleinere Fehler in den Lernkomponenten.
 
-        // Delete the used challenge
-        await challengeDoc.ref.delete();
+### Wie Sie den Passkey-Login testen können:
 
-        const customToken = await authAdmin.createCustomToken(userId);
+1.  **Registrierung (am besten auf einem iPhone/Mac):**
+    *   Öffnen Sie Ihre App auf `vocaro-vocab.vercel.app`.
+    *   Gehen Sie zur Registrierungsseite (`/signup`).
+    *   Geben Sie einen neuen Benutzernamen ein.
+    *   Klicken Sie auf **"Mit Passkey registrieren"**.
+    *   Ihr Gerät sollte Sie nun fragen, ob Sie einen Passkey für "Vocaro" speichern möchten (z.B. mit Face ID oder Touch ID). Bestätigen Sie dies.
+    *   Nach der erfolgreichen Registrierung sollten Sie direkt zum Dashboard weitergeleitet werden.
 
-        return NextResponse.json({ verified: true, customToken });
-    }
+2.  **Login:**
+    *   Melden Sie sich ab. Sie gelangen wieder zur Login-Seite (`/`).
+    *   Klicken Sie auf **"Mit Passkey anmelden"** (lassen Sie das Benutzernamen-Feld leer).
+    *   Ihr Gerät sollte nun die gespeicherten Passkeys für `vocaro-vocab.vercel.app` anzeigen. Wählen Sie den eben erstellten Passkey aus.
+    *   Authentifizieren Sie sich mit Face ID / Touch ID.
+    *   Sie sollten nun erfolgreich eingeloggt sein und zum Dashboard gelangen.
 
-    // If verification failed for any other reason
-    return NextResponse.json({ verified: false, error: 'Die Passkey-Verifizierung ist fehlgeschlagen.' }, { status: 400 });
-}
+Das sollte den kompletten Flow abdecken! Lassen Sie mich wissen, falls Sie auf Probleme stoßen.
