@@ -115,16 +115,23 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-background">
-      <header className="absolute top-4 z-10 w-full px-4 md:px-6">
-          <div className="flex justify-start">
-              {mounted && (
-                <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                  {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                </Button>
-              )}
-          </div>
+      <header className="sticky top-4 z-30 flex justify-between items-center h-20 px-4 md:px-6 m-2 md:m-4 rounded-full glass-effect shadow-md w-[calc(100%-2rem)] md:w-[calc(100%-4rem)] max-w-7xl">
+        <div className="flex-1">
+          {mounted && (
+            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+          )}
+        </div>
+        <div className="flex-1 text-center">
+          <Logo className="text-3xl" />
+        </div>
+        <div className="flex-1 flex justify-end">
+          {/* Placeholder for layout consistency */}
+        </div>
       </header>
-      <main className="w-full max-w-sm px-4">
+
+      <main className="w-full max-w-sm px-4 flex-grow flex items-center">
         <Card className="mx-auto w-full shadow-lg">
           <CardHeader className="text-center">
             <Logo className="mx-auto mb-4 text-3xl" />
