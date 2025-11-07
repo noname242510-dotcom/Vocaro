@@ -246,7 +246,18 @@ export default function VerbPracticePage() {
     const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted').length;
     const progress = totalItemCount > 0 ? (correctAnswersCount / totalItemCount) * 100 : 0;
 
+    const saveToHistory = () => {
+        setHistory(prev => [...prev, { practiceItems, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
+    };
+    
     const handleGoBack = () => {
+        if (isFlipped) {
+            setIsFlipped(false);
+            setUserInput('');
+            setAnswerStatus('unanswered');
+            return;
+        }
+
         if (history.length > 0) {
           const lastState = history[history.length - 1];
           setPracticeItems(lastState.practiceItems);
@@ -306,7 +317,7 @@ export default function VerbPracticePage() {
     const handleClassicAnswer = (knewIt: boolean) => {
         if (!isFlipped || isExiting) return;
 
-        setHistory(prev => [...prev, { practiceItems, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
+        saveToHistory();
     
         const currentCard = practiceItems[currentIndex];
 
@@ -331,7 +342,12 @@ export default function VerbPracticePage() {
         }, 500); // Duration matches animation
     };
     
-      const handleCheckAnswer = () => {
+    const handleFlipCard = () => {
+        saveToHistory();
+        setIsFlipped(true);
+    };
+
+    const handleCheckAnswer = () => {
         if (isFlipped) {
           const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
           setIsExiting(true);
@@ -343,7 +359,7 @@ export default function VerbPracticePage() {
           return;
         }
 
-        setHistory(prev => [...prev, { practiceItems, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
+        saveToHistory();
         setIsFlipped(true);
 
         const currentCard = practiceItems[currentIndex];
@@ -565,9 +581,9 @@ export default function VerbPracticePage() {
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                                 {isTypedMode && answerStatus === 'incorrect' ? (
-                                    <div className="flex flex-col items-center justify-center">
+                                    <div className="flex flex-col items-center justify-center text-center">
                                     <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
-                                    <p className="text-4xl font-bold text-center mt-4">{currentCard.back}</p>
+                                    <p className="text-4xl font-bold mt-4">{currentCard.back}</p>
                                     <div className="mt-4">
                                         <FeedbackIcon status={answerStatus} />
                                     </div>
@@ -616,7 +632,7 @@ export default function VerbPracticePage() {
                             <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
                             </div>
                         ) : (
-                            <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+                            <Button size="lg" className="w-full" onClick={handleFlipCard}>Umdrehen</Button>
                         )}
                     </div>
                     <div

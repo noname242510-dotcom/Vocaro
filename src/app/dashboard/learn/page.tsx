@@ -215,7 +215,18 @@ export default function LearnPage() {
   const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted').length;
   const progress = totalVocabCount > 0 ? (correctAnswersCount / totalVocabCount) * 100 : 0;
 
+  const saveToHistory = () => {
+    setHistory(prev => [...prev, { vocabulary, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
+  };
+
   const handleGoBack = () => {
+    if (isFlipped) {
+        setIsFlipped(false);
+        setUserInput('');
+        setAnswerStatus('unanswered');
+        return;
+    }
+
     if (history.length > 0) {
       const lastState = history[history.length - 1];
       setVocabulary(lastState.vocabulary);
@@ -261,7 +272,7 @@ export default function LearnPage() {
   const handleClassicAnswer = (knewIt: boolean) => {
     if (!isFlipped || isExiting) return;
 
-    setHistory(prev => [...prev, { vocabulary, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
+    saveToHistory();
 
     const currentCard = vocabulary[currentIndex];
     
@@ -286,6 +297,11 @@ export default function LearnPage() {
     }, 500); // Duration matches animation
   };
 
+  const handleFlipCard = () => {
+    saveToHistory();
+    setIsFlipped(true);
+  };
+
   const handleCheckAnswer = () => {
     if (isFlipped) {
       const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
@@ -298,7 +314,7 @@ export default function LearnPage() {
       return;
     }
 
-    setHistory(prev => [...prev, { vocabulary, currentIndex, incorrectlyAnsweredIds, answeredIds, userInput }]);
+    saveToHistory();
     setIsFlipped(true);
 
     const currentCard = vocabulary[currentIndex];
@@ -511,9 +527,9 @@ export default function LearnPage() {
                 </div>
                 <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                     {isTypedMode && answerStatus === 'incorrect' ? (
-                        <div className="flex flex-col items-center justify-center">
+                        <div className="flex flex-col items-center justify-center text-center">
                            <DiffHighlight userInput={userInput} correctAnswer={expectedAnswer} />
-                           <p className="text-4xl font-bold text-center mt-4">{expectedAnswer}</p>
+                           <p className="text-4xl font-bold mt-4">{expectedAnswer}</p>
                            <div className="mt-4">
                                <FeedbackIcon status={answerStatus} />
                            </div>
@@ -590,7 +606,7 @@ export default function LearnPage() {
                         <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
                     </div>
                 ) : (
-                    <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+                    <Button size="lg" className="w-full" onClick={handleFlipCard}>Umdrehen</Button>
                 )}
             </div>
             <div
