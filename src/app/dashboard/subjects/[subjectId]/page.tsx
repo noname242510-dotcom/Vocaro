@@ -6,7 +6,7 @@ import { useState, useMemo, ChangeEvent, useEffect, useRef, useContext } from 'r
 import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import {
-  MoreVertical,
+  MoreHorizontal,
   Plus,
   Upload,
   Pen,
@@ -30,6 +30,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
@@ -762,8 +763,24 @@ export default function SubjectDetailPage() {
             </AlertDialog>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-            
+        <div className="md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setIsRenameDialogOpen(true)}>
+                <Pen className="mr-2 h-4 w-4" />
+                <span>Umbenennen</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span>Löschen</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
