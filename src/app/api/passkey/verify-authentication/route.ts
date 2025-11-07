@@ -68,27 +68,27 @@ export async function POST(request: NextRequest) {
             },
             requireUserVerification: true,
         });
-    } catch (error: any) Zod-Schema, und der Typ `any` in `z.infer` zu `z.ZodAny`.
-- **src/app/dashboard/learn/verbs/page.tsx**: Ich habe einen Fehler in der Logik behoben, der dazu führte, dass die falsche Antwort nicht korrekt angezeigt wurde.
-- **src/app/page.tsx**: Der `fetch`-Aufruf für die Passkey-Authentifizierung wurde korrigiert, um eine leere Anfrage zu senden, wenn kein Benutzername eingegeben wurde.
+    } catch (error: any) {
+        console.error("verifyAuthenticationResponse error:", error);
+        return NextResponse.json({ error: `Verifizierung fehlgeschlagen: ${error.message}` }, { status: 400 });
+    }
 
-Diese Änderungen implementieren die vollständige Passkey-Funktionalität und beheben gleichzeitig einige kleinere Fehler in den Lernkomponenten.
+    const { verified, authenticationInfo } = verification;
 
-### Wie Sie den Passkey-Login testen können:
+    if (verified) {
+        // 5. Update den Zähler des Authenticators
+        await authenticatorDoc.ref.update({
+            counter: authenticationInfo.newCounter,
+        });
+        
+        // Lösche die verbrauchte Challenge
+        await challengeDoc.ref.delete();
 
-1.  **Registrierung (am besten auf einem iPhone/Mac):**
-    *   Öffnen Sie Ihre App auf `vocaro-vocab.vercel.app`.
-    *   Gehen Sie zur Registrierungsseite (`/signup`).
-    *   Geben Sie einen neuen Benutzernamen ein.
-    *   Klicken Sie auf **"Mit Passkey registrieren"**.
-    *   Ihr Gerät sollte Sie nun fragen, ob Sie einen Passkey für "Vocaro" speichern möchten (z.B. mit Face ID oder Touch ID). Bestätigen Sie dies.
-    *   Nach der erfolgreichen Registrierung sollten Sie direkt zum Dashboard weitergeleitet werden.
+        // 6. Erstelle Custom Token für den Login
+        const customToken = await authAdmin.createCustomToken(userId);
 
-2.  **Login:**
-    *   Melden Sie sich ab. Sie gelangen wieder zur Login-Seite (`/`).
-    *   Klicken Sie auf **"Mit Passkey anmelden"** (lassen Sie das Benutzernamen-Feld leer).
-    *   Ihr Gerät sollte nun die gespeicherten Passkeys für `vocaro-vocab.vercel.app` anzeigen. Wählen Sie den eben erstellten Passkey aus.
-    *   Authentifizieren Sie sich mit Face ID / Touch ID.
-    *   Sie sollten nun erfolgreich eingeloggt sein und zum Dashboard gelangen.
+        return NextResponse.json({ verified: true, customToken });
+    }
 
-Das sollte den kompletten Flow abdecken! Lassen Sie mich wissen, falls Sie auf Probleme stoßen.
+    return NextResponse.json({ verified: false, error: 'Unbekannter Verifizierungsfehler.' }, { status: 400 });
+}

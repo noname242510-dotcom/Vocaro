@@ -50,3 +50,6 @@ export async function GET(request: NextRequest) {
         // Wir speichern keinen Benutzernamen, da wir ihn beim "discoverable" Flow noch nicht kennen.
         expires: Date.now() + 5 * 60 * 1000 // 5 Minuten Gültigkeit
     });
+
+    return NextResponse.json({ ...options, challengeId });
+}
