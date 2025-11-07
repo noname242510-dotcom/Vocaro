@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuth, signInWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Fingerprint } from 'lucide-react';
+import { Eye, EyeOff, Fingerprint, Sun, Moon } from 'lucide-react';
 import { startAuthentication } from '@simplewebauthn/browser';
 
 export default function LoginPage() {
@@ -20,6 +20,20 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
+
+  const toggleTheme = () => {
+    document.documentElement.classList.toggle('dark');
+    setIsDarkMode(!isDarkMode);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +115,15 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-background">
+      <header className="absolute top-4 z-10 w-full px-4 md:px-6">
+          <div className="flex justify-start">
+              {mounted && (
+                <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                  {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                </Button>
+              )}
+          </div>
+      </header>
       <main className="w-full max-w-sm px-4">
         <Card className="mx-auto w-full shadow-lg">
           <CardHeader className="text-center">
