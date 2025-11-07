@@ -709,7 +709,10 @@ export default function SubjectDetailPage() {
           </Button>
           <span className="text-3xl md:text-4xl">{subject.emoji}</span>
           <h1 className="text-xl md:text-2xl font-bold font-headline truncate">{subject.name}</h1>
-          <div className="hidden md:flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        </div>
+        <div className="flex items-center">
+          {/* Desktop buttons */}
+          <div className="hidden md:flex items-center gap-2">
             <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
@@ -762,25 +765,26 @@ export default function SubjectDetailPage() {
               </AlertDialogContent>
             </AlertDialog>
           </div>
-        </div>
-        <div className="md:hidden">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsRenameDialogOpen(true)}>
-                <Pen className="mr-2 h-4 w-4" />
-                <span>Umbenennen</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
-                <span>Löschen</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Mobile dropdown */}
+          <div className="md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setIsRenameDialogOpen(true)}>
+                  <Pen className="mr-2 h-4 w-4" />
+                  <span>Umbenennen</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Löschen</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
@@ -1090,3 +1094,4 @@ export default function SubjectDetailPage() {
     
 
     
+
