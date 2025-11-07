@@ -161,7 +161,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                 }}>
                     <Pen className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsDeleteDialogOpen(true)}>
                     <Trash2 className="h-4 w-4" />
                 </Button>
             </div>
