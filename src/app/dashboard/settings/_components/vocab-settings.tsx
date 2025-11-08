@@ -8,18 +8,19 @@ import { SectionShell } from './section-shell';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export function VocabSettings() {
-  const [queryDirectionOverview, setQueryDirectionOverview] = useState(false);
+  const [queryDirectionOverview, setQueryDirectionOverview] = useState('term'); // 'term' or 'definition'
   const [queryDirectionFlashcards, setQueryDirectionFlashcards] = useState(false);
   const [showVocabHints, setShowVocabHints] = useState(true);
 
   useEffect(() => {
-    // false: term -> definition (Fremdwort -> Deutsch)
-    // true: definition -> term (Deutsch -> Fremdwort)
-    const persistedQueryDirectionOverview = localStorage.getItem('query-direction-overview') === 'true';
+    // 'term' (Fremdwort) or 'definition' (Deutsch)
+    const persistedQueryDirectionOverview = localStorage.getItem('query-direction-overview') || 'term';
     setQueryDirectionOverview(persistedQueryDirectionOverview);
     
+    // false: term -> definition, true: definition -> term
     const persistedQueryDirectionFlashcards = localStorage.getItem('query-direction-flashcards') === 'true';
     setQueryDirectionFlashcards(persistedQueryDirectionFlashcards);
 
@@ -27,9 +28,10 @@ export function VocabSettings() {
     setShowVocabHints(persistedShowVocabHints === null ? true : persistedShowVocabHints === 'true');
   }, []);
 
-  const handleQueryDirectionOverviewChange = (checked: boolean) => {
-    setQueryDirectionOverview(checked);
-    localStorage.setItem('query-direction-overview', String(checked));
+  const handleQueryDirectionOverviewChange = (value: string) => {
+    setQueryDirectionOverview(value);
+    // 'term' = false, 'definition' = true for legacy compatibility
+    localStorage.setItem('query-direction-overview', String(value === 'definition'));
   };
   
   const handleQueryDirectionFlashcardsChange = (checked: boolean) => {
@@ -53,13 +55,20 @@ export function VocabSettings() {
                 Welches Wort in der Vokabelliste vorne steht.
               </span>
             </Label>
-            <div className="flex items-center gap-2">
-               <span className="text-sm font-medium text-muted-foreground">Fremdwort</span>
-               <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={() => handleQueryDirectionOverviewChange(!queryDirectionOverview)}>
-                  <ArrowRight className={cn("h-4 w-4 transition-transform duration-300", queryDirectionOverview && "rotate-180")} />
-                </Button>
-               <span className="text-sm font-medium text-muted-foreground">Deutsch</span>
-            </div>
+            <RadioGroup 
+              defaultValue={queryDirectionOverview} 
+              onValueChange={handleQueryDirectionOverviewChange}
+              className="flex gap-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="term" id="r-term" />
+                <Label htmlFor="r-term" className="font-normal">Fremdwort</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="definition" id="r-definition" />
+                <Label htmlFor="r-definition" className="font-normal">Deutsch</Label>
+              </div>
+            </RadioGroup>
           </div>
           <div className="flex items-center justify-between space-x-2">
             <Label htmlFor="query-direction-flashcards" className="flex flex-col space-y-1">
