@@ -18,7 +18,7 @@ export default function SettingsPage() {
     const searchParams = useSearchParams();
     const sectionParam = searchParams.get('section');
 
-    const [mobileSection, setMobileSection] = useState<string | null>(sectionParam);
+    const [mobileSection, setMobileSection] = useState<string | null>(null);
 
     const activeSection = isMobile ? mobileSection : (sectionParam || 'profile');
 
@@ -47,7 +47,7 @@ export default function SettingsPage() {
         }
     };
 
-    if (isMobile && activeSection && activeSection !== 'main') {
+    if (isMobile && activeSection && !searchParams.get('section')) {
         return (
             <SettingsLayout
                 menu={<div />} // Menu is not shown on mobile detail view

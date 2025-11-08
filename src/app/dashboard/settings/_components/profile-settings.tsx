@@ -1,14 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFirebase } from '@/firebase';
-import { getAuth, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from 'firebase/auth';
+import { updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pencil, Eye, EyeOff, Check, X } from 'lucide-react';
+import { Pencil, Check, X, Loader2 } from 'lucide-react';
 import { SectionShell } from './section-shell';
 import {
     Dialog,
@@ -20,6 +20,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import Image from 'next/image';
+import { PasswordDialog } from './password-dialog';
 
 const presetAvatars = [
     '/avatars/avatar-1.svg',
@@ -37,58 +38,60 @@ export function ProfileSettings() {
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState(user?.displayName || '');
   
-  const [isEditingPassword, setIsEditingPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  
-  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
+
+  useEffect(() => {
+    if (user) {
+      setNewUsername(user.displayName || '');
+    }
+  }, [user]);
 
   const getInitials = (name: string | null | undefined) => {
     return name ? name.charAt(0).toUpperCase() : 'U';
   };
 
-  const handleUsernameChange = async () => {
+  const handleUsernameChange = async (password: string) => {
     if (!user || !newUsername.trim() || newUsername.trim() === user.displayName) {
       setIsEditingUsername(false);
       return;
     }
 
+    setIsUpdating(true);
+
     try {
-      await updateProfile(user, { displayName: newUsername.trim() });
-      toast({ title: "Erfolg", description: "Benutzername aktualisiert." });
-      setIsEditingUsername(false);
+        const token = await user.getIdToken();
+        const response = await fetch('/api/user/update-username', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ newUsername: newUsername.trim(), password })
+        });
+        
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Ein Fehler ist aufgetreten.');
+        }
+
+        // Manually update the displayName on the client-side user object
+        // as the change might not propagate instantly.
+        await updateProfile(user, { displayName: newUsername.trim() });
+        
+        toast({ title: "Erfolg", description: "Benutzername erfolgreich aktualisiert." });
+        setIsEditingUsername(false);
+        setIsPasswordDialogOpen(false);
+
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Fehler", description: "Benutzername konnte nicht geändert werden." });
+      toast({ variant: "destructive", title: "Fehler", description: error.message || "Benutzername konnte nicht geändert werden." });
+    } finally {
+        setIsUpdating(false);
     }
   };
 
-  const handlePasswordChange = async () => {
-    if (!user || !user.email || !currentPassword || !newPassword) {
-      toast({ variant: "destructive", title: "Fehler", description: "Bitte fülle alle Felder aus." });
-      return;
-    }
-  
-    try {
-      const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, newPassword);
-      
-      toast({ title: "Erfolg", description: "Passwort erfolgreich geändert." });
-      setIsEditingPassword(false);
-      setCurrentPassword('');
-      setNewPassword('');
-    } catch (error: any) {
-      let message = "Ein Fehler ist aufgetreten.";
-      if(error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        message = "Das aktuelle Passwort ist falsch."
-      } else if (error.code === 'auth/weak-password') {
-        message = "Das neue Passwort ist zu schwach."
-      }
-      toast({ variant: "destructive", title: "Passwortänderung fehlgeschlagen", description: message });
-    }
-  };
 
   const handleAvatarSelect = async (avatarUrl: string) => {
     if (!user) return;
@@ -100,6 +103,8 @@ export function ProfileSettings() {
         toast({ variant: "destructive", title: "Fehler", description: "Profilbild konnte nicht geändert werden." });
     }
   };
+  
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
 
 
   return (
@@ -109,7 +114,6 @@ export function ProfileSettings() {
                 <>
                     <Skeleton className="h-24 w-24 rounded-full" />
                     <Skeleton className="h-8 w-[200px]" />
-                    <Skeleton className="h-10 w-[250px]" />
                 </>
             ) : user ? (
             <>
@@ -152,32 +156,26 @@ export function ProfileSettings() {
                   </>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Input value={newUsername} onChange={e => setNewUsername(e.target.value)} className="text-lg h-10" autoFocus onKeyDown={e => e.key === 'Enter' && handleUsernameChange()} />
-                    <Button variant="ghost" size="icon" onClick={handleUsernameChange}><Check className="h-5 w-5"/></Button>
+                    <Input 
+                        value={newUsername} 
+                        onChange={e => setNewUsername(e.target.value)} 
+                        className="text-lg h-10" 
+                        autoFocus 
+                        onKeyDown={e => e.key === 'Enter' && setIsPasswordDialogOpen(true)}
+                    />
+                    <Button variant="ghost" size="icon" onClick={() => setIsPasswordDialogOpen(true)} disabled={newUsername.trim() === user.displayName || !newUsername.trim()}><Check className="h-5 w-5"/></Button>
                     <Button variant="ghost" size="icon" onClick={() => setIsEditingUsername(false)}><X className="h-5 w-5"/></Button>
                   </div>
                 )}
               </div>
-
-              <div className="flex items-center gap-2">
-                 {!isEditingPassword ? (
-                    <>
-                        <span className="text-muted-foreground">Passwort: ••••••••</span>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsEditingPassword(true)}>
-                            <Pencil className="h-4 w-4" />
-                        </Button>
-                    </>
-                 ) : (
-                    <div className="flex flex-col gap-2 items-center">
-                        <Input type="password" placeholder="Aktuelles Passwort" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="h-9"/>
-                        <Input type="password" placeholder="Neues Passwort" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="h-9"/>
-                        <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" onClick={handlePasswordChange}>Speichern</Button>
-                            <Button variant="ghost" size="sm" onClick={() => setIsEditingPassword(false)}>Abbrechen</Button>
-                        </div>
-                    </div>
-                 )}
-              </div>
+                <PasswordDialog
+                    isOpen={isPasswordDialogOpen}
+                    onOpenChange={setIsPasswordDialogOpen}
+                    onConfirm={handleUsernameChange}
+                    isUpdating={isUpdating}
+                    title="Benutzernamen ändern"
+                    description="Bitte gib dein aktuelles Passwort ein, um die Änderung zu bestätigen."
+                />
             </>
           ) : null}
         </div>
