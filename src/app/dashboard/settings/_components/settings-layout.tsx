@@ -27,7 +27,7 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
     // Show detail view
     return (
       <div>
-        <div className="flex items-center mb-4">
+        <div className="flex items-center mb-4 -ml-2">
           <Button variant="ghost" size="icon" onClick={onMobileBack} className="mr-2">
             <ArrowLeft className="h-5 w-5" />
           </Button>

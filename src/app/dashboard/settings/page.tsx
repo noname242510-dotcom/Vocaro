@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SettingsLayout } from './_components/settings-layout';
 import { SettingsMenu } from './_components/settings-menu';
@@ -13,16 +13,12 @@ import { LanguageSettings } from './_components/language-settings';
 import { AccountSettings } from './_components/account-settings';
 
 export default function SettingsPage() {
-  const isMobile = useIsMobile();
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const sectionParam = searchParams.get('section');
-
+  
   const [activeSection, setActiveSection] = useState<string | null>(sectionParam || 'profile');
-
-  // Sync state with URL changes (e.g., browser back/forward)
-  useEffect(() => {
-    setActiveSection(sectionParam || (isMobile ? activeSection : 'profile'));
-  }, [sectionParam, isMobile]);
 
   const renderSection = () => {
     switch (activeSection) {
@@ -39,16 +35,21 @@ export default function SettingsPage() {
       case 'account':
         return <AccountSettings />;
       default:
-        return null;
+        // On desktop, if no section is active (e.g. from a bad URL), default to profile
+        return <ProfileSettings />;
     }
   };
 
   const handleMenuSelect = (section: string) => {
     setActiveSection(section);
+    const params = new URLSearchParams(searchParams);
+    params.set('section', section);
+    router.replace(`${pathname}?${params.toString()}`);
   };
   
   const handleMobileBack = () => {
     setActiveSection(null);
+    router.replace(pathname);
   };
 
   return (
