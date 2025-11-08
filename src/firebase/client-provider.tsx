@@ -25,6 +25,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
 
   if (!firebaseServices) {
     // You can render a loading spinner or null here
+    // Crucially, we don't render children until services are ready.
     return null; 
   }
 
