@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { SectionShell } from './section-shell';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeftRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function VerbSettings() {
@@ -43,13 +43,11 @@ export function VerbSettings() {
               </span>
             </Label>
             <div className="flex items-center gap-2">
-              <span className={cn("text-sm text-center transition-colors w-20", !queryDirectionVerbs ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsch → Fremdwort</span>
-              <Switch
-                id="query-direction-verbs"
-                checked={queryDirectionVerbs}
-                onCheckedChange={handleQueryDirectionVerbsChange}
-              />
-              <span className={cn("text-sm text-center transition-colors w-20", queryDirectionVerbs ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort → Deutsch</span>
+              <span className={cn("text-sm text-center transition-colors w-20", !queryDirectionVerbs ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsch</span>
+               <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={() => handleQueryDirectionVerbsChange(!queryDirectionVerbs)}>
+                  <ArrowLeftRight className="h-4 w-4" />
+                </Button>
+              <span className={cn("text-sm text-center transition-colors w-20", queryDirectionVerbs ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort</span>
             </div>
           </div>
           <div className="flex items-center justify-between space-x-2">
