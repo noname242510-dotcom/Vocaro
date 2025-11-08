@@ -19,14 +19,27 @@ function SettingsComponent() {
   const sectionParam = searchParams.get('section');
   const isMobile = useIsMobile();
   
-  // On mobile, if a section is in the URL, show it. Otherwise, show the menu.
-  // On desktop, always show a section, defaulting to 'profile'.
-  const [activeSection, setActiveSection] = useState<string | null>(
-    isMobile ? (sectionParam || null) : (sectionParam || 'profile')
-  );
+  const [activeSection, setActiveSection] = useState<string | null>(sectionParam);
+
+  const handleMenuSelect = (section: string) => {
+    setActiveSection(section);
+    // For mobile, the layout will change. For desktop, we update the URL.
+    if (!isMobile) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('section', section);
+      router.replace(`${pathname}?${params.toString()}`);
+    }
+  };
+  
+  const handleMobileBack = () => {
+    setActiveSection(null);
+  };
 
   const renderSection = () => {
+    // On desktop, the active section is controlled by URL param.
+    // On mobile, it's controlled by local state 'activeSection'.
     const sectionToRender = isMobile ? activeSection : (sectionParam || 'profile');
+    
     switch (sectionToRender) {
       case 'profile':
         return <ProfileSettings />;
@@ -41,30 +54,20 @@ function SettingsComponent() {
       case 'account':
         return <AccountSettings />;
       default:
-        // On mobile, if no section is active, we show the menu, so this case shouldn't be hit for content.
-        // On desktop, default to profile.
+        // On desktop, default to profile if param is invalid
         if (!isMobile) return <ProfileSettings />;
+        // On mobile, this will result in the menu being shown, which is correct.
         return null;
     }
   };
-
-  const handleMenuSelect = (section: string) => {
-    setActiveSection(section);
-    // Always update URL for consistent state, which is important for desktop and for mobile reloads.
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('section', section);
-    router.replace(`${pathname}?${params.toString()}`);
-  };
   
-  const handleMobileBack = () => {
-    setActiveSection(null);
-    router.replace(pathname); // Go back to the base settings URL, showing the menu
-  };
+  // On mobile, if a section is selected, we are in a 'detail' view.
+  const showMenuOnMobile = isMobile && !activeSection;
 
   return (
     <SettingsLayout
       menu={<SettingsMenu onSelect={handleMenuSelect} />}
-      showMenuOnMobile={isMobile && !activeSection} 
+      showMenuOnMobile={showMenuOnMobile} 
       onMobileBack={handleMobileBack}
     >
       {renderSection()}
