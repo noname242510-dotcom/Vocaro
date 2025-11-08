@@ -17,21 +17,21 @@ function SettingsComponent() {
   const searchParams = useSearchParams();
   const section = searchParams.get('section') || 'profile';
   
+  // This state now only controls the view on mobile.
   const [mobileActiveSection, setMobileActiveSection] = useState<string | null>(null);
 
   const handleMenuSelect = (selectedSection: string) => {
+    // Show the detail view on mobile
     setMobileActiveSection(selectedSection);
+    // Update the URL so it's consistent
     const params = new URLSearchParams(searchParams.toString());
     params.set('section', selectedSection);
     router.replace(`${pathname}?${params.toString()}`);
   };
 
   const handleMobileBack = () => {
+    // Go back to the menu view on mobile
     setMobileActiveSection(null);
-    const params = new URLSearchParams(searchParams.toString());
-    // We don't remove the section from the URL, so back/forward still works.
-    // The view will just go back to the menu.
-    router.replace(`${pathname}?${params.toString()}`);
   };
 
   const renderSection = () => {
