@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { SettingsLayout } from './_components/settings-layout';
 import { SettingsMenu } from './_components/settings-menu';
@@ -15,29 +15,27 @@ function SettingsComponent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const section = searchParams.get('section') || 'profile';
   
-  // This state now only controls the view on mobile.
-  // It is derived from the URL search param. A null value means the menu is shown.
-  const mobileActiveSection = searchParams.get('section');
-
+  // Directly get the section from URL, default to 'profile'. This is the single source of truth.
+  const section = searchParams.get('section');
+  const activeSection = section || 'profile';
 
   const handleMenuSelect = (selectedSection: string) => {
-    // Show the detail view on mobile by updating the URL
+    // On mobile, this will navigate to the detail view. On desktop, it just updates the URL.
     const params = new URLSearchParams(searchParams.toString());
     params.set('section', selectedSection);
     router.replace(`${pathname}?${params.toString()}`);
   };
 
   const handleMobileBack = () => {
-    // Go back to the menu view on mobile by removing the 'section' param
+    // Go back to the menu view on mobile by removing the 'section' param from the URL.
     const params = new URLSearchParams(searchParams.toString());
     params.delete('section');
     router.replace(`${pathname}?${params.toString()}`);
   };
 
   const renderSection = () => {
-    switch (section) {
+    switch (activeSection) {
       case 'profile':
         return <ProfileSettings />;
       case 'appearance':
@@ -51,6 +49,7 @@ function SettingsComponent() {
       case 'account':
         return <AccountSettings />;
       default:
+        // Fallback to profile section if the URL param is invalid
         return <ProfileSettings />;
     }
   };
@@ -58,7 +57,8 @@ function SettingsComponent() {
   return (
     <SettingsLayout
       menu={<SettingsMenu onSelect={handleMenuSelect} />}
-      showMenuOnMobile={!mobileActiveSection} 
+      // On mobile, the menu is shown only if there is NO section parameter in the URL.
+      showMenuOnMobile={!section} 
       onMobileBack={handleMobileBack}
     >
       {renderSection()}

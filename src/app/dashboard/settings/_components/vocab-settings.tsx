@@ -17,8 +17,13 @@ export function VocabSettings() {
 
   useEffect(() => {
     // 'term' (Fremdwort) or 'definition' (Deutsch)
-    const persistedQueryDirectionOverview = localStorage.getItem('query-direction-overview') || 'term';
-    setQueryDirectionOverview(persistedQueryDirectionOverview);
+    const persistedQueryDirectionOverview = localStorage.getItem('query-direction-overview');
+    // Ensure that the value is either 'term' or 'definition', default to 'term'
+    if (persistedQueryDirectionOverview === 'definition') {
+        setQueryDirectionOverview('definition');
+    } else {
+        setQueryDirectionOverview('term');
+    }
     
     // false: term -> definition, true: definition -> term
     const persistedQueryDirectionFlashcards = localStorage.getItem('query-direction-flashcards') === 'true';
@@ -30,8 +35,7 @@ export function VocabSettings() {
 
   const handleQueryDirectionOverviewChange = (value: string) => {
     setQueryDirectionOverview(value);
-    // 'term' = false, 'definition' = true for legacy compatibility
-    localStorage.setItem('query-direction-overview', String(value === 'definition'));
+    localStorage.setItem('query-direction-overview', value);
   };
   
   const handleQueryDirectionFlashcardsChange = (checked: boolean) => {
@@ -56,7 +60,7 @@ export function VocabSettings() {
               </span>
             </Label>
             <RadioGroup 
-              defaultValue={queryDirectionOverview} 
+              value={queryDirectionOverview} 
               onValueChange={handleQueryDirectionOverviewChange}
               className="flex gap-4"
             >

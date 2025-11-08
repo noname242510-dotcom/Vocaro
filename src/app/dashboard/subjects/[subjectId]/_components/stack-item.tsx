@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -60,14 +58,26 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [newStackName, setNewStackName] = useState(stack.name);
-  const [isTermFirst, setIsTermFirst] = useState(true);
+  const [displayTermFirst, setDisplayTermFirst] = useState(true);
   
   const { toast } = useToast();
   
   useEffect(() => {
-    // query-direction-overview: false = German word first, true = foreign term first
-    const setting = localStorage.getItem('query-direction-overview') === 'true';
-    setIsTermFirst(setting);
+    // 'term' or 'definition'
+    const setting = localStorage.getItem('query-direction-overview');
+    setDisplayTermFirst(setting !== 'definition');
+    
+    // Add a listener for storage changes to update dynamically
+    const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === 'query-direction-overview') {
+            setDisplayTermFirst(event.newValue !== 'definition');
+        }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const allVisibleInStackSelected = vocabulary.length > 0 && vocabulary.every(v => v.isSelected);
@@ -215,8 +225,8 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                       onCheckedChange={(checked) => onSelectionChange(item.id, Boolean(checked))}
                   />
                   <label htmlFor={`vocab-${item.id}`} className="flex-1 grid grid-cols-2 items-center gap-4 cursor-pointer">
-                    <span className="font-medium break-words hyphens-auto">{isTermFirst ? item.term : item.definition}</span>
-                    <span className="text-muted-foreground break-words hyphens-auto">{isTermFirst ? item.definition : item.term}</span>
+                    <span className="font-medium break-words hyphens-auto">{displayTermFirst ? item.term : item.definition}</span>
+                    <span className="text-muted-foreground break-words hyphens-auto">{displayTermFirst ? item.definition : item.term}</span>
                   </label>
                 </Card>
               ))
