@@ -16,20 +16,15 @@ function SettingsComponent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   
-  // Directly get the section from URL. This is the single source of truth.
-  const section = searchParams.get('section');
-  const activeSection = section; // Can be null if not present
+  const activeSection = searchParams.get('section');
 
   const handleMenuSelect = (selectedSection: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('section', selectedSection);
-    // On mobile, selecting a menu item should always show the content.
-    // On desktop, it just updates the URL.
     router.replace(`${pathname}?${params.toString()}`);
   };
 
   const handleMobileBack = () => {
-    // Go back to menu view by removing the 'section' param
     const params = new URLSearchParams(searchParams.toString());
     params.delete('section');
     router.replace(`${pathname}?${params.toString()}`);
@@ -56,8 +51,6 @@ function SettingsComponent() {
   return (
     <SettingsLayout
       menu={<SettingsMenu onSelect={handleMenuSelect} />}
-      // On mobile, show the menu ONLY if there's no section in the URL.
-      // Otherwise, show the content of the active section.
       showMenuOnMobile={!activeSection} 
       onMobileBack={handleMobileBack}
     >

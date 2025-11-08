@@ -4,8 +4,6 @@ import React, { ReactNode } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { ProfileSettings } from './profile-settings';
-
 
 interface SettingsLayoutProps {
   menu: ReactNode;
