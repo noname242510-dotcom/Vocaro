@@ -18,20 +18,22 @@ function SettingsComponent() {
   const section = searchParams.get('section') || 'profile';
   
   // This state now only controls the view on mobile.
-  const [mobileActiveSection, setMobileActiveSection] = useState<string | null>(null);
+  // It is derived from the URL search param. A null value means the menu is shown.
+  const mobileActiveSection = searchParams.get('section');
+
 
   const handleMenuSelect = (selectedSection: string) => {
-    // Show the detail view on mobile
-    setMobileActiveSection(selectedSection);
-    // Update the URL so it's consistent
+    // Show the detail view on mobile by updating the URL
     const params = new URLSearchParams(searchParams.toString());
     params.set('section', selectedSection);
     router.replace(`${pathname}?${params.toString()}`);
   };
 
   const handleMobileBack = () => {
-    // Go back to the menu view on mobile
-    setMobileActiveSection(null);
+    // Go back to the menu view on mobile by removing the 'section' param
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('section');
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
   const renderSection = () => {
