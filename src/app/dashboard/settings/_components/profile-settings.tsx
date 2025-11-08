@@ -64,7 +64,7 @@ export function ProfileSettings() {
     setUsernameError(null);
 
     try {
-        const token = await user.getIdToken();
+        const token = await user.getIdToken(true); // Force refresh the token
         const response = await fetch('/api/user/update-username', {
             method: 'POST',
             headers: {
