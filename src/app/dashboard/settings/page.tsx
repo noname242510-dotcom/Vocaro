@@ -21,14 +21,12 @@ function SettingsComponent() {
   const activeSection = section || 'profile';
 
   const handleMenuSelect = (selectedSection: string) => {
-    // On mobile, this will navigate to the detail view. On desktop, it just updates the URL.
     const params = new URLSearchParams(searchParams.toString());
     params.set('section', selectedSection);
     router.replace(`${pathname}?${params.toString()}`);
   };
 
   const handleMobileBack = () => {
-    // Go back to the menu view on mobile by removing the 'section' param from the URL.
     const params = new URLSearchParams(searchParams.toString());
     params.delete('section');
     router.replace(`${pathname}?${params.toString()}`);
