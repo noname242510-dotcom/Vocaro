@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SettingsLayout } from './_components/settings-layout';
@@ -12,7 +12,7 @@ import { VerbSettings } from './_components/verb-settings';
 import { LanguageSettings } from './_components/language-settings';
 import { AccountSettings } from './_components/account-settings';
 
-export default function SettingsPage() {
+function SettingsComponent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -26,7 +26,7 @@ export default function SettingsPage() {
   );
 
   const renderSection = () => {
-    const sectionToRender = isMobile ? activeSection : (activeSection || 'profile');
+    const sectionToRender = isMobile ? activeSection : (sectionParam || 'profile');
     switch (sectionToRender) {
       case 'profile':
         return <ProfileSettings />;
@@ -41,12 +41,16 @@ export default function SettingsPage() {
       case 'account':
         return <AccountSettings />;
       default:
+        // On mobile, if no section is active, we show the menu, so this case shouldn't be hit for content.
+        // On desktop, default to profile.
+        if (!isMobile) return <ProfileSettings />;
         return null;
     }
   };
 
   const handleMenuSelect = (section: string) => {
     setActiveSection(section);
+    // Always update URL for consistent state, which is important for desktop and for mobile reloads.
     const params = new URLSearchParams(searchParams.toString());
     params.set('section', section);
     router.replace(`${pathname}?${params.toString()}`);
@@ -54,7 +58,7 @@ export default function SettingsPage() {
   
   const handleMobileBack = () => {
     setActiveSection(null);
-    router.replace(pathname);
+    router.replace(pathname); // Go back to the base settings URL, showing the menu
   };
 
   return (
@@ -66,4 +70,13 @@ export default function SettingsPage() {
       {renderSection()}
     </SettingsLayout>
   );
+}
+
+
+export default function SettingsPage() {
+    return (
+        <Suspense fallback={<div>Laden...</div>}>
+            <SettingsComponent />
+        </Suspense>
+    )
 }
