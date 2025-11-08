@@ -9,36 +9,38 @@ import { useRouter } from 'next/navigation';
 interface SettingsLayoutProps {
   menu: ReactNode;
   children: ReactNode;
-  isMobileDetail?: boolean;
-  onMobileBack?: () => void;
+  showMenuOnMobile: boolean;
+  onMobileBack: () => void;
 }
 
-export function SettingsLayout({ menu, children, isMobileDetail, onMobileBack }: SettingsLayoutProps) {
+export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack }: SettingsLayoutProps) {
   const isMobile = useIsMobile();
   const router = useRouter();
 
-  const handleBack = () => {
-    if (onMobileBack) {
-      onMobileBack();
-    } else {
-      router.back();
-    }
-  };
-
   if (isMobile) {
+    if (showMenuOnMobile) {
+      return (
+         <div>
+          <h1 className="text-xl font-bold font-headline mb-4">Einstellungen</h1>
+          {menu}
+        </div>
+      );
+    }
+    // Show detail view
     return (
       <div>
         <div className="flex items-center mb-4">
-          <Button variant="ghost" size="icon" onClick={handleBack} className="mr-2">
+          <Button variant="ghost" size="icon" onClick={onMobileBack} className="mr-2">
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-bold font-headline">Einstellungen</h1>
         </div>
-        {isMobileDetail ? children : menu}
+        {children}
       </div>
     );
   }
 
+  // Desktop layout
   return (
     <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
       <aside>{menu}</aside>

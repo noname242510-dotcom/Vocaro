@@ -50,6 +50,8 @@ export function ProfileSettings() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+
 
   useEffect(() => {
     if (user) {
@@ -72,7 +74,7 @@ export function ProfileSettings() {
     setUsernameError(null);
 
     try {
-        const token = await user.getIdToken(true);
+        const token = await user.getIdToken(true); // Force refresh the token
         const response = await fetch('/api/user/update-username', {
             method: 'POST',
             headers: {
@@ -91,7 +93,8 @@ export function ProfileSettings() {
                  throw new Error(result.error || 'Ein Fehler ist aufgetreten.');
             }
         } else {
-            await updateProfile(user, { displayName: newUsername.trim() });
+            // No need to call updateProfile here, as Firebase Auth change will trigger onAuthStateChanged
+            // which will update the user object in the useFirebase hook.
             toast({ title: "Erfolg", description: "Benutzername erfolgreich aktualisiert." });
             setIsEditingUsername(false);
         }
@@ -128,6 +131,7 @@ export function ProfileSettings() {
 
       if (!response.ok) {
         setPasswordError(result.error);
+        throw new Error(result.error);
       } else {
         toast({ title: "Erfolg", description: "Dein Passwort wurde erfolgreich geändert." });
         setIsEditingPassword(false);
@@ -135,7 +139,7 @@ export function ProfileSettings() {
         setNewPassword('');
       }
     } catch (error: any) {
-      setPasswordError(error.message || "Ein unerwarteter Fehler ist aufgetreten.");
+       toast({ variant: "destructive", title: "Fehler", description: passwordError || error.message || "Ein unerwarteter Fehler ist aufgetreten." });
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -153,7 +157,6 @@ export function ProfileSettings() {
     }
   };
   
-  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
 
 
   return (
