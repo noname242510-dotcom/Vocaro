@@ -2,7 +2,6 @@
 
 import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { SettingsLayout } from './_components/settings-layout';
 import { SettingsMenu } from './_components/settings-menu';
 import { ProfileSettings } from './_components/profile-settings';
@@ -16,41 +15,27 @@ function SettingsComponent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const sectionParam = searchParams.get('section');
-  const isMobile = useIsMobile();
+  const section = searchParams.get('section') || 'profile';
   
-  // On mobile, we need a local state to track the active view (menu or section)
-  // On desktop, the URL is the source of truth.
   const [mobileActiveSection, setMobileActiveSection] = useState<string | null>(null);
 
-  // When the section parameter changes in the URL (e.g., browser back/forward), update mobile view.
-  // This is safer than the previous implementation.
-  useState(() => {
-     setMobileActiveSection(sectionParam);
-  });
-
-  const handleMenuSelect = (section: string) => {
-    // On mobile, we change the local state to show the section component
-    if (isMobile) {
-      setMobileActiveSection(section);
-    }
-    // Always update the URL for consistency and desktop navigation
+  const handleMenuSelect = (selectedSection: string) => {
+    setMobileActiveSection(selectedSection);
     const params = new URLSearchParams(searchParams.toString());
-    params.set('section', section);
+    params.set('section', selectedSection);
     router.replace(`${pathname}?${params.toString()}`);
   };
-  
+
   const handleMobileBack = () => {
     setMobileActiveSection(null);
+    const params = new URLSearchParams(searchParams.toString());
+    // We don't remove the section from the URL, so back/forward still works.
+    // The view will just go back to the menu.
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
   const renderSection = () => {
-    // Determine which section to render.
-    // On mobile, it's what the user has clicked.
-    // On desktop, it's what the URL says. Default to 'profile'.
-    const sectionToRender = isMobile ? mobileActiveSection : (sectionParam || 'profile');
-    
-    switch (sectionToRender) {
+    switch (section) {
       case 'profile':
         return <ProfileSettings />;
       case 'appearance':
@@ -64,20 +49,14 @@ function SettingsComponent() {
       case 'account':
         return <AccountSettings />;
       default:
-        // On desktop, if param is invalid, default to profile.
-        if (!isMobile) return <ProfileSettings />;
-        // On mobile, this will result in the menu being shown (showMenuOnMobile = true).
-        return null;
+        return <ProfileSettings />;
     }
   };
   
-  // On mobile, show the menu if no section has been selected yet.
-  const showMenuOnMobile = isMobile && !mobileActiveSection;
-
   return (
     <SettingsLayout
       menu={<SettingsMenu onSelect={handleMenuSelect} />}
-      showMenuOnMobile={showMenuOnMobile} 
+      showMenuOnMobile={!mobileActiveSection} 
       onMobileBack={handleMobileBack}
     >
       {renderSection()}
