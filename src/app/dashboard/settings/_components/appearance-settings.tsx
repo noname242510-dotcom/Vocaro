@@ -5,13 +5,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { SectionShell } from './section-shell';
 
 export function AppearanceSettings() {
   const [font, setFont] = useState('font-body');
   const [enableConfetti, setEnableConfetti] = useState(true);
-  const [cardLayout, setCardLayout] = useState('standard');
 
   useEffect(() => {
     const persistedFont = localStorage.getItem('app-font') || 'font-body';
@@ -19,9 +17,6 @@ export function AppearanceSettings() {
 
     const persistedConfetti = localStorage.getItem('enable-confetti');
     setEnableConfetti(persistedConfetti === null ? true : persistedConfetti === 'true');
-    
-    const persistedLayout = localStorage.getItem('card-layout') || 'standard';
-    setCardLayout(persistedLayout);
   }, []);
 
   const handleFontChange = (newFont: string) => {
@@ -38,11 +33,6 @@ export function AppearanceSettings() {
     localStorage.setItem('enable-confetti', String(checked));
   };
   
-  const handleCardLayoutChange = (value: string) => {
-    setCardLayout(value);
-    localStorage.setItem('card-layout', value);
-  };
-
   return (
     <SectionShell title="Darstellung" description="Passe an, wie Vocaro aussieht und sich anfühlt.">
       <Card>
@@ -74,30 +64,6 @@ export function AppearanceSettings() {
               </span>
             </Label>
             <Switch id="confetti-mode" checked={enableConfetti} onCheckedChange={handleConfettiChange} />
-          </div>
-
-          <div className="flex flex-col space-y-3">
-            <Label>Kartenlayout</Label>
-            <RadioGroup defaultValue={cardLayout} onValueChange={handleCardLayoutChange} className="grid grid-cols-3 gap-4">
-              <div>
-                <RadioGroupItem value="compact" id="layout-compact" className="peer sr-only" />
-                <Label htmlFor="layout-compact" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                  Kompakt
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem value="standard" id="layout-standard" className="peer sr-only" />
-                <Label htmlFor="layout-standard" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                  Standard
-                </Label>
-              </div>
-              <div>
-                <RadioGroupItem value="large" id="layout-large" className="peer sr-only" />
-                <Label htmlFor="layout-large" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                  Groß
-                </Label>
-              </div>
-            </RadioGroup>
           </div>
         </CardContent>
       </Card>
