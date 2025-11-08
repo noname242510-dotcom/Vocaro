@@ -51,6 +51,8 @@ export function ProfileSettings() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  
+  const hasPasswordProvider = user?.providerData.some(p => p.providerId === 'password');
 
 
   useEffect(() => {
@@ -228,70 +230,72 @@ export function ProfileSettings() {
                     </div>
                   )}
                 </div>
-
-                <div className="w-full max-w-sm">
-                  {!isEditingPassword ? (
-                    <div className="flex items-center justify-center gap-2">
-                        <span className="text-2xl font-mono tracking-widest">••••••••</span>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setIsEditingPassword(true); setPasswordError(null); }}>
-                            <Pencil className="h-4 w-4" />
-                        </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 w-full">
-                        <div className="relative w-full">
-                             <Input
-                                id="currentPassword"
-                                type={showCurrentPassword ? 'text' : 'password'}
-                                value={currentPassword}
-                                onChange={(e) => setCurrentPassword(e.target.value)}
-                                placeholder="Aktuelles Passwort"
-                                className={cn("h-10 text-center", passwordError && "border-destructive focus-visible:ring-destructive")}
-                                autoFocus
-                            />
-                             <Button
-                                type="button" variant="ghost" size="icon"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
-                                onClick={() => setShowCurrentPassword(p => !p)}
-                            >
-                                {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                
+                {hasPasswordProvider && (
+                    <div className="w-full max-w-sm">
+                    {!isEditingPassword ? (
+                        <div className="flex items-center justify-center gap-2">
+                            <span className="text-2xl font-mono tracking-widest">••••••••</span>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setIsEditingPassword(true); setPasswordError(null); }}>
+                                <Pencil className="h-4 w-4" />
                             </Button>
                         </div>
-                        <div className="relative w-full">
-                            <Input
-                                id="newPassword"
-                                type={showNewPassword ? 'text' : 'password'}
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="Neues Passwort"
-                                className={cn("h-10 text-center", passwordError && "border-destructive focus-visible:ring-destructive")}
-                                onKeyDown={(e) => e.key === 'Enter' && handlePasswordChange()}
-                            />
-                             <Button
-                                type="button" variant="ghost" size="icon"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
-                                onClick={() => setShowNewPassword(p => !p)}
-                            >
-                                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </Button>
-                        </div>
-                        <div className="flex items-center justify-center gap-2 w-full mt-2">
-                             <Button variant="outline" onClick={() => {setIsEditingPassword(false); setPasswordError(null); setCurrentPassword(''); setNewPassword('');}} className="flex-1">Abbrechen</Button>
-                             <Button onClick={handlePasswordChange} disabled={isUpdatingPassword || !currentPassword || !newPassword} className="flex-1">
-                                {isUpdatingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                Speichern
-                            </Button>
-                        </div>
-
-                        {passwordError && (
-                            <div className="flex items-center gap-2 text-destructive text-sm mt-2">
-                                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                                <p>{passwordError}</p>
+                    ) : (
+                        <div className="flex flex-col items-center gap-2 w-full">
+                            <div className="relative w-full">
+                                <Input
+                                    id="currentPassword"
+                                    type={showCurrentPassword ? 'text' : 'password'}
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    placeholder="Aktuelles Passwort"
+                                    className={cn("h-10 text-center", passwordError && "border-destructive focus-visible:ring-destructive")}
+                                    autoFocus
+                                />
+                                <Button
+                                    type="button" variant="ghost" size="icon"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
+                                    onClick={() => setShowCurrentPassword(p => !p)}
+                                >
+                                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
                             </div>
-                        )}
+                            <div className="relative w-full">
+                                <Input
+                                    id="newPassword"
+                                    type={showNewPassword ? 'text' : 'password'}
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Neues Passwort"
+                                    className={cn("h-10 text-center", passwordError && "border-destructive focus-visible:ring-destructive")}
+                                    onKeyDown={(e) => e.key === 'Enter' && handlePasswordChange()}
+                                />
+                                <Button
+                                    type="button" variant="ghost" size="icon"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
+                                    onClick={() => setShowNewPassword(p => !p)}
+                                >
+                                    {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                            <div className="flex items-center justify-center gap-2 w-full mt-2">
+                                <Button variant="outline" onClick={() => {setIsEditingPassword(false); setPasswordError(null); setCurrentPassword(''); setNewPassword('');}} className="flex-1">Abbrechen</Button>
+                                <Button onClick={handlePasswordChange} disabled={isUpdatingPassword || !currentPassword || !newPassword} className="flex-1">
+                                    {isUpdatingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    Speichern
+                                </Button>
+                            </div>
+
+                            {passwordError && (
+                                <div className="flex items-center gap-2 text-destructive text-sm mt-2">
+                                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                                    <p>{passwordError}</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
                     </div>
-                  )}
-                </div>
+                )}
             </>
           ) : null}
         </div>

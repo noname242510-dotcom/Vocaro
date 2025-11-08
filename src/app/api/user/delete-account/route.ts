@@ -9,47 +9,51 @@ export async function POST(request: NextRequest) {
         }
         const idToken = authorization.split('Bearer ')[1];
         
-        const { password } = await request.json();
-        if (!password) {
-             return NextResponse.json({ error: 'Passwort ist erforderlich.' }, { status: 400 });
-        }
+        const { password } = await request.json(); // Passwort kann null sein
 
         const decodedToken = await authAdmin.verifyIdToken(idToken);
         const uid = decodedToken.uid;
         const user = await authAdmin.getUser(uid);
         const email = user.email;
 
-        if (!email) {
-            return NextResponse.json({ error: 'Benutzer-E-Mail nicht gefunden, Authentifizierung nicht möglich.' }, { status: 400 });
-        }
-
-        // Re-authenticate on the server by trying to sign in with the provided credentials
-        const { initializeApp, getApps, deleteApp } = await import('firebase/app');
-        const { getAuth: getClientAuth, signInWithEmailAndPassword } = await import('firebase/auth');
-
-        const tempAppName = `temp-delete-app-${uid}`;
-        let tempApp;
-        const existingApp = getApps().find(app => app.name === tempAppName);
-        if (existingApp) {
-            tempApp = existingApp;
-        } else {
-            tempApp = initializeApp({
-                apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-            }, tempAppName);
-        }
-        const tempAuth = getClientAuth(tempApp);
-
-        try {
-            await signInWithEmailAndPassword(tempAuth, email, password);
-        } catch (error: any) {
-             if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                return NextResponse.json({ error: 'Das aktuelle Passwort ist nicht korrekt.' }, { status: 403 });
+        // Führe die Passwortüberprüfung nur durch, wenn ein Passwort mitgesendet wurde und der Benutzer einen E-Mail-Provider hat.
+        if (password && user.providerData.some(p => p.providerId === 'password')) {
+             if (!email) {
+                return NextResponse.json({ error: 'Benutzer-E-Mail nicht gefunden, Authentifizierung nicht möglich.' }, { status: 400 });
             }
-            throw error;
-        } finally {
-            if(getApps().some(app => app.name === tempAppName)) {
-                deleteApp(tempApp).catch(console.error);
+            const { initializeApp, getApps, deleteApp } = await import('firebase/app');
+            const { getAuth: getClientAuth, signInWithEmailAndPassword } = await import('firebase/auth');
+
+            const tempAppName = `temp-delete-app-${uid}`;
+            let tempApp;
+            const existingApp = getApps().find(app => app.name === tempAppName);
+            if (existingApp) {
+                tempApp = existingApp;
+            } else {
+                tempApp = initializeApp({
+                    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+                }, tempAppName);
             }
+            const tempAuth = getClientAuth(tempApp);
+
+            try {
+                await signInWithEmailAndPassword(tempAuth, email, password);
+            } catch (error: any) {
+                if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                    return NextResponse.json({ error: 'Das aktuelle Passwort ist nicht korrekt.' }, { status: 403 });
+                }
+                throw error;
+            } finally {
+                if(getApps().some(app => app.name === tempAppName)) {
+                    deleteApp(tempApp).catch(console.error);
+                }
+            }
+        } else if (!user.providerData.some(p => p.providerId === 'password') && password) {
+            // Wenn der User kein Passwort hat, aber eins gesendet wurde -> Fehler
+            return NextResponse.json({ error: 'Dieser Account verwendet keine Passwörter.' }, { status: 400 });
+        } else if (user.providerData.some(p => p.providerId === 'password') && !password) {
+             // Wenn der User ein Passwort hat, aber keins gesendet wurde -> Fehler
+            return NextResponse.json({ error: 'Passwort ist zur Bestätigung erforderlich.' }, { status: 400 });
         }
         
         // Lösche den Benutzer aus Firebase Authentication

@@ -27,8 +27,16 @@ export function AccountSettings() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleDeleteAccount = async (password: string) => {
+  const hasPasswordProvider = user?.providerData.some(p => p.providerId === 'password');
+
+  const handleDeleteAccount = async (password?: string) => {
     if (!user) return;
+    
+    if (hasPasswordProvider && !password) {
+        toast({ variant: "destructive", title: "Fehler", description: "Passwort ist erforderlich."});
+        return;
+    }
+
     setIsUpdating(true);
 
     try {
@@ -39,7 +47,8 @@ export function AccountSettings() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ password })
+            // Sende das Passwort nur, wenn es vorhanden ist
+            body: JSON.stringify({ password: password ?? null })
         });
         
         const result = await response.json();
@@ -70,14 +79,31 @@ export function AccountSettings() {
         </CardHeader>
         <CardContent>
           <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>Konto löschen</Button>
-           <PasswordDialog
-                isOpen={isDeleteDialogOpen}
-                onOpenChange={setIsDeleteDialogOpen}
-                onConfirm={handleDeleteAccount}
-                isUpdating={isUpdating}
-                title="Bist du absolut sicher?"
-                description="Diese Aktion ist endgültig. Dein Konto und alle zugehörigen Daten werden unwiderruflich gelöscht. Gib zur Bestätigung dein Passwort ein."
-            />
+           {hasPasswordProvider ? (
+                <PasswordDialog
+                    isOpen={isDeleteDialogOpen}
+                    onOpenChange={setIsDeleteDialogOpen}
+                    onConfirm={handleDeleteAccount}
+                    isUpdating={isUpdating}
+                    title="Bist du absolut sicher?"
+                    description="Diese Aktion ist endgültig. Dein Konto und alle zugehörigen Daten werden unwiderruflich gelöscht. Gib zur Bestätigung dein Passwort ein."
+                />
+           ) : (
+             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Bist du absolut sicher?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Diese Aktion ist endgültig. Dein Konto und alle zugehörigen Daten werden unwiderruflich gelöscht.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDeleteAccount()}>Konto löschen</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+             </AlertDialog>
+           )}
         </CardContent>
       </Card>
       <div className="text-center mt-8">
