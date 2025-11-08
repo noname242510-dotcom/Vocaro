@@ -19,14 +19,15 @@ export default function SettingsPage() {
   const sectionParam = searchParams.get('section');
   const isMobile = useIsMobile();
   
-  // On mobile, if a section is in the URL, show it. Otherwise, show the menu (null).
-  // On desktop, default to 'profile' if no section is in the URL.
+  // On mobile, if a section is in the URL, show it. Otherwise, show the menu.
+  // On desktop, always show a section, defaulting to 'profile'.
   const [activeSection, setActiveSection] = useState<string | null>(
-    sectionParam || (isMobile ? null : 'profile')
+    isMobile ? (sectionParam || null) : (sectionParam || 'profile')
   );
 
   const renderSection = () => {
-    switch (activeSection) {
+    const sectionToRender = isMobile ? activeSection : (activeSection || 'profile');
+    switch (sectionToRender) {
       case 'profile':
         return <ProfileSettings />;
       case 'appearance':
@@ -40,19 +41,15 @@ export default function SettingsPage() {
       case 'account':
         return <AccountSettings />;
       default:
-        // On desktop, if no section is active, default to profile
-        return isMobile ? null : <ProfileSettings />;
+        return null;
     }
   };
 
   const handleMenuSelect = (section: string) => {
     setActiveSection(section);
-    // On desktop, we update the URL. On mobile, we just change the state.
-    if (!isMobile) {
-        const params = new URLSearchParams(searchParams);
-        params.set('section', section);
-        router.replace(`${pathname}?${params.toString()}`);
-    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('section', section);
+    router.replace(`${pathname}?${params.toString()}`);
   };
   
   const handleMobileBack = () => {
