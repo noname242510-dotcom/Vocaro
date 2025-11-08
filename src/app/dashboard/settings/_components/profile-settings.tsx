@@ -54,8 +54,8 @@ export function ProfileSettings() {
 
 
   useEffect(() => {
-    if (user) {
-      setNewUsername(user.displayName || '');
+    if (user?.displayName) {
+      setNewUsername(user.displayName);
     }
   }, [user]);
 
@@ -131,7 +131,7 @@ export function ProfileSettings() {
 
       if (!response.ok) {
         setPasswordError(result.error);
-        throw new Error(result.error);
+        // Do not throw error here to avoid generic toast on specific password errors
       } else {
         toast({ title: "Erfolg", description: "Dein Passwort wurde erfolgreich geändert." });
         setIsEditingPassword(false);
