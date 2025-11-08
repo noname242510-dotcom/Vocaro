@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { SectionShell } from './section-shell';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { ArrowLeftRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export function VocabSettings() {
   const [queryDirectionOverview, setQueryDirectionOverview] = useState(false);
@@ -52,11 +52,9 @@ export function VocabSettings() {
               </span>
             </Label>
             <div className="flex items-center gap-2">
-              <span className={cn("text-sm text-center transition-colors w-20", !queryDirectionOverview ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsch</span>
                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={() => handleQueryDirectionOverviewChange(!queryDirectionOverview)}>
-                  <ArrowLeftRight className="h-4 w-4" />
+                  <ArrowRight className={cn("h-4 w-4 transition-transform duration-300", queryDirectionOverview && "rotate-180")} />
                 </Button>
-              <span className={cn("text-sm text-center transition-colors w-20", queryDirectionOverview ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort</span>
             </div>
           </div>
           <div className="flex items-center justify-between space-x-2">
@@ -67,11 +65,9 @@ export function VocabSettings() {
               </span>
             </Label>
             <div className="flex items-center gap-2">
-              <span className={cn("text-sm text-center transition-colors w-20", !queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Deutsch</span>
                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={() => handleQueryDirectionFlashcardsChange(!queryDirectionFlashcards)}>
-                  <ArrowLeftRight className="h-4 w-4" />
+                  <ArrowRight className={cn("h-4 w-4 transition-transform duration-300", queryDirectionFlashcards && "rotate-180")} />
                 </Button>
-              <span className={cn("text-sm text-center transition-colors w-20", queryDirectionFlashcards ? "text-foreground font-medium" : "text-muted-foreground")}>Fremdwort</span>
             </div>
           </div>
           <div className="flex items-center justify-between space-x-2">
