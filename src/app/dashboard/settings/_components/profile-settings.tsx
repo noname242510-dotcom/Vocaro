@@ -297,7 +297,11 @@ export function ProfileSettings() {
                     </div>
                 )}
             </>
-          ) : null}
+          ) : (
+             <div className="text-center text-muted-foreground">
+                Benutzerinformationen konnten nicht geladen werden.
+            </div>
+          )}
         </div>
     </SectionShell>
   );

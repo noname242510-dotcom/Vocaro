@@ -26,7 +26,7 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
         </div>
       );
     }
-    // Show detail view
+    // Show detail view (the selected section's content)
     return (
       <div>
         <div className="flex items-center mb-4 -ml-2">
@@ -42,7 +42,10 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
   // Desktop layout
   return (
     <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
-      <aside>{menu}</aside>
+      <aside>
+        <h1 className="text-xl font-bold font-headline mb-4">Einstellungen</h1>
+        {menu}
+      </aside>
       <main>{children}</main>
     </div>
   );
