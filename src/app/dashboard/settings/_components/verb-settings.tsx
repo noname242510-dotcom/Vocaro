@@ -14,6 +14,8 @@ export function VerbSettings() {
   const [showVerbHints, setShowVerbHints] = useState(true);
 
   useEffect(() => {
+    // false: term -> definition (Fremdwort -> Deutsch)
+    // true: definition -> term (Deutsch -> Fremdwort)
     const persistedQueryDirectionVerbs = localStorage.getItem('query-direction-verbs') === 'true';
     setQueryDirectionVerbs(persistedQueryDirectionVerbs);
     
@@ -43,11 +45,11 @@ export function VerbSettings() {
               </span>
             </Label>
             <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">{queryDirectionVerbs ? 'Fremdwort' : 'Deutsch'}</span>
+                <span className="text-sm font-medium text-muted-foreground">Fremdwort</span>
                 <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={() => handleQueryDirectionVerbsChange(!queryDirectionVerbs)}>
                   <ArrowRight className={cn("h-4 w-4 transition-transform duration-300", queryDirectionVerbs && "rotate-180")} />
                 </Button>
-                <span className="text-sm font-medium text-muted-foreground">{queryDirectionVerbs ? 'Deutsch' : 'Fremdwort'}</span>
+                <span className="text-sm font-medium text-muted-foreground">Deutsch</span>
             </div>
           </div>
           <div className="flex items-center justify-between space-x-2">

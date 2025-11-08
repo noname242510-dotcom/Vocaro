@@ -15,6 +15,8 @@ export function VocabSettings() {
   const [showVocabHints, setShowVocabHints] = useState(true);
 
   useEffect(() => {
+    // false: term -> definition (Fremdwort -> Deutsch)
+    // true: definition -> term (Deutsch -> Fremdwort)
     const persistedQueryDirectionOverview = localStorage.getItem('query-direction-overview') === 'true';
     setQueryDirectionOverview(persistedQueryDirectionOverview);
     
@@ -52,11 +54,11 @@ export function VocabSettings() {
               </span>
             </Label>
             <div className="flex items-center gap-2">
-               <span className="text-sm font-medium text-muted-foreground">{queryDirectionOverview ? 'Fremdwort' : 'Deutsch'}</span>
+               <span className="text-sm font-medium text-muted-foreground">Fremdwort</span>
                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={() => handleQueryDirectionOverviewChange(!queryDirectionOverview)}>
                   <ArrowRight className={cn("h-4 w-4 transition-transform duration-300", queryDirectionOverview && "rotate-180")} />
                 </Button>
-               <span className="text-sm font-medium text-muted-foreground">{queryDirectionOverview ? 'Deutsch' : 'Fremdwort'}</span>
+               <span className="text-sm font-medium text-muted-foreground">Deutsch</span>
             </div>
           </div>
           <div className="flex items-center justify-between space-x-2">
@@ -67,11 +69,11 @@ export function VocabSettings() {
               </span>
             </Label>
             <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">{queryDirectionFlashcards ? 'Fremdwort' : 'Deutsch'}</span>
+                <span className="text-sm font-medium text-muted-foreground">Fremdwort</span>
                 <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={() => handleQueryDirectionFlashcardsChange(!queryDirectionFlashcards)}>
                   <ArrowRight className={cn("h-4 w-4 transition-transform duration-300", queryDirectionFlashcards && "rotate-180")} />
                 </Button>
-                <span className="text-sm font-medium text-muted-foreground">{queryDirectionFlashcards ? 'Deutsch' : 'Fremdwort'}</span>
+                <span className="text-sm font-medium text-muted-foreground">Deutsch</span>
             </div>
           </div>
           <div className="flex items-center justify-between space-x-2">
