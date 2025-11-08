@@ -93,8 +93,6 @@ export function ProfileSettings() {
                  throw new Error(result.error || 'Ein Fehler ist aufgetreten.');
             }
         } else {
-            // No need to call updateProfile here, as Firebase Auth change will trigger onAuthStateChanged
-            // which will update the user object in the useFirebase hook.
             toast({ title: "Erfolg", description: "Benutzername erfolgreich aktualisiert." });
             setIsEditingUsername(false);
         }
@@ -131,7 +129,6 @@ export function ProfileSettings() {
 
       if (!response.ok) {
         setPasswordError(result.error);
-        // Do not throw error here to avoid generic toast on specific password errors
       } else {
         toast({ title: "Erfolg", description: "Dein Passwort wurde erfolgreich geändert." });
         setIsEditingPassword(false);
