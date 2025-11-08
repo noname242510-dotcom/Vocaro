@@ -74,8 +74,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
-    setUserAuthState({ user: null, isUserLoading: true, userError: null }); // Reset on auth instance change
-
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => { // Auth state determined
@@ -92,12 +90,16 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && firestore && auth);
+    
+    // Ensure that if loading is done, we have the most current user from the auth object.
+    const finalUser = !userAuthState.isUserLoading ? auth.currentUser : userAuthState.user;
+
     return {
       areServicesAvailable: servicesAvailable,
       firebaseApp: servicesAvailable ? firebaseApp : null,
       firestore: servicesAvailable ? firestore : null,
       auth: servicesAvailable ? auth : null,
-      user: userAuthState.user,
+      user: finalUser,
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
     };
