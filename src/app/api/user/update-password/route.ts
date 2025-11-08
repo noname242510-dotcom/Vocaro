@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { authAdmin } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase/auth';
@@ -33,14 +34,22 @@ export async function POST(request: NextRequest) {
         // This is a workaround to verify the current password on the server side.
         // The standard way is to re-authenticate on the client and send the new token.
         // Since we are building an API, we will use the client-sdks on the backend to validate.
-        const { initializeApp, getApps } = await import('firebase/app');
+        const { initializeApp, getApps, deleteApp } = await import('firebase/app');
         const { getAuth: getClientAuth, signInWithEmailAndPassword } = await import('firebase/auth');
 
         // We need to initialize a temporary client app to use signInWithEmailAndPassword
         const tempAppName = `temp-auth-app-${uid}`;
-        const tempApp = getApps().find(app => app.name === tempAppName) || initializeApp({
-            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        }, tempAppName);
+        
+        let tempApp;
+        const existingApp = getApps().find(app => app.name === tempAppName);
+        if (existingApp) {
+            tempApp = existingApp;
+        } else {
+            tempApp = initializeApp({
+                apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            }, tempAppName);
+        }
+
         const tempAuth = getClientAuth(tempApp);
 
         try {
@@ -51,6 +60,11 @@ export async function POST(request: NextRequest) {
             }
             // Other sign-in errors
             throw error;
+        } finally {
+             // Clean up the temporary app
+            if(getApps().some(app => app.name === tempAppName)) {
+                deleteApp(tempApp).catch(console.error);
+            }
         }
 
         // If sign-in is successful, proceed to update the password with the Admin SDK

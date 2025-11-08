@@ -139,7 +139,7 @@ export function ProfileSettings() {
         setNewPassword('');
       }
     } catch (error: any) {
-       toast({ variant: "destructive", title: "Fehler", description: passwordError || error.message || "Ein unerwarteter Fehler ist aufgetreten." });
+       toast({ variant: "destructive", title: "Fehler", description: error.message || "Ein unerwarteter Fehler ist aufgetreten." });
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -249,7 +249,7 @@ export function ProfileSettings() {
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
                                 placeholder="Aktuelles Passwort"
-                                className="h-10 text-center"
+                                className={cn("h-10 text-center", passwordError && "border-destructive focus-visible:ring-destructive")}
                                 autoFocus
                             />
                              <Button
@@ -267,7 +267,7 @@ export function ProfileSettings() {
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 placeholder="Neues Passwort"
-                                className="h-10 text-center"
+                                className={cn("h-10 text-center", passwordError && "border-destructive focus-visible:ring-destructive")}
                                 onKeyDown={(e) => e.key === 'Enter' && handlePasswordChange()}
                             />
                              <Button
@@ -279,7 +279,7 @@ export function ProfileSettings() {
                             </Button>
                         </div>
                         <div className="flex items-center justify-center gap-2 w-full mt-2">
-                             <Button variant="outline" onClick={() => {setIsEditingPassword(false); setPasswordError(null);}} className="flex-1">Abbrechen</Button>
+                             <Button variant="outline" onClick={() => {setIsEditingPassword(false); setPasswordError(null); setCurrentPassword(''); setNewPassword('');}} className="flex-1">Abbrechen</Button>
                              <Button onClick={handlePasswordChange} disabled={isUpdatingPassword || !currentPassword || !newPassword} className="flex-1">
                                 {isUpdatingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 Speichern

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authAdmin, firestoreAdmin } from '@/lib/firebase-admin';
-import { getAuth } from 'firebase-admin/auth';
 
 export async function POST(request: NextRequest) {
     try {
@@ -10,9 +9,6 @@ export async function POST(request: NextRequest) {
         }
         const idToken = authorization.split('Bearer ')[1];
         
-        // This fails silently if the password is wrong, so we can't use it for verification alone.
-        // We rely on the client's re-authentication flow to have happened.
-        // For a more secure implementation, you'd verify the password against the hash.
         const { password } = await request.json();
         if (!password) {
              return NextResponse.json({ error: 'Passwort ist erforderlich.' }, { status: 400 });
@@ -20,15 +16,48 @@ export async function POST(request: NextRequest) {
 
         const decodedToken = await authAdmin.verifyIdToken(idToken);
         const uid = decodedToken.uid;
+        const user = await authAdmin.getUser(uid);
+        const email = user.email;
+
+        if (!email) {
+            return NextResponse.json({ error: 'Benutzer-E-Mail nicht gefunden, Authentifizierung nicht möglich.' }, { status: 400 });
+        }
+
+        // Re-authenticate on the server by trying to sign in with the provided credentials
+        const { initializeApp, getApps, deleteApp } = await import('firebase/app');
+        const { getAuth: getClientAuth, signInWithEmailAndPassword } = await import('firebase/auth');
+
+        const tempAppName = `temp-delete-app-${uid}`;
+        let tempApp;
+        const existingApp = getApps().find(app => app.name === tempAppName);
+        if (existingApp) {
+            tempApp = existingApp;
+        } else {
+            tempApp = initializeApp({
+                apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            }, tempAppName);
+        }
+        const tempAuth = getClientAuth(tempApp);
+
+        try {
+            await signInWithEmailAndPassword(tempAuth, email, password);
+        } catch (error: any) {
+             if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                return NextResponse.json({ error: 'Das aktuelle Passwort ist nicht korrekt.' }, { status: 403 });
+            }
+            throw error;
+        } finally {
+            if(getApps().some(app => app.name === tempAppName)) {
+                deleteApp(tempApp).catch(console.error);
+            }
+        }
         
         // Lösche den Benutzer aus Firebase Authentication
         await authAdmin.deleteUser(uid);
         
         // Lösche die Benutzerdaten aus Firestore
         const userDocRef = firestoreAdmin.collection('users').doc(uid);
-        // Hinweis: Dies löscht keine Subkollektionen. Ein vollständiges Löschen
-        // würde eine rekursive Funktion erfordern, z.B. mit Firebase Functions.
-        // Für diese Anwendung ist das Löschen des Haupt-Benutzerdokuments ausreichend.
+        // This will recursively delete all subcollections.
         await firestoreAdmin.recursiveDelete(userDocRef);
 
 
