@@ -19,26 +19,36 @@ function SettingsComponent() {
   const sectionParam = searchParams.get('section');
   const isMobile = useIsMobile();
   
-  const [activeSection, setActiveSection] = useState<string | null>(sectionParam);
+  // On mobile, we need a local state to track the active view (menu or section)
+  // On desktop, the URL is the source of truth.
+  const [mobileActiveSection, setMobileActiveSection] = useState<string | null>(null);
+
+  // When the section parameter changes in the URL (e.g., browser back/forward), update mobile view.
+  // This is safer than the previous implementation.
+  useState(() => {
+     setMobileActiveSection(sectionParam);
+  });
 
   const handleMenuSelect = (section: string) => {
-    setActiveSection(section);
-    // For mobile, the layout will change. For desktop, we update the URL.
-    if (!isMobile) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('section', section);
-      router.replace(`${pathname}?${params.toString()}`);
+    // On mobile, we change the local state to show the section component
+    if (isMobile) {
+      setMobileActiveSection(section);
     }
+    // Always update the URL for consistency and desktop navigation
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('section', section);
+    router.replace(`${pathname}?${params.toString()}`);
   };
   
   const handleMobileBack = () => {
-    setActiveSection(null);
+    setMobileActiveSection(null);
   };
 
   const renderSection = () => {
-    // On desktop, the active section is controlled by URL param.
-    // On mobile, it's controlled by local state 'activeSection'.
-    const sectionToRender = isMobile ? activeSection : (sectionParam || 'profile');
+    // Determine which section to render.
+    // On mobile, it's what the user has clicked.
+    // On desktop, it's what the URL says. Default to 'profile'.
+    const sectionToRender = isMobile ? mobileActiveSection : (sectionParam || 'profile');
     
     switch (sectionToRender) {
       case 'profile':
@@ -54,15 +64,15 @@ function SettingsComponent() {
       case 'account':
         return <AccountSettings />;
       default:
-        // On desktop, default to profile if param is invalid
+        // On desktop, if param is invalid, default to profile.
         if (!isMobile) return <ProfileSettings />;
-        // On mobile, this will result in the menu being shown, which is correct.
+        // On mobile, this will result in the menu being shown (showMenuOnMobile = true).
         return null;
     }
   };
   
-  // On mobile, if a section is selected, we are in a 'detail' view.
-  const showMenuOnMobile = isMobile && !activeSection;
+  // On mobile, show the menu if no section has been selected yet.
+  const showMenuOnMobile = isMobile && !mobileActiveSection;
 
   return (
     <SettingsLayout
