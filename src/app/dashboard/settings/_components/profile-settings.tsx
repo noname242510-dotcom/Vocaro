@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pencil, Check, X, Loader2 } from 'lucide-react';
+import { Pencil, Check, X, Loader2, AlertTriangle } from 'lucide-react';
 import { SectionShell } from './section-shell';
 import {
     Dialog,
@@ -20,7 +20,8 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import Image from 'next/image';
-import { PasswordDialog } from './password-dialog';
+import { cn } from '@/lib/utils';
+
 
 const presetAvatars = [
     '/avatars/avatar-1.svg',
@@ -38,8 +39,8 @@ export function ProfileSettings() {
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState(user?.displayName || '');
   
-  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -52,13 +53,15 @@ export function ProfileSettings() {
     return name ? name.charAt(0).toUpperCase() : 'U';
   };
 
-  const handleUsernameChange = async (password: string) => {
+  const handleUsernameChange = async () => {
     if (!user || !newUsername.trim() || newUsername.trim() === user.displayName) {
       setIsEditingUsername(false);
+      setUsernameError(null);
       return;
     }
 
     setIsUpdating(true);
+    setUsernameError(null);
 
     try {
         const token = await user.getIdToken();
@@ -68,22 +71,22 @@ export function ProfileSettings() {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ newUsername: newUsername.trim(), password })
+            body: JSON.stringify({ newUsername: newUsername.trim() })
         });
         
         const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.error || 'Ein Fehler ist aufgetreten.');
+            if (response.status === 409) {
+                setUsernameError(result.error);
+            } else {
+                 throw new Error(result.error || 'Ein Fehler ist aufgetreten.');
+            }
+        } else {
+            await updateProfile(user, { displayName: newUsername.trim() });
+            toast({ title: "Erfolg", description: "Benutzername erfolgreich aktualisiert." });
+            setIsEditingUsername(false);
         }
-
-        // Manually update the displayName on the client-side user object
-        // as the change might not propagate instantly.
-        await updateProfile(user, { displayName: newUsername.trim() });
-        
-        toast({ title: "Erfolg", description: "Benutzername erfolgreich aktualisiert." });
-        setIsEditingUsername(false);
-        setIsPasswordDialogOpen(false);
 
     } catch (error: any) {
       toast({ variant: "destructive", title: "Fehler", description: error.message || "Benutzername konnte nicht geändert werden." });
@@ -146,36 +149,38 @@ export function ProfileSettings() {
                     </DialogContent>
                 </Dialog>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col items-center gap-2">
                 {!isEditingUsername ? (
-                  <>
+                  <div className="flex items-center gap-2">
                     <h2 className="text-2xl font-bold text-center">{user.displayName || 'Benutzer'}</h2>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setNewUsername(user.displayName || ''); setIsEditingUsername(true); }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setNewUsername(user.displayName || ''); setUsernameError(null); setIsEditingUsername(true); }}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                  </>
+                  </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <Input 
-                        value={newUsername} 
-                        onChange={e => setNewUsername(e.target.value)} 
-                        className="text-lg h-10" 
-                        autoFocus 
-                        onKeyDown={e => e.key === 'Enter' && setIsPasswordDialogOpen(true)}
-                    />
-                    <Button variant="ghost" size="icon" onClick={() => setIsPasswordDialogOpen(true)} disabled={newUsername.trim() === user.displayName || !newUsername.trim()}><Check className="h-5 w-5"/></Button>
-                    <Button variant="ghost" size="icon" onClick={() => setIsEditingUsername(false)}><X className="h-5 w-5"/></Button>
+                  <div className="flex flex-col items-center gap-2 w-full max-w-xs">
+                    <div className="flex items-center gap-2 w-full">
+                        <Input 
+                            value={newUsername} 
+                            onChange={e => setNewUsername(e.target.value)} 
+                            className={cn("text-lg h-10 text-center", usernameError && "border-destructive focus-visible:ring-destructive")}
+                            autoFocus 
+                            onKeyDown={e => e.key === 'Enter' && handleUsernameChange()}
+                        />
+                        <Button variant="ghost" size="icon" onClick={handleUsernameChange} disabled={isUpdating || newUsername.trim() === user.displayName || !newUsername.trim()}>
+                            {isUpdating ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5"/>}
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => {setIsEditingUsername(false); setUsernameError(null);}}><X className="h-5 w-5"/></Button>
+                    </div>
+                     {usernameError && (
+                        <div className="flex items-center gap-2 text-destructive text-sm">
+                            <AlertTriangle className="h-4 w-4" />
+                            <p>{usernameError}</p>
+                        </div>
+                    )}
                   </div>
                 )}
               </div>
-                <PasswordDialog
-                    isOpen={isPasswordDialogOpen}
-                    onOpenChange={setIsPasswordDialogOpen}
-                    onConfirm={handleUsernameChange}
-                    isUpdating={isUpdating}
-                    title="Benutzernamen ändern"
-                    description="Bitte gib dein aktuelles Passwort ein, um die Änderung zu bestätigen."
-                />
             </>
           ) : null}
         </div>

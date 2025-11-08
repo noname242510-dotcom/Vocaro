@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authAdmin } from '@/lib/firebase-admin';
-import { EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
 export async function POST(request: NextRequest) {
     try {
@@ -12,10 +11,10 @@ export async function POST(request: NextRequest) {
         const decodedToken = await authAdmin.verifyIdToken(idToken);
         const uid = decodedToken.uid;
         
-        const { newUsername, password } = await request.json();
+        const { newUsername } = await request.json();
 
-        if (!newUsername || !password) {
-            return NextResponse.json({ error: 'Benutzername und Passwort sind erforderlich.' }, { status: 400 });
+        if (!newUsername) {
+            return NextResponse.json({ error: 'Benutzername ist erforderlich.' }, { status: 400 });
         }
 
         const newEmail = `${newUsername.trim()}@vocaro.app`;
@@ -33,18 +32,10 @@ export async function POST(request: NextRequest) {
             // 'auth/user-not-found' ist der erwartete Fehler, also fahren wir fort.
         }
         
-        const user = await authAdmin.getUser(uid);
-
         // 2. E-Mail und displayName aktualisieren
-        // Firebase Admin SDK erfordert keine erneute Authentifizierung für die E-Mail-Änderung,
-        // aber die Anforderung des Passworts vom Client ist eine gute Sicherheitspraxis.
-        // Wir validieren das Passwort nicht aktiv auf dem Server mit dem Admin SDK,
-        // da dies clientseitige SDK-Methoden erfordern würde, aber wir stellen sicher, dass es gesendet wurde.
-        
         await authAdmin.updateUser(uid, {
             email: newEmail,
             displayName: newUsername.trim(),
-            // emailVerified muss auf false gesetzt werden, da die E-Mail (technisch gesehen) neu ist
             emailVerified: true, 
         });
 
