@@ -33,7 +33,6 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
           <Button variant="ghost" size="icon" onClick={onMobileBack} className="mr-2">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold font-headline">Einstellungen</h1>
         </div>
         {children}
       </div>
