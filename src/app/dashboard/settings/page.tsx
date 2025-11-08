@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SettingsLayout } from './_components/settings-layout';
@@ -17,19 +17,11 @@ export default function SettingsPage() {
   const searchParams = useSearchParams();
   const sectionParam = searchParams.get('section');
 
-  // activeSection determines what is shown. On mobile, if null, show menu.
-  // On desktop, it falls back to 'profile'.
-  const [activeSection, setActiveSection] = useState<string | null>(
-    // On initial mobile load, we want to show the menu, so start with null.
-    isMobile ? null : sectionParam || 'profile'
-  );
+  const [activeSection, setActiveSection] = useState<string | null>(sectionParam || 'profile');
 
-  // If the URL param changes on desktop, update the view.
-  // This syncs browser back/forward with the component state.
-  useMemo(() => {
-    if (!isMobile) {
-      setActiveSection(sectionParam || 'profile');
-    }
+  // Sync state with URL changes (e.g., browser back/forward)
+  useEffect(() => {
+    setActiveSection(sectionParam || (isMobile ? activeSection : 'profile'));
   }, [sectionParam, isMobile]);
 
   const renderSection = () => {
@@ -47,9 +39,7 @@ export default function SettingsPage() {
       case 'account':
         return <AccountSettings />;
       default:
-        // On mobile, if no section is selected, we show the menu.
-        // On desktop, we default to profile.
-        return isMobile ? null : <ProfileSettings />;
+        return null;
     }
   };
 
@@ -58,18 +48,16 @@ export default function SettingsPage() {
   };
   
   const handleMobileBack = () => {
-    setActiveSection(null); // Go back to the menu view on mobile
+    setActiveSection(null);
   };
-
-  const sectionContent = renderSection();
 
   return (
     <SettingsLayout
       menu={<SettingsMenu onSelect={handleMenuSelect} />}
-      showMenuOnMobile={!activeSection} // Only show menu if no section is active
+      showMenuOnMobile={!activeSection} 
       onMobileBack={handleMobileBack}
     >
-      {sectionContent}
+      {renderSection()}
     </SettingsLayout>
   );
 }

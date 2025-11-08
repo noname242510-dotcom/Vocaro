@@ -4,7 +4,6 @@ import React, { ReactNode } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 interface SettingsLayoutProps {
   menu: ReactNode;
@@ -15,7 +14,6 @@ interface SettingsLayoutProps {
 
 export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack }: SettingsLayoutProps) {
   const isMobile = useIsMobile();
-  const router = useRouter();
 
   if (isMobile) {
     if (showMenuOnMobile) {
