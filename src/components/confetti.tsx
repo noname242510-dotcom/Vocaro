@@ -57,7 +57,7 @@ export const Confetti = ({ active }: { active: boolean }) => {
   
     useEffect(() => {
       if (active) {
-        setPieces(Array.from({ length: 150 }, (_, i) => i + Date.now()));
+        setPieces(Array.from({ length: 400 }, (_, i) => i + Date.now()));
       }
     }, [active]);
   

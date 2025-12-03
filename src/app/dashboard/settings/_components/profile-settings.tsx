@@ -190,8 +190,8 @@ export function ProfileSettings() {
                         </DialogHeader>
                         <div className="grid grid-cols-3 gap-4 py-4">
                             {presetAvatars.map(url => (
-                                <button key={url} onClick={() => handleAvatarSelect(url)} className="p-2 rounded-full hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring">
-                                    <Image src={url} alt="Avatar" width={80} height={80} className="rounded-full" />
+                                <button key={url} onClick={() => handleAvatarSelect(url)} className="p-2 rounded-full hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring aspect-square">
+                                    <Image src={url} alt="Avatar" width={80} height={80} className="rounded-full w-full h-full object-cover" />
                                 </button>
                             ))}
                         </div>
