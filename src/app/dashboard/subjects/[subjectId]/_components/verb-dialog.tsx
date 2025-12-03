@@ -26,6 +26,7 @@ interface VerbDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   language: string;
   onSave: (verbData: Omit<Verb, 'id' | 'subjectId' | 'language'>) => Promise<void>;
+  subjectId: string;
   existingVerb?: Verb | null;
 }
 
@@ -174,7 +175,7 @@ const TenseList = ({ groupedTenses, forms, formType, pronounKey, onFormChange }:
   );
 
 
-export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVerb }: VerbDialogProps) {
+export function VerbDialog({ isOpen, onOpenChange, language, onSave, subjectId, existingVerb }: VerbDialogProps) {
   const [infinitive, setInfinitive] = useState('');
   const [generatedData, setGeneratedData] = useState<GenerateVerbFormsOutput | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -208,8 +209,10 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, existingVer
         () => generateVerbForms({ verb: infinitive, language }),
         {
             name: `Verbformen für "${infinitive}" generieren`,
+            type: 'verb-generation',
+            context: { subjectId },
             onSuccess: (result) => {
-                toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert und gespeichert.` });
+                toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert.` });
             },
             onError: (e) => {
                 setError(e.message || 'Die Verbformen konnten nicht generiert werden.');

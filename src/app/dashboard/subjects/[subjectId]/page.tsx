@@ -1083,6 +1083,7 @@ export default function SubjectDetailPage() {
         onOpenChange={setIsVerbDialogOpen}
         language={getLanguageFromSubject(subject?.name)}
         onSave={handleSaveVerb}
+        subjectId={subjectId}
         existingVerb={editingVerb}
       />
     </div>
@@ -1094,4 +1095,5 @@ export default function SubjectDetailPage() {
     
 
     
+
 

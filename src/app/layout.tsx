@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { ClientToaster } from "@/components/client-toaster";
 import { TaskProvider } from "@/contexts/task-context";
 import { TaskProgressToast } from "@/components/task-progress-toast";
+import { GlobalVerbResultListener } from "@/components/global-verb-result-listener";
 
 export const metadata: Metadata = {
   title: "Vocaro",
@@ -47,6 +48,7 @@ export default function RootLayout({
           <TaskProvider>
             {children}
             <TaskProgressToast />
+            <GlobalVerbResultListener />
           </TaskProvider>
         </FirebaseClientProvider>
         <ClientToaster />
