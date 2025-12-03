@@ -41,7 +41,8 @@ const ConfettiPiece = ({ id, onComplete }: { id: number; onComplete: (id: number
     }, (randomDelay + randomDuration) * 1000);
 
     return () => clearTimeout(timer);
-  }, [id, onComplete]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div
