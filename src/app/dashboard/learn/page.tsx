@@ -208,11 +208,22 @@ export default function LearnPage() {
 
   useEffect(() => {
     if (!isExiting && isTypedMode && inputRef.current) {
-      // The `preventScroll` option stops the browser from auto-scrolling.
-      // We manually scroll the element into view with 'block: "end"' to align it
-      // just above the on-screen keyboard.
-      inputRef.current.focus({ preventScroll: true });
-      inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        const inputElement = inputRef.current;
+        // Focus without causing the browser's default scroll
+        inputElement.focus({ preventScroll: true });
+        
+        // Manually scroll to position the input field at the bottom of the viewport
+        const elementRect = inputElement.getBoundingClientRect();
+        const absoluteElementTop = elementRect.top + window.pageYOffset;
+        const newScrollPosition = absoluteElementTop - window.innerHeight + elementRect.height + 20; // 20px buffer
+
+        // Use a timeout to ensure the keyboard has appeared
+        setTimeout(() => {
+            window.scrollTo({
+                top: newScrollPosition,
+                behavior: 'smooth'
+            });
+        }, 100);
     }
   }, [currentIndex, isExiting, isTypedMode]);
   
