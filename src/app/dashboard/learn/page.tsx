@@ -476,8 +476,8 @@ export default function LearnPage() {
   const expectedAnswer = isTermFirst ? currentCard.definition : currentCard.term;
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="w-full max-w-2xl px-4 sm:px-0">
+    <div className="flex flex-col min-h-[calc(100vh-8rem)] md:min-h-[calc(100vh-10rem)]">
+      <div className="w-full max-w-2xl px-4 sm:px-0 mx-auto">
         <div className="flex items-center justify-between mb-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -509,7 +509,7 @@ export default function LearnPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-2xl h-80 relative mt-4">
+      <div className="w-full max-w-2xl h-80 relative mt-4 mx-auto flex-grow">
         <div
           key={currentCard.id}
           className={cn(
@@ -599,7 +599,7 @@ export default function LearnPage() {
         </div>
       </div>
       
-      <div className="mt-8 w-full max-w-2xl flex flex-col items-center">
+      <div className="mt-auto w-full max-w-2xl flex flex-col items-center mx-auto">
         <div className="w-full h-12 relative">
             <div
                 className={cn(
