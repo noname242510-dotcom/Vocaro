@@ -46,9 +46,12 @@ export function VerbSettings() {
             </Label>
             <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-muted-foreground">Fremdwort</span>
-                <Button variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-full" onClick={() => handleQueryDirectionVerbsChange(!queryDirectionVerbs)}>
-                  <ArrowRight className={cn("h-4 w-4 transition-transform duration-300", queryDirectionVerbs && "rotate-180")} />
-                </Button>
+                 <div 
+                    className="p-2 cursor-pointer rounded-full hover:bg-accent"
+                    onClick={() => handleQueryDirectionVerbsChange(!queryDirectionVerbs)}
+                >
+                    <ArrowRight className={cn("h-5 w-5 text-muted-foreground transition-transform duration-300", queryDirectionVerbs && "rotate-180")} />
+                </div>
                 <span className="text-sm font-medium text-muted-foreground">Deutsch</span>
             </div>
           </div>
