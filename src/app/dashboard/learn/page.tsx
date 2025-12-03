@@ -208,7 +208,11 @@ export default function LearnPage() {
 
   useEffect(() => {
     if (!isExiting && isTypedMode && inputRef.current) {
-        inputRef.current.focus();
+      // The `preventScroll` option stops the browser from auto-scrolling.
+      // We manually scroll the element into view with 'block: "end"' to align it
+      // just above the on-screen keyboard.
+      inputRef.current.focus({ preventScroll: true });
+      inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   }, [currentIndex, isExiting, isTypedMode]);
   
