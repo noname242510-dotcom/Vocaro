@@ -13,6 +13,7 @@ import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { Subject } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function DashboardLayout({
   children,
@@ -157,9 +158,12 @@ export default function DashboardLayout({
           {/* Account Section */}
           <div className="mt-auto">
              <div className="flex items-center p-2 rounded-full mb-4">
-                <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl mr-3">
-                  {isUserLoading ? '' : getInitials(user?.displayName)}
-                </div>
+                <Avatar className="h-10 w-10 mr-3">
+                  <AvatarImage src={user?.photoURL ?? undefined} alt={user?.displayName ?? 'Benutzer'} />
+                  <AvatarFallback className="font-bold">
+                    {isUserLoading ? '' : getInitials(user?.displayName)}
+                  </AvatarFallback>
+                </Avatar>
                 <div>
                   <p className="font-semibold">{isUserLoading ? 'Laden...' : (user?.displayName || 'Benutzer')}</p>
                 </div>
