@@ -143,7 +143,7 @@ export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed }: Sub
               </div>
             </div>
           </div>
-          <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute top-4 right-4 flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
               variant="ghost"
               size="icon"
@@ -185,7 +185,7 @@ export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed }: Sub
           </div>
         </CardHeader>
         <CardContent className="p-0 mt-auto absolute bottom-4 right-4">
-          <Link href={`/dashboard/subjects/${subject.id}`} className="opacity-0 group-hover:opacity-100 transition-opacity">
+          <Link href={`/dashboard/subjects/${subject.id}`} className="md:opacity-0 group-hover:opacity-100 transition-opacity">
             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-secondary">
               <ArrowRight className="h-5 w-5" />
             </Button>
