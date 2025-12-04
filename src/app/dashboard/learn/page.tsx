@@ -208,22 +208,7 @@ export default function LearnPage() {
 
   useEffect(() => {
     if (!isExiting && isTypedMode && inputRef.current) {
-        const inputElement = inputRef.current;
-        // Focus without causing the browser's default scroll
-        inputElement.focus({ preventScroll: true });
-        
-        // Manually scroll to position the input field at the bottom of the viewport
-        const elementRect = inputElement.getBoundingClientRect();
-        const absoluteElementTop = elementRect.top + window.pageYOffset;
-        const newScrollPosition = absoluteElementTop - window.innerHeight + elementRect.height + 20; // 20px buffer
-
-        // Use a timeout to ensure the keyboard has appeared
-        setTimeout(() => {
-            window.scrollTo({
-                top: newScrollPosition,
-                behavior: 'smooth'
-            });
-        }, 100);
+      inputRef.current.focus();
     }
   }, [currentIndex, isExiting, isTypedMode]);
   
@@ -509,11 +494,11 @@ export default function LearnPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-2xl h-80 relative mt-4 mx-auto flex-grow">
+      <div className="w-full max-w-2xl mt-4 mx-auto flex-grow flex flex-col">
         <div
           key={currentCard.id}
           className={cn(
-            "relative w-full h-full flex flex-col items-center justify-center p-6 rounded-2xl glass-effect border transition-opacity duration-300",
+            "relative w-full h-80 flex flex-col items-center justify-center p-6 rounded-2xl glass-effect border transition-opacity duration-300",
             !isExiting ? 'opacity-100' : 'opacity-0',
           )}
         >
