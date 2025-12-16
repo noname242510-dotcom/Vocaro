@@ -25,6 +25,7 @@ import { Confetti } from '@/components/confetti';
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { SpeakerButton } from '@/components/speaker-button';
 
 // Function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -486,7 +487,7 @@ export default function VerbPracticePage() {
     };
     
     return (
-        <div className="flex flex-col min-h-[calc(100vh-8rem)] md:min-h-[calc(100vh-10rem)]">
+        <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)]">
             <div className="w-full max-w-2xl px-4 sm:px-0 mx-auto">
                 <div className="flex items-center justify-between mb-2">
                     <AlertDialog>
@@ -536,8 +537,19 @@ export default function VerbPracticePage() {
                             </div>
                         </div>
                     </div>
-
+                    
                     <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
+                        <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                            <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(0deg)]">
+                                <SpeakerButton text={currentCard.front} isFlipped={isFlipped} isFront={true} autoPlay={!isGermanFirst} />
+                            </div>
+                            <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                                <SpeakerButton text={currentCard.back} isFlipped={isFlipped} isFront={false} autoPlay={isGermanFirst} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">
                         <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                             <div className="[backface-visibility:hidden] w-full h-full flex items-center justify-center">
                                 {/* Empty on front, hint on back */}
