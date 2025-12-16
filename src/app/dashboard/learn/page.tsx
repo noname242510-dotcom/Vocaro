@@ -94,6 +94,7 @@ export default function LearnPage() {
   const [answeredIds, setAnsweredIds] = useState<Map<string, AnswerStatus>>(new Map());
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
+  const [subjectName, setSubjectName] = useState<string>('');
   const [subjectEmoji, setSubjectEmoji] = useState<string>('');
   const [isExiting, setIsExiting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -127,6 +128,7 @@ export default function LearnPage() {
       const vocabIdsJson = sessionStorage.getItem('learn-session-vocab');
       const storedSubjectId = sessionStorage.getItem('learn-session-subject');
       const storedSubjectEmoji = sessionStorage.getItem('learn-session-emoji');
+      const storedSubjectName = sessionStorage.getItem('learn-session-subject-name');
 
 
       if (!vocabIdsJson || !storedSubjectId) {
@@ -136,9 +138,9 @@ export default function LearnPage() {
       }
 
       setSubjectId(storedSubjectId);
-      if (storedSubjectEmoji) {
-        setSubjectEmoji(storedSubjectEmoji);
-      }
+      if (storedSubjectEmoji) setSubjectEmoji(storedSubjectEmoji);
+      if (storedSubjectName) setSubjectName(storedSubjectName);
+
 
       let vocabIds: string[] = [];
       try {
@@ -514,10 +516,10 @@ export default function LearnPage() {
            <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
               <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                  <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(0deg)]">
-                    {isTermFirst && <SpeakerButton text={currentCard.term} isFlipped={isFlipped} isFront={true} autoPlay={true} />}
+                    {isTermFirst && <SpeakerButton text={currentCard.term} isFlipped={isFlipped} isFront={true} autoPlay={true} languageHint={subjectName}/>}
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                    {!isTermFirst && <SpeakerButton text={currentCard.term} isFlipped={isFlipped} isFront={true} autoPlay={true} />}
+                    {!isTermFirst && <SpeakerButton text={currentCard.term} isFlipped={isFlipped} isFront={true} autoPlay={true} languageHint={subjectName}/>}
                 </div>
               </div>
             </div>

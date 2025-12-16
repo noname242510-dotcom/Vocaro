@@ -119,6 +119,7 @@ export default function VerbPracticePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [subjectId, setSubjectId] = useState<string | null>(null);
+    const [subjectName, setSubjectName] = useState<string>('');
     const [subjectEmoji, setSubjectEmoji] = useState<string>('');
     const [totalItemCount, setTotalItemCount] = useState(0);
 
@@ -155,6 +156,7 @@ export default function VerbPracticePage() {
         const sessionData = sessionStorage.getItem('verb-practice-session');
         const subjectIdData = sessionStorage.getItem('verb-practice-subject-id');
         const storedSubjectEmoji = sessionStorage.getItem('learn-session-emoji');
+        const storedSubjectName = sessionStorage.getItem('learn-session-subject-name');
 
         if (!sessionData || !subjectIdData) {
             setError('Keine Übungsdaten gefunden. Bitte gehe zurück und wähle Verben aus.');
@@ -164,6 +166,7 @@ export default function VerbPracticePage() {
 
         setSubjectId(subjectIdData);
         if (storedSubjectEmoji) setSubjectEmoji(storedSubjectEmoji);
+        if (storedSubjectName) setSubjectName(storedSubjectName);
 
         try {
             const verbs: (Verb & { selectedTenses: string[] })[] = JSON.parse(sessionData);
@@ -541,10 +544,10 @@ export default function VerbPracticePage() {
                     <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
                         <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                             <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(0deg)]">
-                                {!isGermanFirst && <SpeakerButton text={currentCard.front} isFlipped={isFlipped} isFront={true} autoPlay={true} />}
+                                {!isGermanFirst && <SpeakerButton text={currentCard.front} isFlipped={isFlipped} isFront={true} autoPlay={true} languageHint={subjectName} />}
                             </div>
                             <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                 {isGermanFirst && <SpeakerButton text={currentCard.back} isFlipped={isFlipped} isFront={true} autoPlay={false} />}
+                                 {isGermanFirst && <SpeakerButton text={currentCard.back} isFlipped={isFlipped} isFront={false} autoPlay={true} languageHint={subjectName} />}
                             </div>
                         </div>
                     </div>

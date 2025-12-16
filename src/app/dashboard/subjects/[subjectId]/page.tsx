@@ -415,6 +415,7 @@ export default function SubjectDetailPage() {
       sessionStorage.setItem('learn-session-vocab', JSON.stringify(selectedVocab));
       sessionStorage.setItem('learn-session-subject', subjectId);
       sessionStorage.setItem('learn-session-emoji', subject.emoji);
+      sessionStorage.setItem('learn-session-subject-name', subject.name);
       router.push(`/dashboard/learn`);
     }
   };
@@ -672,6 +673,7 @@ export default function SubjectDetailPage() {
       sessionStorage.setItem('verb-practice-session', JSON.stringify(practiceData));
       sessionStorage.setItem('verb-practice-subject-id', subjectId);
       sessionStorage.setItem('learn-session-emoji', subject.emoji);
+      sessionStorage.setItem('learn-session-subject-name', subject.name);
       router.push('/dashboard/learn/verbs');
     }
   };
@@ -1089,12 +1091,3 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
-
-
-
