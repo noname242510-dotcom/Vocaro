@@ -15,9 +15,6 @@ interface SpeakerButtonProps {
   className?: string;
 }
 
-// Global cache to store audio data URIs and promises
-const audioCache = new Map<string, Promise<string>>();
-
 const languageCodeMap: Record<string, string> = {
     '🇩🇪': 'de-DE', 'Deutsch': 'de-DE',
     '🇬🇧': 'en-GB', 'Englisch': 'en-GB', 'English': 'en-US',
@@ -32,29 +29,28 @@ const languageCodeMap: Record<string, string> = {
 };
 
 function getLanguageCode(hint: string): string | undefined {
-    // Check for emoji first
     for (const key in languageCodeMap) {
         if (hint.includes(key)) {
             return languageCodeMap[key];
         }
     }
-    return undefined; // Default or no match
+    return undefined;
 }
 
+const audioCache = new Map<string, Promise<string>>();
 
-const getAudioData = async (text: string, languageCode?: string): Promise<string> => {
-    const cacheKey = `${languageCode}:${text}`;
+const getAudioData = (text: string, languageCode?: string): Promise<string> => {
+    const cacheKey = `${languageCode || 'default'}:${text}`;
 
     if (audioCache.has(cacheKey)) {
         return audioCache.get(cacheKey)!;
     }
     
-    // First, try to get from localStorage for persistence across sessions
     try {
         const storedData = localStorage.getItem(cacheKey);
         if (storedData) {
             const promise = Promise.resolve(storedData);
-            audioCache.set(cacheKey, promise); // Populate in-memory cache
+            audioCache.set(cacheKey, promise);
             return promise;
         }
     } catch (e) {
@@ -65,7 +61,7 @@ const getAudioData = async (text: string, languageCode?: string): Promise<string
         try {
             const result = await textToSpeech({ text, languageCode });
             if (result.media) {
-                 try {
+                try {
                     localStorage.setItem(cacheKey, result.media);
                 } catch (e) {
                     console.warn("Could not write to localStorage for TTS cache.", e);
@@ -81,7 +77,6 @@ const getAudioData = async (text: string, languageCode?: string): Promise<string
 
     audioCache.set(cacheKey, audioPromise);
     
-    // In case of error, remove the failed promise from cache to allow retries
     audioPromise.catch(() => {
         audioCache.delete(cacheKey);
     });
@@ -89,75 +84,90 @@ const getAudioData = async (text: string, languageCode?: string): Promise<string
     return audioPromise;
 };
 
-
 export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, languageHint, className }: SpeakerButtonProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [audioSrc, setAudioSrc] = useState<string | null>(null);
   
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasPlayedOnceRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   const languageCode = getLanguageCode(languageHint);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    // Get an audio element on mount
+    if (!audioRef.current) {
+        audioRef.current = new Audio();
+    }
+    const audio = audioRef.current;
+    
+    const handleAudioEnd = () => {
+        if(isMountedRef.current) setIsPlaying(false);
+    };
+    audio.addEventListener('ended', handleAudioEnd);
+
+    // Cleanup on unmount
+    return () => {
+        isMountedRef.current = false;
+        audio.removeEventListener('ended', handleAudioEnd);
+        audio.pause();
+        audio.src = '';
+    };
+  }, []);
+
 
   const play = async () => {
     if (isLoading || isPlaying) return;
 
-    if (audioSrc && audioRef.current) {
-      setIsPlaying(true);
-      audioRef.current.currentTime = 0;
-      audioRef.current.play();
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (audio.src) {
+      if (isMountedRef.current) setIsPlaying(true);
+      audio.currentTime = 0;
+      audio.play().catch(() => {
+          if (isMountedRef.current) setIsPlaying(false);
+      });
     } else {
-      setIsLoading(true);
+      if (isMountedRef.current) setIsLoading(true);
       try {
         const dataUrl = await getAudioData(text, languageCode);
-        setAudioSrc(dataUrl);
+        if (isMountedRef.current && audio) {
+            audio.src = dataUrl;
+            setIsPlaying(true);
+            audio.play().catch(() => {
+                if (isMountedRef.current) setIsPlaying(false);
+            });
+            hasPlayedOnceRef.current = true;
+        }
       } catch (error) {
         console.error("TTS Error:", error);
       } finally {
-        setIsLoading(false);
+        if (isMountedRef.current) setIsLoading(false);
       }
     }
   };
-
-  // Effect to play audio once it's loaded
-  useEffect(() => {
-    if (audioSrc && audioRef.current && isLoading) { // Only play automatically after loading
-        setIsPlaying(true);
-        audioRef.current.src = audioSrc;
-        audioRef.current.play();
-        hasPlayedOnceRef.current = true;
-    }
-  }, [audioSrc, isLoading]);
   
-  // Effect for autoplay
   useEffect(() => {
-    // Determine if the card is on the side that should speak
     const shouldSpeak = isFront; 
+    const audio = audioRef.current;
 
-    if (isFlipped && shouldSpeak && autoPlay && !hasPlayedOnceRef.current) {
+    if (shouldSpeak && autoPlay && !hasPlayedOnceRef.current && isFlipped) {
         play();
     }
     
-    // Reset state when card is flipped back to the front
-    if (!isFlipped) {
+    if (!isFlipped && audio) {
         hasPlayedOnceRef.current = false;
-        setIsPlaying(false);
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
+        if (isMountedRef.current) setIsPlaying(false);
+        audio.pause();
+        if (audio.currentTime > 0) {
+            audio.currentTime = 0;
         }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlipped, isFront, autoPlay]);
 
-  // Handle audio ending
-  useEffect(() => {
-    const audio = audioRef.current;
-    const handleAudioEnd = () => setIsPlaying(false);
-    audio?.addEventListener('ended', handleAudioEnd);
-    return () => audio?.removeEventListener('ended', handleAudioEnd);
-  }, []);
 
   return (
     <div className={cn("relative h-10 w-10", className)}>
@@ -184,7 +194,7 @@ export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, languageHint
                 r="16"
                 fill="none"
                 className={cn(
-                    "stroke-primary transition-all",
+                    "stroke-primary",
                     isPlaying ? 'opacity-100' : 'opacity-0'
                 )}
                 strokeWidth="2"
@@ -195,7 +205,6 @@ export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, languageHint
                 }}
             />
         </svg>
-        <audio ref={audioRef} className="hidden" />
     </div>
   );
 };
