@@ -541,10 +541,10 @@ export default function VerbPracticePage() {
                     <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
                         <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                             <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(0deg)]">
-                                <SpeakerButton text={currentCard.front} isFlipped={isFlipped} isFront={true} autoPlay={!isGermanFirst} />
+                                {!isGermanFirst && <SpeakerButton text={currentCard.front} isFlipped={isFlipped} isFront={true} autoPlay={true} />}
                             </div>
                             <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                <SpeakerButton text={currentCard.back} isFlipped={isFlipped} isFront={false} autoPlay={isGermanFirst} />
+                                 {isGermanFirst && <SpeakerButton text={currentCard.back} isFlipped={isFlipped} isFront={true} autoPlay={false} />}
                             </div>
                         </div>
                     </div>
