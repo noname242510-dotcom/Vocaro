@@ -42,6 +42,7 @@ interface PracticeItem {
     isConjugation: boolean; // Flag to identify if it's a conjugation or infinitive translation
     front: string;
     back: string;
+    hint?: string; // Tense can be a hint now
 }
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect' | 'accepted';
@@ -168,62 +169,57 @@ export default function VerbPracticePage() {
             const items: PracticeItem[] = [];
 
             verbs.forEach((verb) => {
+                // If no tenses are selected, practice the infinitive translation
                 if (verb.selectedTenses.length === 0) {
-                    // Only practice infinitive
                     items.push({
                         id: `${verb.id}-infinitive`,
                         verbInfinitive: verb.infinitive,
                         isConjugation: false,
-                        front: germanFirstSetting ? verb.translation : verb.infinitive,
-                        back: germanFirstSetting ? verb.infinitive : verb.translation,
+                        front: verb.infinitive,
+                        back: verb.translation,
                     });
                 } else {
                     // Practice selected tenses
                     verb.selectedTenses.forEach((tense) => {
-                        const tenseForms = verb.forms[tense] as VerbTense;
+                        const foreignTenseForms = verb.forms[tense] as VerbTense;
                         const germanTenseForms = verb.germanForms?.[tense] as VerbTense;
                         
-                        if (tenseForms) {
-                            Object.entries(tenseForms).forEach(([pronoun, form]) => {
-                                let front, back;
+                        if (foreignTenseForms && germanTenseForms) {
+                             Object.entries(foreignTenseForms).forEach(([pronoun, foreignForm]) => {
                                 const germanPronoun = germanPronounMap[pronoun] || pronoun;
+                                const germanForm = germanTenseForms[germanPronoun];
 
-                                if (germanFirstSetting && germanTenseForms) {
-                                    const germanForm = germanTenseForms[germanPronoun];
-                                    if(germanForm) {
-                                        front = `${germanPronoun}, ${tense}`;
-                                        back = `${pronoun} ${form}`;
-                                    } else {
-                                        // Fallback if no German form is found
-                                        front = `${pronoun}, ${tense}`;
-                                        back = form;
-                                    }
-                                } else { // Foreign language first
-                                    front = `${pronoun}, ${tense}`;
-                                    const germanForm = germanTenseForms ? germanTenseForms[germanPronoun] : '';
-                                    back = germanForm ? `${germanPronoun} ${germanForm}` : form;
+                                if (germanForm) {
+                                    items.push({
+                                        id: `${verb.id}-${tense}-${pronoun}`,
+                                        verbInfinitive: verb.infinitive,
+                                        isConjugation: true,
+                                        front: `${pronoun.startsWith('(') ? '' : pronoun + ' '}${foreignForm}`,
+                                        back: `${germanPronoun.startsWith('(') ? '' : germanPronoun + ' '}${germanForm}`,
+                                        hint: tense,
+                                    });
                                 }
-
-                                items.push({
-                                    id: `${verb.id}-${tense}-${pronoun}`,
-                                    verbInfinitive: verb.infinitive,
-                                    isConjugation: true,
-                                    front,
-                                    back,
-                                });
                             });
                         }
                     });
                 }
             });
+            
+            // Apply German-first setting after generation
+            const finalItems = items.map(item => {
+                if (isGermanFirst) {
+                    return { ...item, front: item.back, back: item.front };
+                }
+                return item;
+            })
 
-            if (items.length === 0) {
+            if (finalItems.length === 0) {
                 setError('Keine gültigen Übungseinheiten gefunden. Überprüfe deine Auswahl.');
                 setIsLoading(false);
                 return;
             }
 
-            const shuffledItems = shuffleArray(items);
+            const shuffledItems = shuffleArray(finalItems);
             setPracticeItems(shuffledItems);
             setInitialItems(shuffledItems);
             setTotalItemCount(shuffledItems.length);
@@ -544,7 +540,10 @@ export default function VerbPracticePage() {
                     <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
                         <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                             <div className="[backface-visibility:hidden] w-full h-full flex items-center justify-center">
-                                {shouldShowHints && currentCard.isConjugation && (
+                                {/* Empty on front, hint on back */}
+                            </div>
+                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
+                               {shouldShowHints && currentCard.isConjugation && (
                                     <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
                                         <PopoverTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); }}>
@@ -557,14 +556,14 @@ export default function VerbPracticePage() {
                                         >
                                             <div className="flex items-start gap-2">
                                                 <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
-                                                <p className="text-sm">{currentCard.verbInfinitive}</p>
+                                                <div className="text-sm">
+                                                    <p className="font-semibold">{currentCard.verbInfinitive}</p>
+                                                    <p className="text-muted-foreground">{currentCard.hint}</p>
+                                                </div>
                                             </div>
                                         </PopoverContent>
                                     </Popover>
                                 )}
-                            </div>
-                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                {/* Empty on the back */}
                             </div>
                         </div>
                     </div>
@@ -668,10 +667,12 @@ export default function VerbPracticePage() {
                     </div>
                 </div>
                 {history.length > 0 && !isExiting && (
-                    <Button variant="link" onClick={handleGoBack} className="mt-4 text-muted-foreground">
-                    <ChevronLeft className="mr-1 h-4 w-4" />
-                    Zurück
-                    </Button>
+                    <div className="w-full text-center mt-2">
+                        <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
+                            <ChevronLeft className="mr-1 h-4 w-4" />
+                            Zurück
+                        </Button>
+                    </div>
                 )}
             </div>
         </div>
