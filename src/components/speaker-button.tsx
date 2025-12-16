@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Volume2 } from 'lucide-react';
+import { Volume2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { textToSpeech } from '@/ai/flows/text-to-speech';
 
 interface SpeakerButtonProps {
   text: string;
@@ -15,53 +16,79 @@ interface SpeakerButtonProps {
 
 export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, className }: SpeakerButtonProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  
+  const audioRef = useRef<HTMLAudioElement>(null);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasPlayedOnceRef = useRef(false);
 
-  // Estimate duration based on text length. A simple but effective heuristic.
-  const DURATION_PER_CHAR = 60; // ms
-  const MIN_DURATION = 800; // ms
-  const MAX_DURATION = 5000; // ms
+  const DURATION_PER_CHAR = 60;
+  const MIN_DURATION = 800;
+  const MAX_DURATION = 5000;
   const playbackDuration = Math.max(MIN_DURATION, Math.min(text.length * DURATION_PER_CHAR, MAX_DURATION));
 
-  const play = () => {
-    if (isPlaying) return;
-    setIsPlaying(true);
-    hasPlayedOnceRef.current = true;
-    
-    if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
+  const play = async () => {
+    if (isLoading || isPlaying) return;
+
+    if (audioSrc && audioRef.current) {
+      setIsPlaying(true);
+      audioRef.current.currentTime = 0;
+      audioRef.current.play();
+      hasPlayedOnceRef.current = true;
+    } else {
+      setIsLoading(true);
+      try {
+        const result = await textToSpeech(text);
+        if (result.media) {
+          setAudioSrc(result.media);
+          // The effect listening to audioSrc will handle playing
+        }
+      } catch (error) {
+        console.error("TTS Error:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
-    
-    animationTimeoutRef.current = setTimeout(() => {
-      setIsPlaying(false);
-    }, playbackDuration);
   };
-  
-  // Effect to handle autoplay
+
+  // Effect to play audio once it's loaded
   useEffect(() => {
-    // We want to autoplay only when the card flips to the designated front side
+    if (audioSrc && audioRef.current) {
+        setIsPlaying(true);
+        audioRef.current.src = audioSrc;
+        audioRef.current.play();
+        hasPlayedOnceRef.current = true;
+    }
+  }, [audioSrc]);
+  
+  // Effect for autoplay
+  useEffect(() => {
     if (isFlipped && isFront && autoPlay && !hasPlayedOnceRef.current) {
       play();
     }
     
-    // Reset the "has played" flag when the card is flipped away
     if (!isFlipped) {
       hasPlayedOnceRef.current = false;
       setIsPlaying(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       if (animationTimeoutRef.current) {
         clearTimeout(animationTimeoutRef.current);
       }
     }
-    
-    return () => {
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
-      }
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlipped, isFront, autoPlay]);
 
+  // Handle audio ending
+  useEffect(() => {
+    const audio = audioRef.current;
+    const handleAudioEnd = () => setIsPlaying(false);
+    audio?.addEventListener('ended', handleAudioEnd);
+    return () => audio?.removeEventListener('ended', handleAudioEnd);
+  }, []);
 
   return (
     <div className={cn("relative h-10 w-10", className)}>
@@ -73,8 +100,9 @@ export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, className }:
             e.stopPropagation();
             play();
           }}
+          disabled={isLoading}
         >
-          <Volume2 className="h-5 w-5" />
+          {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Volume2 className="h-5 w-5" />}
         </Button>
         <svg
             className="absolute top-0 left-0 w-full h-full -rotate-90 pointer-events-none"
@@ -86,15 +114,19 @@ export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, className }:
                 cy="18"
                 r="16"
                 fill="none"
-                className={cn("stroke-primary transition-all", isPlaying ? 'opacity-100' : 'opacity-0')}
+                className={cn(
+                    "stroke-primary transition-all",
+                    isPlaying ? 'opacity-100' : 'opacity-0'
+                )}
                 strokeWidth="2"
                 strokeDasharray="100"
                 strokeDashoffset={isPlaying ? 0 : 100}
                 style={{
-                    transition: isPlaying ? `stroke-dashoffset ${playbackDuration}ms linear` : 'none',
+                    transition: isPlaying ? `stroke-dashoffset ${audioRef.current?.duration ? audioRef.current.duration * 1000 : playbackDuration}ms linear` : 'none',
                 }}
             />
         </svg>
+        <audio ref={audioRef} className="hidden" />
     </div>
   );
 };
