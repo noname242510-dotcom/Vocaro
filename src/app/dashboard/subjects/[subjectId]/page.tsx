@@ -336,7 +336,7 @@ export default function SubjectDetailPage() {
             fetchAllVocab();
         },
         onError: (error) => {
-            toast({ variant: "destructive", title: "Fehler bei der Vokabelerkennung", description: error.message });
+            toast({ variant: "destructive", title: "Fehler bei der Vokabelerkennung", description: "Die KI konnte die Anfrage nicht verarbeiten. Bitte versuche es erneut." });
         }
       }
     );
@@ -1095,5 +1095,6 @@ export default function SubjectDetailPage() {
     
 
     
+
 
 

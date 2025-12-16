@@ -215,8 +215,8 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, subjectId, 
                 toast({ title: 'Erfolg', description: `Verbformen für "${infinitive}" wurden generiert.` });
             },
             onError: (e) => {
-                setError(e.message || 'Die Verbformen konnten nicht generiert werden.');
-                toast({ variant: 'destructive', title: 'Fehler', description: e.message || 'Die Verbformen konnten nicht generiert werden.' });
+                setError('Die KI konnte die Anfrage nicht verarbeiten. Bitte versuche es erneut.');
+                toast({ variant: 'destructive', title: 'Fehler', description: 'Die KI konnte die Anfrage nicht verarbeiten. Bitte versuche es erneut.' });
             }
         }
     );

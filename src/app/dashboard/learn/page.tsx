@@ -196,7 +196,7 @@ export default function LearnPage() {
         }
       } catch (e) {
         console.error(e);
-        setError('Fehler beim Laden der Vokabeln.');
+        setError('Die Vokabeln konnten nicht geladen werden. Bitte überprüfe deine Internetverbindung.');
       } finally {
         setIsLoading(false);
       }
@@ -243,6 +243,7 @@ export default function LearnPage() {
   };
   
   const goToNextCard = (isCorrect: boolean) => {
+    saveToHistory(); // Save state before moving to the next card
     const currentCard = vocabulary[currentIndex];
     let remainingCards = [...vocabulary];
   
@@ -272,8 +273,6 @@ export default function LearnPage() {
   const handleClassicAnswer = (knewIt: boolean) => {
     if (!isFlipped || isExiting) return;
 
-    saveToHistory();
-
     const currentCard = vocabulary[currentIndex];
     
     if (knewIt) {
@@ -298,7 +297,6 @@ export default function LearnPage() {
   };
 
   const handleFlipCard = () => {
-    saveToHistory();
     setIsFlipped(true);
   };
 
@@ -314,7 +312,6 @@ export default function LearnPage() {
       return;
     }
 
-    saveToHistory();
     setIsFlipped(true);
 
     const currentCard = vocabulary[currentIndex];
