@@ -18,11 +18,20 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
   const isMobile = useIsMobile();
   const router = useRouter();
 
+  const headerContent = (
+    <div className="flex items-center gap-2 mb-4">
+      <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
+          <ArrowLeft className="h-5 w-5" />
+      </Button>
+      <h1 className="text-xl font-bold font-headline">Einstellungen</h1>
+    </div>
+  );
+
   if (isMobile) {
     if (showMenuOnMobile) {
       return (
          <div>
-          <h1 className="text-xl font-bold font-headline mb-4">Einstellungen</h1>
+          {headerContent}
           {menu}
         </div>
       );
@@ -45,12 +54,7 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
     <div className="relative">
       <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
         <aside>
-          <div className="flex items-center gap-2 mb-4">
-             <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
-                <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-bold font-headline">Einstellungen</h1>
-          </div>
+          {headerContent}
           {menu}
         </aside>
         <main>{children}</main>
