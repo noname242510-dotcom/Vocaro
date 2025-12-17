@@ -11,8 +11,8 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Confetti } from '@/components/confetti';
 import { useFirebase } from '@/firebase';
-import { collection, getDocs, query, where, documentId, collectionGroup } from 'firebase/firestore';
-import type { VocabularyItem } from '@/lib/types';
+import { collection, getDocs, query, where, documentId, collectionGroup, getDoc, doc } from 'firebase/firestore';
+import type { VocabularyItem, Subject } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -94,8 +94,10 @@ export default function LearnPage() {
   const [answeredIds, setAnsweredIds] = useState<Map<string, AnswerStatus>>(new Map());
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
-  const [subjectName, setSubjectName] = useState<string>('');
-  const [subjectEmoji, setSubjectEmoji] = useState<string>('');
+<<<<<<< HEAD
+=======
+  const [subject, setSubject] = useState<Subject | null>(null);
+>>>>>>> 843cc7b (Aufgabe:)
   const [isExiting, setIsExiting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
@@ -127,37 +129,45 @@ export default function LearnPage() {
     const fetchVocab = async () => {
       const vocabIdsJson = sessionStorage.getItem('learn-session-vocab');
       const storedSubjectId = sessionStorage.getItem('learn-session-subject');
-      const storedSubjectEmoji = sessionStorage.getItem('learn-session-emoji');
-      const storedSubjectName = sessionStorage.getItem('learn-session-subject-name');
-
-
+<<<<<<< HEAD
+=======
+      
+>>>>>>> 843cc7b (Aufgabe:)
       if (!vocabIdsJson || !storedSubjectId) {
         setError('Keine Vokabeln für die Lernsitzung gefunden.');
         setIsLoading(false);
         return;
       }
-
-      setSubjectId(storedSubjectId);
-      if (storedSubjectEmoji) setSubjectEmoji(storedSubjectEmoji);
-      if (storedSubjectName) setSubjectName(storedSubjectName);
-
-
-      let vocabIds: string[] = [];
-      try {
-        vocabIds = JSON.parse(vocabIdsJson);
-      } catch (e) {
-        setError('Fehler beim Lesen der Vokabel-IDs.');
-        setIsLoading(false);
-        return;
-      }
-
-      if (vocabIds.length === 0) {
-        setError('Keine Vokabeln ausgewählt.');
-        setIsLoading(false);
-        return;
-      }
+<<<<<<< HEAD
+=======
+>>>>>>> 843cc7b (Aufgabe:)
       
+      setSubjectId(storedSubjectId);
+
       try {
+        const subjectDocRef = doc(firestore, 'users', user.uid, 'subjects', storedSubjectId);
+        const subjectDoc = await getDoc(subjectDocRef);
+        if (subjectDoc.exists()) {
+            setSubject({ ...subjectDoc.data(), id: subjectDoc.id } as Subject);
+        } else {
+            throw new Error('Subject not found');
+        }
+
+        let vocabIds: string[] = [];
+        try {
+          vocabIds = JSON.parse(vocabIdsJson);
+        } catch (e) {
+          setError('Fehler beim Lesen der Vokabel-IDs.');
+          setIsLoading(false);
+          return;
+        }
+
+        if (vocabIds.length === 0) {
+          setError('Keine Vokabeln ausgewählt.');
+          setIsLoading(false);
+          return;
+        }
+      
         const allVocab: VocabularyItem[] = [];
         const CHUNK_SIZE = 30; // Firestore 'in' query limit
         
@@ -199,7 +209,7 @@ export default function LearnPage() {
         }
       } catch (e) {
         console.error(e);
-        setError('Die KI konnte die Anfrage nicht verarbeiten. Bitte versuche es erneut.');
+        setError('Die Daten konnten nicht geladen werden. Bitte versuche es erneut.');
       } finally {
         setIsLoading(false);
       }
@@ -505,23 +515,22 @@ export default function LearnPage() {
           <div className="absolute top-4 left-4 text-3xl [perspective:1000px]">
             <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                 <div className="[backface-visibility:hidden]">
-                    <span>{isTermFirst ? subjectEmoji : '🇩🇪'}</span>
+                    <span>{isTermFirst ? subject?.emoji : '🇩🇪'}</span>
                 </div>
                 <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                    <span>{isTermFirst ? '🇩🇪' : subjectEmoji}</span>
+                    <span>{isTermFirst ? '🇩🇪' : subject?.emoji}</span>
                 </div>
             </div>
           </div>
           
-           <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
-              <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                 <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(0deg)]">
-                    {isTermFirst && <SpeakerButton text={currentCard.term} isFlipped={isFlipped} isFront={true} autoPlay={true} languageHint={subjectName}/>}
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                    {!isTermFirst && <SpeakerButton text={currentCard.term} isFlipped={isFlipped} isFront={true} autoPlay={true} languageHint={subjectName}/>}
-                </div>
-              </div>
+<<<<<<< HEAD
+=======
+           <div className="absolute top-4 right-4 h-10 w-10">
+              <SpeakerButton 
+                text={currentCard.term} 
+                languageHint={subject?.name || 'English'}
+              />
+>>>>>>> 843cc7b (Aufgabe:)
             </div>
           
           <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-12">

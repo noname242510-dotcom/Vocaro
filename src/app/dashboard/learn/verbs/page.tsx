@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Check, Loader2, RotateCcw, X, Lightbulb, Pencil, ChevronLeft, Smile, Frown, Meh } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Verb, VerbTense } from '@/lib/types';
+import type { Verb, VerbTense, Subject } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +26,9 @@ import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SpeakerButton } from '@/components/speaker-button';
+import { useFirebase } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+
 
 // Function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -110,6 +113,7 @@ const germanPronounMap: Record<string, string> = {
 
 
 export default function VerbPracticePage() {
+    const { firestore, user } = useFirebase();
     const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
     const { triggerHapticFeedback } = useHapticFeedback();
@@ -119,8 +123,12 @@ export default function VerbPracticePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [subjectId, setSubjectId] = useState<string | null>(null);
+<<<<<<< HEAD
     const [subjectName, setSubjectName] = useState<string>('');
     const [subjectEmoji, setSubjectEmoji] = useState<string>('');
+=======
+    const [subject, setSubject] = useState<Subject | null>(null);
+>>>>>>> 843cc7b (Aufgabe:)
     const [totalItemCount, setTotalItemCount] = useState(0);
 
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -155,9 +163,10 @@ export default function VerbPracticePage() {
 
         const sessionData = sessionStorage.getItem('verb-practice-session');
         const subjectIdData = sessionStorage.getItem('verb-practice-subject-id');
-        const storedSubjectEmoji = sessionStorage.getItem('learn-session-emoji');
-        const storedSubjectName = sessionStorage.getItem('learn-session-subject-name');
-
+<<<<<<< HEAD
+=======
+        
+>>>>>>> 843cc7b (Aufgabe:)
         if (!sessionData || !subjectIdData) {
             setError('Keine Übungsdaten gefunden. Bitte gehe zurück und wähle Verben aus.');
             setIsLoading(false);
@@ -165,77 +174,90 @@ export default function VerbPracticePage() {
         }
 
         setSubjectId(subjectIdData);
-        if (storedSubjectEmoji) setSubjectEmoji(storedSubjectEmoji);
-        if (storedSubjectName) setSubjectName(storedSubjectName);
+<<<<<<< HEAD
+=======
+>>>>>>> 843cc7b (Aufgabe:)
 
-        try {
-            const verbs: (Verb & { selectedTenses: string[] })[] = JSON.parse(sessionData);
-            const items: PracticeItem[] = [];
-
-            verbs.forEach((verb) => {
-                // If no tenses are selected, practice the infinitive translation
-                if (verb.selectedTenses.length === 0) {
-                    items.push({
-                        id: `${verb.id}-infinitive`,
-                        verbInfinitive: verb.infinitive,
-                        isConjugation: false,
-                        front: verb.infinitive,
-                        back: verb.translation,
-                    });
-                } else {
-                    // Practice selected tenses
-                    verb.selectedTenses.forEach((tense) => {
-                        const foreignTenseForms = verb.forms[tense] as VerbTense;
-                        const germanTenseForms = verb.germanForms?.[tense] as VerbTense;
-                        
-                        if (foreignTenseForms && germanTenseForms) {
-                             Object.entries(foreignTenseForms).forEach(([pronoun, foreignForm]) => {
-                                const germanPronoun = germanPronounMap[pronoun] || pronoun;
-                                const germanForm = germanTenseForms[germanPronoun];
-
-                                if (germanForm) {
-                                    items.push({
-                                        id: `${verb.id}-${tense}-${pronoun}`,
-                                        verbInfinitive: verb.infinitive,
-                                        isConjugation: true,
-                                        front: `${pronoun.startsWith('(') ? '' : pronoun + ' '}${foreignForm}`,
-                                        back: `${germanPronoun.startsWith('(') ? '' : germanPronoun + ' '}${germanForm}`,
-                                        hint: tense,
-                                    });
-                                }
-                            });
-                        }
-                    });
+        const loadData = async () => {
+            try {
+                if (user && firestore) {
+                    const subjectDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectIdData);
+                    const subjectDoc = await getDoc(subjectDocRef);
+                    if (subjectDoc.exists()) {
+                        setSubject({ ...subjectDoc.data(), id: subjectDoc.id } as Subject);
+                    }
                 }
-            });
-            
-            // Apply German-first setting after generation
-            const finalItems = items.map(item => {
-                if (isGermanFirst) {
-                    return { ...item, front: item.back, back: item.front };
-                }
-                return item;
-            })
+                
+                const verbs: (Verb & { selectedTenses: string[] })[] = JSON.parse(sessionData);
+                const items: PracticeItem[] = [];
 
-            if (finalItems.length === 0) {
-                setError('Keine gültigen Übungseinheiten gefunden. Überprüfe deine Auswahl.');
+                verbs.forEach((verb) => {
+                    // If no tenses are selected, practice the infinitive translation
+                    if (verb.selectedTenses.length === 0) {
+                        items.push({
+                            id: `${verb.id}-infinitive`,
+                            verbInfinitive: verb.infinitive,
+                            isConjugation: false,
+                            front: verb.infinitive,
+                            back: verb.translation,
+                        });
+                    } else {
+                        // Practice selected tenses
+                        verb.selectedTenses.forEach((tense) => {
+                            const foreignTenseForms = verb.forms[tense] as VerbTense;
+                            const germanTenseForms = verb.germanForms?.[tense] as VerbTense;
+                            
+                            if (foreignTenseForms && germanTenseForms) {
+                                Object.entries(foreignTenseForms).forEach(([pronoun, foreignForm]) => {
+                                    const germanPronoun = germanPronounMap[pronoun] || pronoun;
+                                    const germanForm = germanTenseForms[germanPronoun];
+
+                                    if (germanForm) {
+                                        items.push({
+                                            id: `${verb.id}-${tense}-${pronoun}`,
+                                            verbInfinitive: verb.infinitive,
+                                            isConjugation: true,
+                                            front: `${pronoun.startsWith('(') ? '' : pronoun + ' '}${foreignForm}`,
+                                            back: `${germanPronoun.startsWith('(') ? '' : germanPronoun + ' '}${germanForm}`,
+                                            hint: tense,
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+                
+                // Apply German-first setting after generation
+                const finalItems = items.map(item => {
+                    if (isGermanFirst) {
+                        return { ...item, front: item.back, back: item.front };
+                    }
+                    return item;
+                })
+
+                if (finalItems.length === 0) {
+                    setError('Keine gültigen Übungseinheiten gefunden. Überprüfe deine Auswahl.');
+                    setIsLoading(false);
+                    return;
+                }
+
+                const shuffledItems = shuffleArray(finalItems);
+                setPracticeItems(shuffledItems);
+                setInitialItems(shuffledItems);
+                setTotalItemCount(shuffledItems.length);
+
+            } catch (e) {
+                console.error(e);
+                setError('Fehler beim Verarbeiten der Übungsdaten.');
+            } finally {
                 setIsLoading(false);
-                return;
             }
-
-            const shuffledItems = shuffleArray(finalItems);
-            setPracticeItems(shuffledItems);
-            setInitialItems(shuffledItems);
-            setTotalItemCount(shuffledItems.length);
-
-        } catch (e) {
-            console.error(e);
-            setError('Fehler beim Verarbeiten der Übungsdaten.');
-        } finally {
-            setIsLoading(false);
         }
+        
+        loadData();
 
-    }, []);
+    }, [user, firestore]);
 
     useEffect(() => {
         if (!isExiting && isTypedMode && inputRef.current) {
@@ -489,6 +511,9 @@ export default function VerbPracticePage() {
         }
     };
     
+    const textToSpeak = isGermanFirst ? currentCard.back : currentCard.front;
+    const languageHint = isGermanFirst ? 'German' : subject?.name || 'English';
+
     return (
         <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)]">
             <div className="w-full max-w-2xl px-4 sm:px-0 mx-auto">
@@ -533,23 +558,19 @@ export default function VerbPracticePage() {
                     <div className="absolute top-4 left-4 text-3xl [perspective:1000px]">
                         <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                             <div className="[backface-visibility:hidden]">
-                                <span>{isGermanFirst ? '🇩🇪' : subjectEmoji}</span>
+                                <span>{isGermanFirst ? '🇩🇪' : subject?.emoji}</span>
                             </div>
                             <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                <span>{isGermanFirst ? subjectEmoji : '🇩🇪'}</span>
+                                <span>{isGermanFirst ? subject?.emoji : '🇩🇪'}</span>
                             </div>
                         </div>
                     </div>
                     
-                    <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
-                        <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                            <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(0deg)]">
-                                {!isGermanFirst && <SpeakerButton text={currentCard.front} isFlipped={isFlipped} isFront={true} autoPlay={true} languageHint={subjectName} />}
-                            </div>
-                            <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                 {isGermanFirst && <SpeakerButton text={currentCard.back} isFlipped={isFlipped} isFront={false} autoPlay={true} languageHint={subjectName} />}
-                            </div>
-                        </div>
+<<<<<<< HEAD
+=======
+                    <div className="absolute top-4 right-4 h-10 w-10">
+                       <SpeakerButton text={textToSpeak} languageHint={languageHint} />
+>>>>>>> 843cc7b (Aufgabe:)
                     </div>
 
                     <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">
