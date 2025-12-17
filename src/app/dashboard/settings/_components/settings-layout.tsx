@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface SettingsLayoutProps {
   menu: ReactNode;
@@ -15,6 +16,7 @@ interface SettingsLayoutProps {
 
 export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack }: SettingsLayoutProps) {
   const isMobile = useIsMobile();
+  const router = useRouter();
 
   if (isMobile) {
     if (showMenuOnMobile) {
@@ -41,10 +43,8 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
   // Desktop layout
   return (
     <div className="relative">
-       <Button variant="ghost" size="icon" className="absolute -left-16 top-0" asChild>
-        <Link href="/dashboard">
+       <Button variant="ghost" size="icon" className="absolute -left-16 top-0" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
-        </Link>
       </Button>
       <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
         <aside>
