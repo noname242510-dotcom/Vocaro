@@ -10,6 +10,7 @@ import { VocabSettings } from './_components/vocab-settings';
 import { VerbSettings } from './_components/verb-settings';
 import { LanguageSettings } from './_components/language-settings';
 import { AccountSettings } from './_components/account-settings';
+import { TtsSettings } from './_components/tts-settings';
 
 function SettingsComponent() {
   const router = useRouter();
@@ -38,6 +39,8 @@ function SettingsComponent() {
         return <VocabSettings />;
       case 'verbs':
         return <VerbSettings />;
+      case 'tts':
+        return <TtsSettings />;
       case 'language':
         return <LanguageSettings />;
       case 'account':

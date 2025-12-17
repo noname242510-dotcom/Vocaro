@@ -32,31 +32,26 @@ const expandAbbreviation = (text: string, langCode: string): string => {
 export const useTextToSpeech = (): UseTextToSpeechReturn => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       setIsSupported(true);
+
+      const utterance = new SpeechSynthesisUtterance();
+      utteranceRef.current = utterance;
       
       const handleVoicesChanged = () => {
-        setVoices(window.speechSynthesis.getVoices());
+        voicesRef.current = window.speechSynthesis.getVoices();
       };
 
       window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
       handleVoicesChanged(); // Initial load
 
-      const utterance = new SpeechSynthesisUtterance();
-      utteranceRef.current = utterance;
-
       utterance.onstart = () => setIsPlaying(true);
       utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = (event: SpeechSynthesisErrorEvent) => {
-        // "interrupted" is a common event when a new speech is started before the old one finishes.
-        // We can safely ignore it to avoid console spam.
-        if (event.error !== 'interrupted') {
-          // This line will be removed to suppress the error in the console.
-        }
+      utterance.onerror = () => {
         setIsPlaying(false);
       };
 
@@ -68,8 +63,9 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
   }, []);
 
   const speak = useCallback((text: string, languageHint: string) => {
-    if (!isSupported || voices.length === 0 || !utteranceRef.current) {
-        return;
+    const ttsEnabled = localStorage.getItem('tts-enabled') === 'true';
+    if (!isSupported || !utteranceRef.current || voicesRef.current.length === 0 || !ttsEnabled) {
+      return;
     }
     
     window.speechSynthesis.cancel();
@@ -81,13 +77,23 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
     utterance.lang = languageCode;
     utterance.rate = 0.85;
 
-    const bestVoice = voices.find(voice => voice.lang === languageCode && !voice.localService) || voices.find(voice => voice.lang === languageCode);
-    if (bestVoice) {
-      utterance.voice = bestVoice;
+    const preferredVoiceURI = localStorage.getItem('tts-voice-uri');
+    let chosenVoice = null;
+
+    if (preferredVoiceURI) {
+        chosenVoice = voicesRef.current.find(voice => voice.voiceURI === preferredVoiceURI);
+    }
+    
+    if (!chosenVoice) {
+        chosenVoice = voicesRef.current.find(voice => voice.lang === languageCode && !voice.localService) || voicesRef.current.find(voice => voice.lang === languageCode);
+    }
+
+    if (chosenVoice) {
+      utterance.voice = chosenVoice;
     }
     
     window.speechSynthesis.speak(utterance);
-  }, [isSupported, voices]);
+  }, [isSupported]);
 
   const cancel = useCallback(() => {
     if (isSupported) {
