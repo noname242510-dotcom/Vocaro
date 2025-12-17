@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -36,6 +37,7 @@ function getLanguageCode(hint: string): string | undefined {
     }
     return undefined;
 }
+
 
 const audioCache = new Map<string, Promise<string>>();
 
@@ -87,59 +89,61 @@ const getAudioData = (text: string, languageCode?: string): Promise<string> => {
 export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, languageHint, className }: SpeakerButtonProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const hasPlayedOnceRef = useRef(false);
   const isMountedRef = useRef(true);
-
-  const languageCode = getLanguageCode(languageHint);
+  const hasPlayedOnceRef = useRef(false);
 
   useEffect(() => {
     isMountedRef.current = true;
-    // Get an audio element on mount
-    if (!audioRef.current) {
-        audioRef.current = new Audio();
-    }
-    const audio = audioRef.current;
-    
-    const handleAudioEnd = () => {
-        if(isMountedRef.current) setIsPlaying(false);
-    };
-    audio.addEventListener('ended', handleAudioEnd);
+    audioRef.current = new Audio();
 
-    // Cleanup on unmount
+    const audio = audioRef.current;
+    const onEnded = () => {
+      if (isMountedRef.current) setIsPlaying(false);
+    };
+    audio.addEventListener('ended', onEnded);
+    
     return () => {
         isMountedRef.current = false;
-        audio.removeEventListener('ended', handleAudioEnd);
-        audio.pause();
-        audio.src = '';
+        if (audio) {
+          audio.removeEventListener('ended', onEnded);
+          audio.pause();
+          audio.src = '';
+        }
     };
   }, []);
 
+  const languageCode = getLanguageCode(languageHint);
 
   const play = async () => {
     if (isLoading || isPlaying) return;
 
     const audio = audioRef.current;
     if (!audio) return;
-
+    
+    // If we already have the src, just play it
     if (audio.src) {
-      if (isMountedRef.current) setIsPlaying(true);
+      if(isMountedRef.current) setIsPlaying(true);
       audio.currentTime = 0;
-      audio.play().catch(() => {
-          if (isMountedRef.current) setIsPlaying(false);
-      });
+      try {
+        await audio.play();
+      } catch (error) {
+        if(isMountedRef.current) setIsPlaying(false);
+      }
     } else {
+      // Otherwise, fetch it first
       if (isMountedRef.current) setIsLoading(true);
       try {
         const dataUrl = await getAudioData(text, languageCode);
         if (isMountedRef.current && audio) {
-            audio.src = dataUrl;
-            setIsPlaying(true);
-            audio.play().catch(() => {
-                if (isMountedRef.current) setIsPlaying(false);
-            });
+          audio.src = dataUrl;
+          if(isMountedRef.current) setIsPlaying(true);
+          try {
+            await audio.play();
             hasPlayedOnceRef.current = true;
+          } catch(error) {
+             if(isMountedRef.current) setIsPlaying(false);
+          }
         }
       } catch (error) {
         console.error("TTS Error:", error);
@@ -148,24 +152,28 @@ export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, languageHint
       }
     }
   };
-  
-  useEffect(() => {
-    const shouldSpeak = isFront; 
-    const audio = audioRef.current;
 
-    if (shouldSpeak && autoPlay && !hasPlayedOnceRef.current && isFlipped) {
-        play();
+  useEffect(() => {
+    const audio = audioRef.current;
+    // Condition to autoplay: card is flipped to the front, autoplay is on, and it hasn't played yet in this "flipped" state
+    const shouldSpeak = isFlipped && isFront && autoPlay && !hasPlayedOnceRef.current;
+    
+    if (shouldSpeak) {
+      play();
     }
     
+    // When the card is flipped back, reset the state
     if (!isFlipped && audio) {
-        hasPlayedOnceRef.current = false;
-        if (isMountedRef.current) setIsPlaying(false);
+      hasPlayedOnceRef.current = false; // Allow autoplay on next flip
+      if (isPlaying) {
         audio.pause();
-        if (audio.currentTime > 0) {
-            audio.currentTime = 0;
-        }
+        if(isMountedRef.current) setIsPlaying(false);
+      }
+       if (audio.currentTime > 0) {
+        audio.currentTime = 0;
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFlipped, isFront, autoPlay]);
 
 
