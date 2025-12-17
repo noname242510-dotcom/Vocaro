@@ -5,8 +5,8 @@ import type { VerifiedAuthenticationResponse, AuthenticationResponseJSON } from 
 import { firestoreAdmin, authAdmin } from '@/lib/firebase-admin';
 import type { Authenticator } from '@/lib/types';
 
-const RP_ID = 'vocaro-vocab.vercel.app';
-const ORIGIN = `https://${RP_ID}`;
+const RP_ID = process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : 'localhost';
+const ORIGIN = process.env.NEXT_PUBLIC_APP_URL || `https://${RP_ID}`;
 
 export async function POST(request: NextRequest) {
     const body: AuthenticationResponseJSON & { challengeId: string } = await request.json();
