@@ -4,13 +4,15 @@ import { generateAuthenticationOptions } from '@simplewebauthn/server';
 import { firestoreAdmin, authAdmin } from '@/lib/firebase-admin';
 import type { Authenticator } from '@/lib/types';
 
-const RP_ID = process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : 'localhost';
-const ORIGIN = process.env.NEXT_PUBLIC_APP_URL || `https://${RP_ID}`;
-
 
 export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const username = searchParams.get('username');
+
+    // Dynamically determine the relying party ID and origin
+    const url = new URL(request.url);
+    const rpID = url.hostname;
+    const origin = url.origin;
 
     let userAuthenticators: Authenticator[] = [];
 
@@ -33,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
     
     const options = await generateAuthenticationOptions({
-        rpID: RP_ID,
+        rpID: rpID,
         // Wenn keine Passkeys für den Benutzer gefunden wurden (oder kein Benutzername angegeben wurde),
         // bleibt dieses Array leer, was den "discoverable" Flow aktiviert.
         allowCredentials: userAuthenticators.map(auth => ({

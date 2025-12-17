@@ -4,12 +4,14 @@ import { generateRegistrationOptions } from '@simplewebauthn/server';
 import { firestoreAdmin, authAdmin } from '@/lib/firebase-admin';
 
 const RP_NAME = 'Vocaro';
-const RP_ID = process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : 'localhost';
-const ORIGIN = process.env.NEXT_PUBLIC_APP_URL || `https://${RP_ID}`;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const username = searchParams.get('username');
+
+  // Dynamically determine the relying party ID
+  const url = new URL(request.url);
+  const rpID = url.hostname;
 
   if (!username) {
     return NextResponse.json({ error: 'Benutzername fehlt.' }, { status: 400 });
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
 
   const options = await generateRegistrationOptions({
     rpName: RP_NAME,
-    rpID: RP_ID,
+    rpID: rpID,
     userID: userId,
     userName: username,
     userDisplayName: username,

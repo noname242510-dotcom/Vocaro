@@ -5,12 +5,15 @@ import type { VerifiedAuthenticationResponse, AuthenticationResponseJSON } from 
 import { firestoreAdmin, authAdmin } from '@/lib/firebase-admin';
 import type { Authenticator } from '@/lib/types';
 
-const RP_ID = process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : 'localhost';
-const ORIGIN = process.env.NEXT_PUBLIC_APP_URL || `https://${RP_ID}`;
 
 export async function POST(request: NextRequest) {
     const body: AuthenticationResponseJSON & { challengeId: string } = await request.json();
     const { challengeId } = body;
+
+    // Dynamically determine the relying party ID and origin
+    const url = new URL(request.url);
+    const rpID = url.hostname;
+    const origin = url.origin;
 
     // 1. Hole die Challenge aus Firestore
     if (!challengeId) {
@@ -58,8 +61,8 @@ export async function POST(request: NextRequest) {
         verification = await verifyAuthenticationResponse({
             response: body,
             expectedChallenge: challenge,
-            expectedOrigin: ORIGIN,
-            expectedRPID: RP_ID,
+            expectedOrigin: origin,
+            expectedRPID: rpID,
             authenticator: {
                 credentialID: Buffer.from(authenticator.credentialID, 'base64'),
                 credentialPublicKey: Buffer.from(authenticator.credentialPublicKey, 'base64'),

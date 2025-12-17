@@ -5,13 +5,16 @@ import type { VerifiedRegistrationResponse, RegistrationResponseJSON } from '@si
 import { authAdmin, firestoreAdmin } from '@/lib/firebase-admin';
 import type { Authenticator } from '@/lib/types';
 
-const RP_ID = process.env.NEXT_PUBLIC_APP_URL ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname : 'localhost';
-const ORIGIN = process.env.NEXT_PUBLIC_APP_URL || `https://${RP_ID}`;
 
 export async function POST(request: NextRequest) {
     const body: RegistrationResponseJSON & { username: string } = await request.json();
     const { username } = body;
     const email = `${username}@vocaro.app`;
+
+    // Dynamically determine the relying party ID and origin
+    const url = new URL(request.url);
+    const rpID = url.hostname;
+    const origin = url.origin;
     
     // 1. Hole die gespeicherte Challenge
     // Wir müssen die ID finden, die wir in generate-options verwendet haben.
@@ -31,8 +34,8 @@ export async function POST(request: NextRequest) {
         verification = await verifyRegistrationResponse({
             response: body,
             expectedChallenge: challenge,
-            expectedOrigin: ORIGIN,
-            expectedRPID: RP_ID,
+            expectedOrigin: origin,
+            expectedRPID: rpID,
             requireUserVerification: true,
         });
     } catch (error: any) {
