@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { Volume2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { textToSpeech, TextToSpeechInput } from '@/ai/flows/text-to-speech';
+import { textToSpeech } from '@/ai/flows/text-to-speech';
 
 interface SpeakerButtonProps {
   text: string;
@@ -38,7 +37,6 @@ function getLanguageCode(hint: string): string | undefined {
     return undefined;
 }
 
-
 const audioCache = new Map<string, Promise<string>>();
 
 const getAudioData = (text: string, languageCode?: string): Promise<string> => {
@@ -47,7 +45,7 @@ const getAudioData = (text: string, languageCode?: string): Promise<string> => {
     if (audioCache.has(cacheKey)) {
         return audioCache.get(cacheKey)!;
     }
-    
+
     try {
         const storedData = localStorage.getItem(cacheKey);
         if (storedData) {
@@ -58,12 +56,12 @@ const getAudioData = (text: string, languageCode?: string): Promise<string> => {
     } catch (e) {
         console.warn("Could not access localStorage for TTS cache.", e);
     }
-
+    
     const audioPromise = new Promise<string>(async (resolve, reject) => {
         try {
             const result = await textToSpeech({ text, languageCode });
             if (result.media) {
-                try {
+                 try {
                     localStorage.setItem(cacheKey, result.media);
                 } catch (e) {
                     console.warn("Could not write to localStorage for TTS cache.", e);
@@ -86,6 +84,7 @@ const getAudioData = (text: string, languageCode?: string): Promise<string> => {
     return audioPromise;
 };
 
+
 export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, languageHint, className }: SpeakerButtonProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -95,9 +94,9 @@ export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, languageHint
 
   useEffect(() => {
     isMountedRef.current = true;
-    audioRef.current = new Audio();
+    const audio = new Audio();
+    audioRef.current = audio;
 
-    const audio = audioRef.current;
     const onEnded = () => {
       if (isMountedRef.current) setIsPlaying(false);
     };
@@ -117,64 +116,46 @@ export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, languageHint
 
   const play = async () => {
     if (isLoading || isPlaying) return;
-
     const audio = audioRef.current;
     if (!audio) return;
-    
-    // If we already have the src, just play it
-    if (audio.src) {
-      if(isMountedRef.current) setIsPlaying(true);
-      audio.currentTime = 0;
-      try {
-        await audio.play();
-      } catch (error) {
-        if(isMountedRef.current) setIsPlaying(false);
-      }
-    } else {
-      // Otherwise, fetch it first
-      if (isMountedRef.current) setIsLoading(true);
-      try {
+
+    setIsLoading(true);
+    try {
         const dataUrl = await getAudioData(text, languageCode);
         if (isMountedRef.current && audio) {
-          audio.src = dataUrl;
-          if(isMountedRef.current) setIsPlaying(true);
-          try {
+            audio.src = dataUrl;
+            setIsPlaying(true);
             await audio.play();
             hasPlayedOnceRef.current = true;
-          } catch(error) {
-             if(isMountedRef.current) setIsPlaying(false);
-          }
         }
-      } catch (error) {
+    } catch (error) {
         console.error("TTS Error:", error);
-      } finally {
+        if(isMountedRef.current) setIsPlaying(false);
+    } finally {
         if (isMountedRef.current) setIsLoading(false);
-      }
     }
   };
 
   useEffect(() => {
     const audio = audioRef.current;
-    // Condition to autoplay: card is flipped to the front, autoplay is on, and it hasn't played yet in this "flipped" state
     const shouldSpeak = isFlipped && isFront && autoPlay && !hasPlayedOnceRef.current;
     
     if (shouldSpeak) {
       play();
     }
     
-    // When the card is flipped back, reset the state
     if (!isFlipped && audio) {
-      hasPlayedOnceRef.current = false; // Allow autoplay on next flip
+      hasPlayedOnceRef.current = false;
       if (isPlaying) {
         audio.pause();
-        if(isMountedRef.current) setIsPlaying(false);
+        if (isMountedRef.current) setIsPlaying(false);
       }
-       if (audio.currentTime > 0) {
+      if (audio.currentTime > 0) {
         audio.currentTime = 0;
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFlipped, isFront, autoPlay]);
+  }, [isFlipped, isFront, autoPlay, text]);
 
 
   return (
