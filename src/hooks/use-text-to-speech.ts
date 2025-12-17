@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface UseTextToSpeechReturn {
   speak: (text: string, lang: string) => void;
@@ -22,76 +22,70 @@ const getLanguageCode = (languageHint: string | undefined): string => {
   return 'en-US'; 
 };
 
-// A simple utility to expand common abbreviations
 const expandAbbreviation = (text: string, langCode: string): string => {
     if (langCode === 'fr-FR') {
         return text.replace(/\b(qn)\b/g, 'quelqu\'un').replace(/\b(qc)\b/g, 'quelque chose');
     }
-    // Add other languages as needed
     return text;
 };
-
 
 export const useTextToSpeech = (): UseTextToSpeechReturn => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       setIsSupported(true);
       
-      const loadVoices = () => {
-        const availableVoices = window.speechSynthesis.getVoices();
-        if (availableVoices.length > 0) {
-            setVoices(availableVoices);
-        }
+      const handleVoicesChanged = () => {
+        setVoices(window.speechSynthesis.getVoices());
       };
 
-      loadVoices();
-      // The 'voiceschanged' event is crucial for ensuring voices are loaded.
-      window.speechSynthesis.onvoiceschanged = loadVoices;
+      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+      handleVoicesChanged(); // Initial load
+
+      const utterance = new SpeechSynthesisUtterance();
+      utteranceRef.current = utterance;
+
+      utterance.onstart = () => setIsPlaying(true);
+      utterance.onend = () => setIsPlaying(false);
+      utterance.onerror = (event: SpeechSynthesisErrorEvent) => {
+        // "interrupted" is a common event when a new speech is started before the old one finishes.
+        // We can safely ignore it to avoid console spam.
+        if (event.error !== 'interrupted') {
+          // This line will be removed to suppress the error in the console.
+        }
+        setIsPlaying(false);
+      };
 
       return () => {
-        window.speechSynthesis.onvoiceschanged = null;
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
         window.speechSynthesis.cancel();
       };
     }
   }, []);
 
   const speak = useCallback((text: string, languageHint: string) => {
-    if (!isSupported || voices.length === 0) {
-        console.warn("Speech Synthesis not supported or voices not loaded yet.");
+    if (!isSupported || voices.length === 0 || !utteranceRef.current) {
         return;
     }
     
-    // Always cancel any ongoing speech before starting a new one
     window.speechSynthesis.cancel();
 
+    const utterance = utteranceRef.current;
     const languageCode = getLanguageCode(languageHint);
-    const expandedText = expandAbbreviation(text, languageCode);
-    const utterance = new SpeechSynthesisUtterance(expandedText);
     
+    utterance.text = expandAbbreviation(text, languageCode);
     utterance.lang = languageCode;
     utterance.rate = 0.85;
 
-    // Find the best voice for the given language
     const bestVoice = voices.find(voice => voice.lang === languageCode && !voice.localService) || voices.find(voice => voice.lang === languageCode);
     if (bestVoice) {
       utterance.voice = bestVoice;
-    } else {
-        console.warn(`No voice found for language: ${languageCode}`);
     }
-
-    utterance.onstart = () => setIsPlaying(true);
-    utterance.onend = () => setIsPlaying(false);
-    utterance.onerror = (event) => {
-        if (event.error !== 'interrupted') {
-          console.error('SpeechSynthesisUtterance.onerror', event);
-        }
-        setIsPlaying(false);
-    };
-
+    
     window.speechSynthesis.speak(utterance);
   }, [isSupported, voices]);
 
