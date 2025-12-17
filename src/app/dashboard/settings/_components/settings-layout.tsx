@@ -1,6 +1,7 @@
 'use client';
 
 import React, { ReactNode } from 'react';
+import Link from 'next/link';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -39,12 +40,19 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
 
   // Desktop layout
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
-      <aside>
-        <h1 className="text-xl font-bold font-headline mb-4">Einstellungen</h1>
-        {menu}
-      </aside>
-      <main>{children}</main>
+    <div className="relative">
+       <Button variant="ghost" size="icon" className="absolute -left-16 top-0" asChild>
+        <Link href="/dashboard">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+      </Button>
+      <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
+        <aside>
+          <h1 className="text-xl font-bold font-headline mb-4">Einstellungen</h1>
+          {menu}
+        </aside>
+        <main>{children}</main>
+      </div>
     </div>
   );
 }
