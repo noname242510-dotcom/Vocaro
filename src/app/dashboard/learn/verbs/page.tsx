@@ -123,12 +123,8 @@ export default function VerbPracticePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [subjectId, setSubjectId] = useState<string | null>(null);
-<<<<<<< HEAD
-    const [subjectName, setSubjectName] = useState<string>('');
-    const [subjectEmoji, setSubjectEmoji] = useState<string>('');
-=======
+
     const [subject, setSubject] = useState<Subject | null>(null);
->>>>>>> 843cc7b (Aufgabe:)
     const [totalItemCount, setTotalItemCount] = useState(0);
 
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -163,10 +159,9 @@ export default function VerbPracticePage() {
 
         const sessionData = sessionStorage.getItem('verb-practice-session');
         const subjectIdData = sessionStorage.getItem('verb-practice-subject-id');
-<<<<<<< HEAD
-=======
+
         
->>>>>>> 843cc7b (Aufgabe:)
+
         if (!sessionData || !subjectIdData) {
             setError('Keine Übungsdaten gefunden. Bitte gehe zurück und wähle Verben aus.');
             setIsLoading(false);
@@ -174,9 +169,7 @@ export default function VerbPracticePage() {
         }
 
         setSubjectId(subjectIdData);
-<<<<<<< HEAD
-=======
->>>>>>> 843cc7b (Aufgabe:)
+
 
         const loadData = async () => {
             try {
@@ -257,7 +250,7 @@ export default function VerbPracticePage() {
         
         loadData();
 
-    }, [user, firestore]);
+    }, [user, firestore, isGermanFirst]);
 
     useEffect(() => {
         if (!isExiting && isTypedMode && inputRef.current) {
@@ -566,11 +559,10 @@ export default function VerbPracticePage() {
                         </div>
                     </div>
                     
-<<<<<<< HEAD
-=======
+
                     <div className="absolute top-4 right-4 h-10 w-10">
                        <SpeakerButton text={textToSpeak} languageHint={languageHint} />
->>>>>>> 843cc7b (Aufgabe:)
+
                     </div>
 
                     <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">

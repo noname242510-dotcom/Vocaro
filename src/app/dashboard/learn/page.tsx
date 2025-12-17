@@ -94,10 +94,9 @@ export default function LearnPage() {
   const [answeredIds, setAnsweredIds] = useState<Map<string, AnswerStatus>>(new Map());
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
-<<<<<<< HEAD
-=======
+
   const [subject, setSubject] = useState<Subject | null>(null);
->>>>>>> 843cc7b (Aufgabe:)
+
   const [isExiting, setIsExiting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
@@ -129,18 +128,16 @@ export default function LearnPage() {
     const fetchVocab = async () => {
       const vocabIdsJson = sessionStorage.getItem('learn-session-vocab');
       const storedSubjectId = sessionStorage.getItem('learn-session-subject');
-<<<<<<< HEAD
-=======
+
       
->>>>>>> 843cc7b (Aufgabe:)
+
       if (!vocabIdsJson || !storedSubjectId) {
         setError('Keine Vokabeln für die Lernsitzung gefunden.');
         setIsLoading(false);
         return;
       }
-<<<<<<< HEAD
-=======
->>>>>>> 843cc7b (Aufgabe:)
+
+
       
       setSubjectId(storedSubjectId);
 
@@ -523,14 +520,20 @@ export default function LearnPage() {
             </div>
           </div>
           
-<<<<<<< HEAD
-=======
+
            <div className="absolute top-4 right-4 h-10 w-10">
+
               <SpeakerButton 
                 text={currentCard.term} 
                 languageHint={subject?.name || 'English'}
               />
 >>>>>>> 843cc7b (Aufgabe:)
+=======
+                <SpeakerButton 
+                    text={isTermFirst ? currentCard.term : currentCard.definition} 
+                    languageHint={isTermFirst ? (subject?.name || 'English') : 'German'}
+                />
+>>>>>>> a837f42 (Aufgabe:)
             </div>
           
           <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-12">
