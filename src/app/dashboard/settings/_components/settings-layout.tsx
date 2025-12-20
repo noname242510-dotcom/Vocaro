@@ -57,6 +57,7 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
     <div className="relative">
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
         <aside>
           {headerContent}
@@ -72,6 +73,16 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
         <aside>
           <h1 className="text-xl font-bold font-headline mb-4">Einstellungen</h1>
 >>>>>>> 29e8e48 (füge einen zurück button in den einstellungen links oben ein, der sich ü)
+=======
+      <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
+        <aside>
+          <div className="flex items-center gap-2 mb-4">
+             <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
+                <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-xl font-bold font-headline">Einstellungen</h1>
+          </div>
+>>>>>>> 9f3ead0 (der button wird nicht angezeigt)
           {menu}
         </aside>
         <main>{children}</main>
