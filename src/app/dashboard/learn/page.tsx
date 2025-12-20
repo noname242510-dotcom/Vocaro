@@ -472,7 +472,12 @@ export default function LearnPage() {
   const foreignFlag = subject?.emoji || '🌐';
   const germanFlag = '🇩🇪';
 
+  // Front of the card
+  const frontWord = isTermFirst ? currentCard.term : currentCard.definition;
   const frontFlag = isTermFirst ? foreignFlag : germanFlag;
+
+  // Back of the card
+  const backWord = isTermFirst ? currentCard.definition : currentCard.term;
   const backFlag = isTermFirst ? germanFlag : foreignFlag;
 
 
@@ -531,6 +536,7 @@ export default function LearnPage() {
           
            <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
              <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                {/* Speaker for the foreign word */}
                 <div className={cn("absolute inset-0 [backface-visibility:hidden]", !isTermFirst && "opacity-0")}>
                     <SpeakerButton text={currentCard.term} languageHint={languageHint} />
                 </div>
@@ -542,15 +548,15 @@ export default function LearnPage() {
           
           <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-12">
             {/* These two are invisible but establish the grid area's size */}
-            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
-            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
+            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{frontWord}</p>
+            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{backWord}</p>
             
             <div className={cn(
                 "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
                 isFlipped && "[transform:rotateY(180deg)]"
             )}>
                 <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                    <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.term : currentCard.definition}</p>
+                    <p className="text-4xl font-bold text-center">{frontWord}</p>
                 </div>
                 <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                     {isTypedMode && answerStatus === 'incorrect' ? (
@@ -562,7 +568,7 @@ export default function LearnPage() {
                            </div>
                         </div>
                     ) : (
-                        <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
+                        <p className="text-4xl font-bold text-center">{backWord}</p>
                     )}
                     {isTypedMode && (answerStatus === 'correct' || answerStatus === 'accepted') && (
                         <div className="mt-4">

@@ -505,17 +505,28 @@ export default function VerbPracticePage() {
         }
     };
     
-    // This defines the text that needs to be spoken (always the foreign word)
     const foreignCardText = isGermanFirst ? currentCard.back : currentCard.front;
     const languageHint = isGermanFirst ? 'German' : (subject?.name || 'English');
 
     const foreignFlag = subject?.emoji || '🌐';
     const germanFlag = '🇩🇪';
+    
+    // Check if the content is German based on the isGermanFirst setting.
+    const frontIsGerman = isGermanFirst;
+    const backIsGerman = !isGermanFirst;
 
-    // The front of the card can be either German or Foreign
-    const frontFlag = isGermanFirst ? germanFlag : foreignFlag;
-    // The back is the opposite
-    const backFlag = isGermanFirst ? foreignFlag : germanFlag;
+    // The flag for the foreign language is the subject's emoji.
+    const foreignWordFlag = subject?.emoji || '🌐';
+
+    // Assign flags based on whether the content is German or foreign.
+    const frontFlag = frontIsGerman ? germanFlag : foreignWordFlag;
+    const backFlag = backIsGerman ? germanFlag : foreignWordFlag;
+
+    // The text to be spoken is always the foreign language text.
+    // If the front is German, the back is foreign, and vice-versa.
+    const textToSpeak = frontIsGerman ? currentCard.back : currentCard.front;
+    
+    const speakerIsOnBack = frontIsGerman;
 
 
     return (
@@ -573,11 +584,11 @@ export default function VerbPracticePage() {
 
                      <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
                         <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                            <div className={cn("absolute inset-0 [backface-visibility:hidden]", isGermanFirst && "opacity-0")}>
-                                <SpeakerButton text={foreignCardText} languageHint={languageHint} />
+                            <div className={cn("absolute inset-0 [backface-visibility:hidden]", speakerIsOnBack && "opacity-0")}>
+                                <SpeakerButton text={textToSpeak} languageHint={languageHint} />
                             </div>
-                            <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !isGermanFirst && "opacity-0")}>
-                               <SpeakerButton text={foreignCardText} languageHint={languageHint} />
+                            <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !speakerIsOnBack && "opacity-0")}>
+                               <SpeakerButton text={textToSpeak} languageHint={languageHint} />
                             </div>
                         </div>
                     </div>
