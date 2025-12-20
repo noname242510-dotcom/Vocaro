@@ -27,57 +27,59 @@ const expandAbbreviation = (text: string, langCode: string): string => {
     if (langCode === 'fr-FR') {
         return text.replace(/\b(qn)\b/g, 'quelqu\'un').replace(/\b(qc)\b/g, 'quelque chose');
     }
-    // Add other languages as needed
     return text;
 };
-
 
 export const useTextToSpeech = (): UseTextToSpeechReturn => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       setIsSupported(true);
       
-      // Erstelle eine einzige, wiederverwendbare Instanz der Utterance
       const utterance = new SpeechSynthesisUtterance();
       utteranceRef.current = utterance;
 
-      const handleEnd = () => {
+      const handleEnd = () => setIsPlaying(false);
+      const handleError = (event: SpeechSynthesisErrorEvent) => {
+        if (event.error !== 'interrupted') {
+          // You might want to log other errors for debugging, but not 'interrupted'
+        }
         setIsPlaying(false);
       };
 
-      const handleError = (event: SpeechSynthesisErrorEvent) => {
-        // Der 'interrupted'-Fehler ist normal und wird erwartet, wenn eine neue Sprachausgabe startet.
-        // Wir protokollieren diesen Fehler nicht, um die Konsole sauber zu halten.
-        if (event.error !== 'interrupted') {
-          // Echte Fehler könnten hier protokolliert werden, falls nötig.
-          // console.error('SpeechSynthesisUtterance.onerror', event);
+      const loadVoices = () => {
+        const availableVoices = window.speechSynthesis.getVoices();
+        if (availableVoices.length > 0) {
+            setVoices(availableVoices);
+            // Once voices are loaded, we don't need to listen for the event anymore on some browsers.
+            // But on others (like Chrome), it's fired every time. Keeping it is safer.
         }
-        setIsPlaying(false); // Spielstatus bei jedem Fehler zurücksetzen
       };
 
       utterance.addEventListener('end', handleEnd);
       utterance.addEventListener('error', handleError);
+      window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+      loadVoices(); // Initial attempt
 
-      // Aufräumfunktion: Entfernt Listener und bricht die Sprachausgabe ab, wenn die Komponente unmountet.
       return () => {
         utterance.removeEventListener('end', handleEnd);
         utterance.removeEventListener('error', handleError);
+        window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
         window.speechSynthesis.cancel();
       };
     }
-  }, []); // Dieser Effekt läuft nur einmal, um die Utterance und Listener einzurichten.
+  }, []);
 
   const speak = useCallback((text: string, languageHint: string) => {
     const ttsEnabled = localStorage.getItem('tts-enabled') === 'true';
     if (!isSupported || !utteranceRef.current || !ttsEnabled) {
       return;
     }
-    
-    // Bricht immer eine laufende Ausgabe ab, bevor eine neue gestartet wird.
+
     window.speechSynthesis.cancel();
     
     const utterance = utteranceRef.current;
@@ -88,28 +90,23 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
     utterance.rate = 0.85;
 
     const preferredVoiceURI = localStorage.getItem('tts-voice-uri');
-    const voices = window.speechSynthesis.getVoices();
-    let chosenVoice = null;
+    let chosenVoice: SpeechSynthesisVoice | null = null;
 
     if (preferredVoiceURI) {
-        chosenVoice = voices.find(voice => voice.voiceURI === preferredVoiceURI);
+        chosenVoice = voices.find(voice => voice.voiceURI === preferredVoiceURI) || null;
     }
     
-    // Wenn keine bevorzugte Stimme gefunden wurde, suche eine passende Stimme zur Sprache.
     if (!chosenVoice && voices.length > 0) {
-        // Bevorzuge Stimmen, die nicht lokal sind, da sie oft eine bessere Qualität haben.
-        chosenVoice = voices.find(voice => voice.lang === languageCode && !voice.localService) || voices.find(voice => voice.lang === languageCode);
+        chosenVoice = voices.find(voice => voice.lang === languageCode && !voice.localService) 
+                   || voices.find(voice => voice.lang === languageCode)
+                   || null;
     }
 
-    if (chosenVoice) {
-      utterance.voice = chosenVoice;
-    } else {
-      utterance.voice = null; // Setze auf Browser-Standard zurück, wenn keine passende Stimme gefunden wird
-    }
+    utterance.voice = chosenVoice;
     
     setIsPlaying(true);
     window.speechSynthesis.speak(utterance);
-  }, [isSupported]);
+  }, [isSupported, voices]);
 
   const cancel = useCallback(() => {
     if (isSupported) {
