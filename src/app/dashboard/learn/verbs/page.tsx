@@ -147,6 +147,9 @@ export default function VerbPracticePage() {
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
 
+    // Ref for auto-play logic
+    const speakerButtonRef = useRef<{ play: () => void }>(null);
+
 
     useEffect(() => {
         const germanFirstSetting = localStorage.getItem('query-direction-verbs') === 'true';
@@ -259,6 +262,12 @@ export default function VerbPracticePage() {
         }
     }, [currentIndex, isExiting, isTypedMode]);
     
+    useEffect(() => {
+        if (isFlipped && speakerButtonRef.current) {
+          speakerButtonRef.current.play();
+        }
+    }, [isFlipped]);
+
     const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted').length;
     const progress = totalItemCount > 0 ? (correctAnswersCount / totalItemCount) * 100 : 0;
 
@@ -585,10 +594,10 @@ export default function VerbPracticePage() {
                      <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
                         <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                             <div className={cn("absolute inset-0 [backface-visibility:hidden]", speakerIsOnBack && "opacity-0")}>
-                                <SpeakerButton text={textToSpeak} languageHint={languageHint} />
+                                <SpeakerButton ref={!speakerIsOnBack ? speakerButtonRef : null} text={textToSpeak} languageHint={languageHint} />
                             </div>
                             <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !speakerIsOnBack && "opacity-0")}>
-                               <SpeakerButton text={textToSpeak} languageHint={languageHint} />
+                               <SpeakerButton ref={speakerIsOnBack ? speakerButtonRef : null} text={textToSpeak} languageHint={languageHint} />
                             </div>
                         </div>
                     </div>
@@ -722,14 +731,14 @@ export default function VerbPracticePage() {
                         )}
                     </div>
                 </div>
-                {history.length > 0 && !isExiting && (
-                    <div className="w-full text-center mt-2">
+                <div className="w-full text-center mt-2 h-[36px]">
+                    {history.length > 0 && !isExiting && (
                         <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
                             <ChevronLeft className="mr-1 h-4 w-4" />
                             Zurück
                         </Button>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );

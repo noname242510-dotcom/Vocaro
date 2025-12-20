@@ -112,6 +112,8 @@ export default function LearnPage() {
   const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
   const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
 
+  // Ref for auto-play logic
+  const speakerButtonRef = useRef<{ play: () => void }>(null);
 
   useEffect(() => {
     // Load settings from local storage
@@ -223,6 +225,12 @@ export default function LearnPage() {
     }
   }, [currentIndex, isExiting, isTypedMode]);
   
+  useEffect(() => {
+    if (isFlipped && speakerButtonRef.current) {
+      speakerButtonRef.current.play();
+    }
+  }, [isFlipped]);
+
   const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted').length;
   const progress = totalVocabCount > 0 ? (correctAnswersCount / totalVocabCount) * 100 : 0;
 
@@ -475,11 +483,12 @@ export default function LearnPage() {
   // Front of the card
   const frontWord = isTermFirst ? currentCard.term : currentCard.definition;
   const frontFlag = isTermFirst ? foreignFlag : germanFlag;
+  const frontIsForeign = isTermFirst;
 
   // Back of the card
   const backWord = isTermFirst ? currentCard.definition : currentCard.term;
   const backFlag = isTermFirst ? germanFlag : foreignFlag;
-
+  const backIsForeign = !isTermFirst;
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)]">
@@ -537,11 +546,11 @@ export default function LearnPage() {
            <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
              <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                 {/* Speaker for the foreign word */}
-                <div className={cn("absolute inset-0 [backface-visibility:hidden]", !isTermFirst && "opacity-0")}>
-                    <SpeakerButton text={currentCard.term} languageHint={languageHint} />
+                <div className={cn("absolute inset-0 [backface-visibility:hidden]", !frontIsForeign && "opacity-0")}>
+                    <SpeakerButton ref={frontIsForeign ? speakerButtonRef : null} text={currentCard.term} languageHint={languageHint} />
                 </div>
-                <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", isTermFirst && "opacity-0")}>
-                    <SpeakerButton text={currentCard.term} languageHint={languageHint} />
+                <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !backIsForeign && "opacity-0")}>
+                    <SpeakerButton ref={backIsForeign ? speakerButtonRef : null} text={currentCard.term} languageHint={languageHint} />
                 </div>
             </div>
           </div>
@@ -674,14 +683,14 @@ export default function LearnPage() {
                 )}
             </div>
         </div>
-        {history.length > 0 && !isExiting && (
-          <div className="w-full text-center mt-2">
-            <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                Zurück
-            </Button>
-          </div>
-        )}
+        <div className="w-full text-center mt-2 h-[36px]">
+            {history.length > 0 && !isExiting && (
+              <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Zurück
+              </Button>
+            )}
+        </div>
       </div>
     </div>
   );
