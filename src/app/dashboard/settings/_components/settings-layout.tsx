@@ -52,9 +52,20 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
   // Desktop layout
   return (
     <div className="relative">
+<<<<<<< HEAD
       <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
         <aside>
           {headerContent}
+=======
+       <Button variant="ghost" size="icon" className="absolute -left-16 top-0" asChild>
+        <Link href="/dashboard">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+      </Button>
+      <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
+        <aside>
+          <h1 className="text-xl font-bold font-headline mb-4">Einstellungen</h1>
+>>>>>>> 29e8e48 (füge einen zurück button in den einstellungen links oben ein, der sich ü)
           {menu}
         </aside>
         <main>{children}</main>

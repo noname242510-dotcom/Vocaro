@@ -20,7 +20,7 @@ const getLanguageCode = (languageHint: string | undefined): string => {
   if (hint.includes('italienisch') || hint.includes('italian')) return 'it-IT';
   if (hint.includes('portugiesisch') || hint.includes('portuguese')) return 'pt-PT';
   if (hint.includes('russich') || hint.includes('russian')) return 'ru-RU';
-  return 'en-US'; 
+  return 'en-US';
 };
 
 const expandAbbreviation = (text: string, langCode: string): string => {
@@ -52,7 +52,6 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
 
       const handleEnd = () => setIsPlaying(false);
       const handleError = (event: SpeechSynthesisErrorEvent) => {
-        // The 'interrupted' error is expected when canceling speech, so we don't log it.
         if (event.error !== 'interrupted') {
           console.error('SpeechSynthesisUtterance.onerror', event);
         }
@@ -77,7 +76,6 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
       return;
     }
 
-    // Cancel any ongoing speech before starting a new one
     window.speechSynthesis.cancel();
     
     const utterance = utteranceRef.current;
@@ -103,6 +101,7 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
 
     utterance.voice = chosenVoice || null;
     
+    setIsPlaying(true);
     window.speechSynthesis.speak(utterance);
   }, [isSupported]);
 
