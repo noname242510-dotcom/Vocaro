@@ -4,65 +4,58 @@ import { useState, useEffect, useRef } from 'react';
 import { Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useTextToSpeech } from '@/hooks/use-text-to-speech';
 
 interface SpeakerButtonProps {
   text: string;
-  isFlipped: boolean;
-  isFront: boolean;
-  autoPlay: boolean;
+  languageHint?: string;
   className?: string;
-  disabled?: boolean;
 }
 
-export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, className }: SpeakerButtonProps) => {
-  const [isPlaying, setIsPlaying] = useState(false);
+export const SpeakerButton = ({ text, languageHint, className }: SpeakerButtonProps) => {
+  const { speak, isPlaying } = useTextToSpeech();
+  const [isAnimating, setIsAnimating] = useState(false);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hasPlayedOnceRef = useRef(false);
 
-  // Estimate duration based on text length. A simple but effective heuristic.
-  const DURATION_PER_CHAR = 60; // ms
-  const MIN_DURATION = 800; // ms
-  const MAX_DURATION = 5000; // ms
+  const DURATION_PER_CHAR = 60;
+  const MIN_DURATION = 800;
+  const MAX_DURATION = 5000;
   const playbackDuration = Math.max(MIN_DURATION, Math.min(text.length * DURATION_PER_CHAR, MAX_DURATION));
 
-  const play = () => {
-    if (isPlaying) return;
-    setIsPlaying(true);
-    hasPlayedOnceRef.current = true;
+  const handlePlay = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
     
+    // Allow re-playing even if animation is running
+    speak(text, languageHint || 'en-US');
+
+    // Start animation
+    setIsAnimating(true);
     if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
+      clearTimeout(animationTimeoutRef.current);
     }
-    
     animationTimeoutRef.current = setTimeout(() => {
-      setIsPlaying(false);
+      setIsAnimating(false);
     }, playbackDuration);
   };
   
-  // Effect to handle autoplay
   useEffect(() => {
-    // We want to autoplay only when the card flips to the designated front side
-    if (isFlipped && isFront && autoPlay && !hasPlayedOnceRef.current) {
-      play();
-    }
-    
-    // Reset the "has played" flag when the card is flipped away
-    if (!isFlipped) {
-      hasPlayedOnceRef.current = false;
-      setIsPlaying(false);
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current);
+      // If the global TTS engine stops playing, we should stop our animation.
+      if (!isPlaying) {
+          setIsAnimating(false);
+          if (animationTimeoutRef.current) {
+              clearTimeout(animationTimeoutRef.current);
+          }
       }
-    }
-    
+  }, [isPlaying]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
     return () => {
       if (animationTimeoutRef.current) {
         clearTimeout(animationTimeoutRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isFlipped, isFront, autoPlay]);
-
+  }, []);
 
   return (
     <div className={cn("relative h-10 w-10", className)}>
@@ -70,10 +63,7 @@ export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, className }:
           variant="ghost"
           size="icon"
           className="w-full h-full text-muted-foreground hover:text-foreground"
-          onClick={(e) => {
-            e.stopPropagation();
-            play();
-          }}
+          onClick={handlePlay}
         >
           <Volume2 className="h-5 w-5" />
         </Button>
@@ -87,12 +77,12 @@ export const SpeakerButton = ({ text, isFlipped, isFront, autoPlay, className }:
                 cy="18"
                 r="16"
                 fill="none"
-                className={cn("stroke-primary transition-all", isPlaying ? 'opacity-100' : 'opacity-0')}
+                className={cn("stroke-primary transition-all", isAnimating ? 'opacity-100' : 'opacity-0')}
                 strokeWidth="2"
                 strokeDasharray="100"
-                strokeDashoffset={isPlaying ? 0 : 100}
+                strokeDashoffset={isAnimating ? 0 : 100}
                 style={{
-                    transition: isPlaying ? `stroke-dashoffset ${playbackDuration}ms linear` : 'none',
+                    transition: isAnimating ? `stroke-dashoffset ${playbackDuration}ms linear` : 'none',
                 }}
             />
         </svg>
