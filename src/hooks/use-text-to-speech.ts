@@ -46,13 +46,9 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
       };
 
       const handleError = (event: SpeechSynthesisErrorEvent) => {
-        // The 'interrupted' error is expected and normal when we cancel
-        // an ongoing speech to start a new one. We explicitly do nothing
-        // for this error to prevent logging it to the console.
-        if (event.error === 'interrupted') {
-          // Do nothing. This is not a real error.
-        } else {
-          // For any other error, you might want to log it for debugging.
+        // The 'interrupted' error is expected and normal.
+        if (event.error !== 'interrupted') {
+          // For any other error, you might want to log it for debugging in the future.
           // console.error('SpeechSynthesisUtterance.onerror', event);
         }
         setIsPlaying(false); // Always reset playing state on any error
