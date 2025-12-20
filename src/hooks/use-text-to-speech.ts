@@ -38,6 +38,7 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       setIsSupported(true);
       
+      // Create a single utterance instance and reuse it.
       const utterance = new SpeechSynthesisUtterance();
       utteranceRef.current = utterance;
 
@@ -46,9 +47,9 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
       };
 
       const handleError = (event: SpeechSynthesisErrorEvent) => {
-        // The 'interrupted' error is expected and normal.
+        // The 'interrupted' error is expected and normal when speech is cancelled.
+        // We should not log this as an error in the console.
         if (event.error !== 'interrupted') {
-          // For any other error, you might want to log it for debugging in the future.
           // console.error('SpeechSynthesisUtterance.onerror', event);
         }
         setIsPlaying(false); // Always reset playing state on any error
@@ -57,7 +58,7 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
       utterance.addEventListener('end', handleEnd);
       utterance.addEventListener('error', handleError);
 
-      // Cleanup function
+      // Cleanup function to remove listeners and cancel speech when the component unmounts.
       return () => {
         utterance.removeEventListener('end', handleEnd);
         utterance.removeEventListener('error', handleError);
@@ -72,7 +73,7 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
       return;
     }
     
-    // Always cancel any ongoing speech before starting a new one.
+    // Always cancel any ongoing speech before starting a new one. This prevents overlaps.
     window.speechSynthesis.cancel();
     
     const utterance = utteranceRef.current;
@@ -90,7 +91,9 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
         chosenVoice = voices.find(voice => voice.voiceURI === preferredVoiceURI);
     }
     
+    // If no preferred voice or preferred voice not found, try to find a matching language voice.
     if (!chosenVoice && voices.length > 0) {
+        // Prefer non-local voices as they often have better quality.
         chosenVoice = voices.find(voice => voice.lang === languageCode && !voice.localService) || voices.find(voice => voice.lang === languageCode);
     }
 
