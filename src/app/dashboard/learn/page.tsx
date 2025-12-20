@@ -527,13 +527,18 @@ export default function LearnPage() {
                 text={currentCard.term} 
                 languageHint={subject?.name || 'English'}
               />
->>>>>>> 843cc7b (Aufgabe:)
-=======
+
+
                 <SpeakerButton 
                     text={isTermFirst ? currentCard.term : currentCard.definition} 
                     languageHint={isTermFirst ? (subject?.name || 'English') : 'German'}
                 />
->>>>>>> a837f42 (Aufgabe:)
+
+                <div className={cn("relative w-full h-full transition-opacity duration-300", isFlipped && 'opacity-0')}>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground">
+                        <Volume2 className="h-5 w-5" />
+                    </Button>
+                </div>
             </div>
           
           <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-12">

@@ -504,8 +504,7 @@ export default function VerbPracticePage() {
         }
     };
     
-    const textToSpeak = isGermanFirst ? currentCard.back : currentCard.front;
-    const languageHint = isGermanFirst ? 'German' : subject?.name || 'English';
+    const languageHint = isGermanFirst ? (subject?.name || 'English') : 'German';
 
     return (
         <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)]">
@@ -561,7 +560,12 @@ export default function VerbPracticePage() {
                     
 
                     <div className="absolute top-4 right-4 h-10 w-10">
-                       <SpeakerButton text={textToSpeak} languageHint={languageHint} />
+
+                       <div className={cn("relative w-full h-full transition-opacity duration-300", isFlipped && 'opacity-0')}>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground">
+                                <Volume2 className="h-5 w-5" />
+                            </Button>
+                        </div>
 
                     </div>
 
