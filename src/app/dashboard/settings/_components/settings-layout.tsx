@@ -52,39 +52,28 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
   }
 
   // Desktop layout
-  return (
-    <div className="relative">
-      <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
-        <aside>
-          {headerContent}
+return (
+  <div className="relative">
+    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
+      <aside>
+        <div className="flex items-center gap-2 mb-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="-ml-2"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-xl font-bold font-headline">
+            Einstellungen
+          </h1>
+        </div>
 
-       <Button variant="ghost" size="icon" className="absolute -left-16 top-0" asChild>
-        <Link href="/dashboard">
+        {menu}
+      </aside>
 
-       <Button variant="ghost" size="icon" className="absolute -left-16 top-0" onClick={() => router.back()}>
-
-          <ArrowLeft className="h-5 w-5" />
-      </Button>
-      <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
-        <aside>
-          <h1 className="text-xl font-bold font-headline mb-4">Einstellungen</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
-        <aside>
-
-          <div className="flex items-center gap-2 mb-4">
-             <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
-                <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-bold font-headline">Einstellungen</h1>
-          </div>
-
-          {headerContent}
-
-          {menu}
-        </aside>
-        <main>{children}</main>
-      </div>
+      <main>{children}</main>
     </div>
-  );
-}
+  </div>
+);
