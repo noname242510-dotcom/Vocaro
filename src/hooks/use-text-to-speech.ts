@@ -78,8 +78,15 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
   }, []);
 
   const speak = useCallback((rawText: string, languageHint?: string) => {
-    const ttsEnabled = localStorage.getItem('tts-enabled') === 'true';
-    if (!isSupported || !ttsEnabled || !rawText) return;
+    let ttsEnabled = localStorage.getItem('tts-enabled');
+    if (ttsEnabled === null) {
+      localStorage.setItem('tts-enabled', 'true');
+      ttsEnabled = 'true';
+    }
+    if (!isSupported || ttsEnabled !== 'true' || !rawText) return;
+    
+    ...
+  }, [isSupported]);
 
     const languageCode = getLanguageCode(languageHint);
     const text = expandAbbreviation(rawText, languageCode).trim();
