@@ -22,33 +22,22 @@ const getLanguageCode = (languageHint?: string): string => {
   return 'en-US';
 };
 
-// Abkürzungen für alle unterstützten Sprachen
 const expandAbbreviation = (text: string, langCode: string): string => {
   switch (langCode) {
     case 'fr-FR':
-      return text
-        .replace(/\b(qn)\b/gi, "quelqu'un")
-        .replace(/\b(qc)\b/gi, 'quelque chose');
+      return text.replace(/\b(qn)\b/gi, "quelqu'un").replace(/\b(qc)\b/gi, 'quelque chose');
     case 'en-US':
-      return text
-        .replace(/\be\.g\.\b/gi, 'for example')
-        .replace(/\bi\.e\.\b/gi, 'that is');
+      return text.replace(/\be\.g\.\b/gi, 'for example').replace(/\bi\.e\.\b/gi, 'that is');
     case 'de-DE':
-      return text
-        .replace(/\bz\.B\.\b/gi, 'zum Beispiel')
-        .replace(/\bu\.a\.\b/gi, 'unter anderem');
+      return text.replace(/\bz\.B\.\b/gi, 'zum Beispiel').replace(/\bu\.a\.\b/gi, 'unter anderem');
     case 'es-ES':
-      return text
-        .replace(/\bp\. ej\.\b/gi, 'por ejemplo');
+      return text.replace(/\bp\. ej\.\b/gi, 'por ejemplo');
     case 'it-IT':
-      return text
-        .replace(/\bpe\. es\.\b/gi, 'per esempio');
+      return text.replace(/\bpe\. es\.\b/gi, 'per esempio');
     case 'pt-PT':
-      return text
-        .replace(/\bex\.\b/gi, 'por exemplo');
+      return text.replace(/\bex\.\b/gi, 'por exemplo');
     case 'ru-RU':
-      return text
-        .replace(/\bт\. е\.\b/gi, 'то есть');
+      return text.replace(/\bт\. е\.\b/gi, 'то есть');
     default:
       return text;
   }
@@ -58,6 +47,7 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  const voicesReadyRef = useRef(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -65,10 +55,12 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
 
       const handleVoicesChanged = () => {
         voicesRef.current = window.speechSynthesis.getVoices();
+        voicesReadyRef.current = true;
+        console.log('Voices loaded:', voicesRef.current.length);
       };
 
-      handleVoicesChanged();
       window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+      handleVoicesChanged(); // sofort prüfen
 
       return () => {
         window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
@@ -86,38 +78,48 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
 
     if (!isSupported || ttsEnabled !== 'true' || !rawText) return;
 
+    if (!voicesReadyRef.current) {
+      console.warn('TTS-Stimmen noch nicht bereit');
+      return;
+    }
+
     const languageCode = getLanguageCode(languageHint);
     const text = expandAbbreviation(rawText, languageCode).trim();
     if (!text) return;
 
-    // Cancel laufende Wiedergabe
-    window.speechSynthesis.cancel();
+    // laufende Wiedergabe abbrechen
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
 
-    // Neues Utterance für jeden Aufruf
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = languageCode;
     utterance.rate = 0.85;
 
-    // Stimme wählen, falls im LocalStorage gesetzt
+    // Stimme wählen
     const preferredVoiceURI = localStorage.getItem('tts-voice-uri');
-    let chosenVoice: SpeechSynthesisVoice | undefined;
+    let chosenVoice = undefined;
 
     if (voicesRef.current.length > 0) {
       if (preferredVoiceURI) {
         chosenVoice = voicesRef.current.find(v => v.voiceURI === preferredVoiceURI);
       }
       if (!chosenVoice) {
-        chosenVoice = voicesRef.current.find(v => v.lang === languageCode) || undefined;
+        chosenVoice = voicesRef.current.find(v => v.lang === languageCode) || null;
       }
     }
 
     if (chosenVoice) utterance.voice = chosenVoice;
 
-    // Eventlistener
+    // Events
     utterance.onend = () => setIsPlaying(false);
-    utterance.onerror = () => setIsPlaying(false);
+    utterance.onerror = (e) => {
+      console.error('TTS Fehler:', e);
+      setIsPlaying(false);
+    };
 
     setIsPlaying(true);
+    console.log('TTS speak:', { text, languageCode, chosenVoice });
     window.speechSynthesis.speak(utterance);
   }, [isSupported]);
 
