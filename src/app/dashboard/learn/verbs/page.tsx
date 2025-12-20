@@ -505,13 +505,16 @@ export default function VerbPracticePage() {
         }
     };
     
+    // This defines the text that needs to be spoken (always the foreign word)
     const foreignCardText = isGermanFirst ? currentCard.back : currentCard.front;
     const languageHint = isGermanFirst ? 'German' : (subject?.name || 'English');
 
     const foreignFlag = subject?.emoji || '🌐';
     const germanFlag = '🇩🇪';
 
+    // The front of the card can be either German or Foreign
     const frontFlag = isGermanFirst ? germanFlag : foreignFlag;
+    // The back is the opposite
     const backFlag = isGermanFirst ? foreignFlag : germanFlag;
 
 
