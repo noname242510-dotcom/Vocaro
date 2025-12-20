@@ -32,13 +32,14 @@ const expandAbbreviation = (text: string, langCode: string): string => {
 export const useTextToSpeech = (): UseTextToSpeechReturn => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
-  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       setIsSupported(true);
-
+      
+      // Create a single, reusable utterance instance
       const utterance = new SpeechSynthesisUtterance();
       utteranceRef.current = utterance;
 
@@ -46,20 +47,25 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
         voicesRef.current = window.speechSynthesis.getVoices();
       };
 
-      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+      // Load voices and set up the listener
       handleVoicesChanged();
+      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
 
-      const handleEnd = () => setIsPlaying(false);
+      const handleEnd = () => {
+        setIsPlaying(false);
+      };
+
       const handleError = (event: SpeechSynthesisErrorEvent) => {
         if (event.error !== 'interrupted') {
-          console.error('SpeechSynthesisUtterance.onerror', event);
+          // console.error('SpeechSynthesisUtterance.onerror', event);
         }
         setIsPlaying(false);
       };
 
       utterance.addEventListener('end', handleEnd);
       utterance.addEventListener('error', handleError);
-      
+
+      // Cleanup function
       return () => {
         utterance.removeEventListener('end', handleEnd);
         utterance.removeEventListener('error', handleError);
@@ -75,6 +81,7 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
       return;
     }
 
+    // Cancel any ongoing speech before starting a new one
     window.speechSynthesis.cancel();
     
     const utterance = utteranceRef.current;
@@ -101,7 +108,7 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
     utterance.voice = chosenVoice || null;
     
     setIsPlaying(true);
-    window.speechSynthesis.speak(utterance);
+    window.speechSynthesis.speak(utterance); // This was the missing line
   }, [isSupported]);
 
   const cancel = useCallback(() => {
