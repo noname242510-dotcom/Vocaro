@@ -42,7 +42,7 @@ const expandAbbreviation = (text: string, langCode: string): string => {
         .replace(/\bp\. ej\.\b/gi, 'por ejemplo');
     case 'it-IT':
       return text
-        .replace(/\pe\. es\.\b/gi, 'per esempio');
+        .replace(/\bpe\. es\.\b/gi, 'per esempio');
     case 'pt-PT':
       return text
         .replace(/\bex\.\b/gi, 'por exemplo');
@@ -83,10 +83,8 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
       localStorage.setItem('tts-enabled', 'true');
       ttsEnabled = 'true';
     }
+
     if (!isSupported || ttsEnabled !== 'true' || !rawText) return;
-    
-    ...
-  }, [isSupported]);
 
     const languageCode = getLanguageCode(languageHint);
     const text = expandAbbreviation(rawText, languageCode).trim();
