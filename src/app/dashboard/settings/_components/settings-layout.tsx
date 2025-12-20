@@ -30,6 +30,15 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
 =======
 >>>>>>> d6b92db (der zurück button soll zur letzten aufgerufenen seite vor den einstellun)
 
+  const headerContent = (
+    <div className="flex items-center gap-2 mb-4">
+      <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
+          <ArrowLeft className="h-5 w-5" />
+      </Button>
+      <h1 className="text-xl font-bold font-headline">Einstellungen</h1>
+    </div>
+  );
+
   if (isMobile) {
     if (showMenuOnMobile) {
       return (
@@ -76,6 +85,7 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
 =======
       <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12">
         <aside>
+<<<<<<< HEAD
           <div className="flex items-center gap-2 mb-4">
              <Button variant="ghost" size="icon" className="-ml-2" onClick={() => router.back()}>
                 <ArrowLeft className="h-5 w-5" />
@@ -83,6 +93,9 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
             <h1 className="text-xl font-bold font-headline">Einstellungen</h1>
           </div>
 >>>>>>> 9f3ead0 (der button wird nicht angezeigt)
+=======
+          {headerContent}
+>>>>>>> 85533a2 (mach jetzt)
           {menu}
         </aside>
         <main>{children}</main>
