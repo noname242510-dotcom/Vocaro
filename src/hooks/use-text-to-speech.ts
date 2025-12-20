@@ -52,6 +52,8 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
       utterance.onstart = () => setIsPlaying(true);
       utterance.onend = () => setIsPlaying(false);
       utterance.onerror = (event) => {
+        // The 'interrupted' error is expected when we cancel an ongoing speech to start a new one.
+        // We should not log this as an error in the console.
         if (event.error !== 'interrupted') {
           console.error('SpeechSynthesisUtterance.onerror', event);
         }
@@ -72,6 +74,8 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
       return;
     }
     
+    // Always cancel any ongoing speech before starting a new one.
+    // This is the action that causes the "interrupted" error, which is normal.
     window.speechSynthesis.cancel();
 
     const utterance = utteranceRef.current;
