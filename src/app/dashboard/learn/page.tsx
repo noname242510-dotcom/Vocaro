@@ -523,7 +523,7 @@ export default function LearnPage() {
           </div>
           
 
-          <div className="absolute top-4 right-4 h-10 w-10">
+           <div className="absolute top-4 right-4 h-10 w-10">
             <div className={cn("relative w-full h-full transition-opacity duration-300", isFlipped && 'opacity-0')}>
 
               <SpeakerButton text={foreignCardText} languageHint={languageHint} />
