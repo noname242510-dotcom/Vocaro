@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface UseTextToSpeechReturn {
-  speak: (text: string, lang: string) => void;
+  speak: (text: string, langHint?: string) => void;
   cancel: () => void;
   isPlaying: boolean;
   isSupported: boolean;
 }
 
-const getLanguageCode = (languageHint: string | undefined): string => {
+const getLanguageCode = (languageHint?: string): string => {
   if (!languageHint) return 'en-US';
   const hint = languageHint.toLowerCase();
   if (hint.includes('französisch') || hint.includes('french')) return 'fr-FR';
@@ -18,97 +18,102 @@ const getLanguageCode = (languageHint: string | undefined): string => {
   if (hint.includes('deutsch') || hint.includes('german')) return 'de-DE';
   if (hint.includes('italienisch') || hint.includes('italian')) return 'it-IT';
   if (hint.includes('portugiesisch') || hint.includes('portuguese')) return 'pt-PT';
-  if (hint.includes('russich') || hint.includes('russian')) return 'ru-RU';
+  if (hint.includes('russisch') || hint.includes('russian')) return 'ru-RU';
   return 'en-US';
 };
 
+// Abkürzungen für alle unterstützten Sprachen
 const expandAbbreviation = (text: string, langCode: string): string => {
-    if (langCode === 'fr-FR') {
-        return text.replace(/\b(qn)\b/g, 'quelqu\'un').replace(/\b(qc)\b/g, 'quelque chose');
-    }
-    return text;
+  switch (langCode) {
+    case 'fr-FR':
+      return text
+        .replace(/\b(qn)\b/gi, "quelqu'un")
+        .replace(/\b(qc)\b/gi, 'quelque chose');
+    case 'en-US':
+      return text
+        .replace(/\be\.g\.\b/gi, 'for example')
+        .replace(/\bi\.e\.\b/gi, 'that is');
+    case 'de-DE':
+      return text
+        .replace(/\bz\.B\.\b/gi, 'zum Beispiel')
+        .replace(/\bu\.a\.\b/gi, 'unter anderem');
+    case 'es-ES':
+      return text
+        .replace(/\bp\. ej\.\b/gi, 'por ejemplo');
+    case 'it-IT':
+      return text
+        .replace(/\pe\. es\.\b/gi, 'per esempio');
+    case 'pt-PT':
+      return text
+        .replace(/\bex\.\b/gi, 'por exemplo');
+    case 'ru-RU':
+      return text
+        .replace(/\bт\. е\.\b/gi, 'то есть');
+    default:
+      return text;
+  }
 };
 
 export const useTextToSpeech = (): UseTextToSpeechReturn => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       setIsSupported(true);
-      
-      // Create a single, reusable utterance instance
-      const utterance = new SpeechSynthesisUtterance();
-      utteranceRef.current = utterance;
 
       const handleVoicesChanged = () => {
         voicesRef.current = window.speechSynthesis.getVoices();
       };
 
-      // Load voices and set up the listener
       handleVoicesChanged();
       window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
 
-      const handleEnd = () => {
-        setIsPlaying(false);
-      };
-
-      const handleError = (event: SpeechSynthesisErrorEvent) => {
-        if (event.error !== 'interrupted') {
-          // console.error('SpeechSynthesisUtterance.onerror', event);
-        }
-        setIsPlaying(false);
-      };
-
-      utterance.addEventListener('end', handleEnd);
-      utterance.addEventListener('error', handleError);
-
-      // Cleanup function
       return () => {
-        utterance.removeEventListener('end', handleEnd);
-        utterance.removeEventListener('error', handleError);
         window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
         window.speechSynthesis.cancel();
       };
     }
   }, []);
 
-  const speak = useCallback((text: string, languageHint: string) => {
+  const speak = useCallback((rawText: string, languageHint?: string) => {
     const ttsEnabled = localStorage.getItem('tts-enabled') === 'true';
-    if (!isSupported || !utteranceRef.current || !ttsEnabled) {
-      return;
-    }
+    if (!isSupported || !ttsEnabled || !rawText) return;
 
-    // Cancel any ongoing speech before starting a new one
-    window.speechSynthesis.cancel();
-    
-    const utterance = utteranceRef.current;
     const languageCode = getLanguageCode(languageHint);
-    
-    utterance.text = expandAbbreviation(text, languageCode);
+    const text = expandAbbreviation(rawText, languageCode).trim();
+    if (!text) return;
+
+    // Cancel laufende Wiedergabe
+    window.speechSynthesis.cancel();
+
+    // Neues Utterance für jeden Aufruf
+    const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = languageCode;
     utterance.rate = 0.85;
 
+    // Stimme wählen, falls im LocalStorage gesetzt
     const preferredVoiceURI = localStorage.getItem('tts-voice-uri');
-    let chosenVoice: SpeechSynthesisVoice | undefined = undefined;
+    let chosenVoice: SpeechSynthesisVoice | undefined;
 
     if (voicesRef.current.length > 0) {
       if (preferredVoiceURI) {
-          chosenVoice = voicesRef.current.find(voice => voice.voiceURI === preferredVoiceURI);
+        chosenVoice = voicesRef.current.find(v => v.voiceURI === preferredVoiceURI);
       }
-      
       if (!chosenVoice) {
-          chosenVoice = voicesRef.current.find(voice => voice.lang === languageCode && !voice.localService) 
-                     || voicesRef.current.find(voice => voice.lang === languageCode);
+        chosenVoice = voicesRef.current.find(v => v.lang === languageCode) || undefined;
       }
     }
 
-    utterance.voice = chosenVoice || null;
-    
+    if (chosenVoice) utterance.voice = chosenVoice;
+
+    // Eventlistener
+    utterance.onend = () => setIsPlaying(false);
+    utterance.onerror = () => setIsPlaying(false);
+
     setIsPlaying(true);
-    window.speechSynthesis.speak(utterance); // This was the missing line
+    window.speechSynthesis.speak(utterance);
   }, [isSupported]);
 
   const cancel = useCallback(() => {
