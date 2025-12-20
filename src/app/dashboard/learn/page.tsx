@@ -466,6 +466,7 @@ export default function LearnPage() {
   };
   
   const expectedAnswer = isTermFirst ? currentCard.definition : currentCard.term;
+  const languageHint = subject?.name || 'English';
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)]">
@@ -521,25 +522,16 @@ export default function LearnPage() {
           </div>
           
 
-           <div className="absolute top-4 right-4 h-10 w-10">
-
+          <div className="absolute top-4 right-4 h-10 w-10">
+            <div className={cn("relative w-full h-full transition-opacity duration-300", isFlipped && 'opacity-0')}>
               <SpeakerButton 
-                text={currentCard.term} 
-                languageHint={subject?.name || 'English'}
+                  text={currentCard.term} 
+                  languageHint={languageHint} 
+                  disabled={!isTermFirst} 
               />
 
-
-                <SpeakerButton 
-                    text={isTermFirst ? currentCard.term : currentCard.definition} 
-                    languageHint={isTermFirst ? (subject?.name || 'English') : 'German'}
-                />
-
-                <div className={cn("relative w-full h-full transition-opacity duration-300", isFlipped && 'opacity-0')}>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground">
-                        <Volume2 className="h-5 w-5" />
-                    </Button>
-                </div>
             </div>
+          </div>
           
           <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-12">
             {/* These two are invisible but establish the grid area's size */}
