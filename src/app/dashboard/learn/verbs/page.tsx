@@ -508,6 +508,12 @@ export default function VerbPracticePage() {
     const foreignCardText = isGermanFirst ? currentCard.back : currentCard.front;
     const languageHint = isGermanFirst ? 'German' : (subject?.name || 'English');
 
+    const foreignFlag = subject?.emoji || '🌐';
+    const germanFlag = '🇩🇪';
+
+    const frontFlag = isGermanFirst ? germanFlag : foreignFlag;
+    const backFlag = isGermanFirst ? foreignFlag : germanFlag;
+
 
     return (
         <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)]">
@@ -553,10 +559,10 @@ export default function VerbPracticePage() {
                     <div className="absolute top-4 left-4 text-3xl [perspective:1000px]">
                         <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                             <div className="[backface-visibility:hidden]">
-                                <span>{isGermanFirst ? '🇩🇪' : subject?.emoji}</span>
+                                <span>{frontFlag}</span>
                             </div>
                             <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                <span>{isGermanFirst ? subject?.emoji : '🇩🇪'}</span>
+                                <span>{backFlag}</span>
                             </div>
                         </div>
                     </div>
@@ -716,4 +722,3 @@ export default function VerbPracticePage() {
 }
 
     
-

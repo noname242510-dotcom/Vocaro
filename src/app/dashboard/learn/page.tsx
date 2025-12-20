@@ -469,6 +469,13 @@ export default function LearnPage() {
   const expectedAnswer = isTermFirst ? currentCard.definition : currentCard.term;
   const languageHint = subject?.name || 'English';
 
+  const foreignFlag = subject?.emoji || '🌐';
+  const germanFlag = '🇩🇪';
+
+  const frontFlag = isTermFirst ? foreignFlag : germanFlag;
+  const backFlag = isTermFirst ? germanFlag : foreignFlag;
+
+
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)]">
       <div className="w-full max-w-2xl px-4 sm:px-0 mx-auto">
@@ -514,15 +521,15 @@ export default function LearnPage() {
           <div className="absolute top-4 left-4 text-3xl [perspective:1000px]">
             <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                 <div className="[backface-visibility:hidden]">
-                    <span>{isTermFirst ? subject?.emoji : '🇩🇪'}</span>
+                    <span>{frontFlag}</span>
                 </div>
                 <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                    <span>{isTermFirst ? '🇩🇪' : subject?.emoji}</span>
+                    <span>{backFlag}</span>
                 </div>
             </div>
           </div>
           
-          <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
+           <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
              <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                 <div className={cn("absolute inset-0 [backface-visibility:hidden]", !isTermFirst && "opacity-0")}>
                     <SpeakerButton text={currentCard.term} languageHint={languageHint} />
