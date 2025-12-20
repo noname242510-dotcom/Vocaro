@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -48,7 +47,7 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
       };
 
       window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-      handleVoicesChanged(); // Initial load
+      handleVoicesChanged();
 
       const handleEnd = () => setIsPlaying(false);
       const handleError = (event: SpeechSynthesisErrorEvent) => {
