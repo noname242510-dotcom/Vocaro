@@ -51,9 +51,13 @@ export const useTextToSpeech = (): UseTextToSpeechReturn => {
 
       utterance.onstart = () => setIsPlaying(true);
       utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = () => {
+      utterance.onerror = (event) => {
+        if (event.error !== 'interrupted') {
+          console.error('SpeechSynthesisUtterance.onerror', event);
+        }
         setIsPlaying(false);
       };
+
 
       return () => {
         window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);

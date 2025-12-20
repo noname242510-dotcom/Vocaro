@@ -564,10 +564,7 @@ export default function VerbPracticePage() {
                      <div className="absolute top-4 right-4 h-10 w-10">
                         <div className={cn("relative w-full h-full transition-opacity duration-300", isFlipped && 'opacity-0')}>
 
-                            <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" disabled>
-                                <Volume2 className="h-5 w-5" />
-                            </Button>
-
+                            <SpeakerButton text={foreignCardText} languageHint={languageHint} />
                         </div>
 
                     </div>
