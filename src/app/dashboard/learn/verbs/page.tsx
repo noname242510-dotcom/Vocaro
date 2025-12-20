@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -561,12 +562,15 @@ export default function VerbPracticePage() {
                     </div>
                     
 
-                     <div className="absolute top-4 right-4 h-10 w-10">
-                        <div className={cn("relative w-full h-full transition-opacity duration-300", isFlipped && 'opacity-0')}>
-
-                            <SpeakerButton text={foreignCardText} languageHint={languageHint} />
+                     <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
+                        <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                            <div className={cn("absolute inset-0 [backface-visibility:hidden]", isGermanFirst && "opacity-0")}>
+                                <SpeakerButton text={foreignCardText} languageHint={languageHint} />
+                            </div>
+                            <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !isGermanFirst && "opacity-0")}>
+                               <SpeakerButton text={foreignCardText} languageHint={languageHint} />
+                            </div>
                         </div>
-
                     </div>
 
                     <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">
@@ -712,3 +716,4 @@ export default function VerbPracticePage() {
 }
 
     
+
