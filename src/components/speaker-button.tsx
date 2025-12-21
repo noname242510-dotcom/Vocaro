@@ -75,6 +75,7 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
             };
             audioRef.current.onplay = () => {
               setIsPlaying(true);
+              if (animationTimeoutRef.current) clearTimeout(animationTimeoutRef.current);
               animationTimeoutRef.current = setTimeout(() => setIsPlaying(false), playbackDuration);
             };
             audioRef.current.onended = () => {

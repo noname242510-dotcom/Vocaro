@@ -480,15 +480,16 @@ export default function LearnPage() {
   const foreignFlag = subject?.emoji || '🌐';
   const germanFlag = '🇩🇪';
 
-  // Front of the card
-  const frontWord = isTermFirst ? currentCard.term : currentCard.definition;
-  const frontFlag = isTermFirst ? foreignFlag : germanFlag;
+  // Determine which side is foreign and which is German
   const frontIsForeign = isTermFirst;
-
-  // Back of the card
-  const backWord = isTermFirst ? currentCard.definition : currentCard.term;
-  const backFlag = isTermFirst ? germanFlag : foreignFlag;
   const backIsForeign = !isTermFirst;
+
+  // Assign words and flags based on that
+  const frontWord = frontIsForeign ? currentCard.term : currentCard.definition;
+  const frontFlag = frontIsForeign ? foreignFlag : germanFlag;
+
+  const backWord = backIsForeign ? currentCard.term : currentCard.definition;
+  const backFlag = backIsForeign ? foreignFlag : germanFlag;
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)]">
@@ -626,11 +627,11 @@ export default function LearnPage() {
         </div>
       </div>
       
-      <div className="mt-auto w-full max-w-2xl flex flex-col items-center mx-auto pt-4">
-        <div className="w-full h-12 relative">
+      <div className="w-full max-w-2xl mx-auto pt-4">
+        <div className="h-12">
             <div
                 className={cn(
-                    'absolute inset-0 flex justify-center items-center transition-all duration-300',
+                    'flex justify-center items-center transition-all duration-300',
                     (isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
                 )}
             >
@@ -653,7 +654,7 @@ export default function LearnPage() {
             </div>
             <div
                 className={cn(
-                    'absolute inset-0 flex justify-center items-center gap-2 transition-all duration-300',
+                    'flex justify-center items-center gap-2 transition-all duration-300',
                     (!isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
                 )}
             >
@@ -683,14 +684,12 @@ export default function LearnPage() {
                 )}
             </div>
         </div>
-        <div className="w-full text-center mt-2">
-            {history.length > 0 && !isExiting ? (
+        <div className="w-full text-center mt-2 h-[36px]">
+            {history.length > 0 && !isExiting && (
               <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
                   <ChevronLeft className="mr-1 h-4 w-4" />
                   Zurück
               </Button>
-            ) : (
-              <div className="h-[36px]" />
             )}
         </div>
       </div>

@@ -514,18 +514,16 @@ export default function VerbPracticePage() {
         }
     };
     
-    const foreignCardText = isGermanFirst ? currentCard.back : currentCard.front;
-    const languageHint = isGermanFirst ? 'German' : (subject?.name || 'English');
+    // This is used for TTS
+    const languageHint = subject?.name || 'English';
 
-    const foreignFlag = subject?.emoji || '🌐';
-    const germanFlag = '🇩🇪';
-    
-    // Check if the content is German based on the isGermanFirst setting.
+    // Check if the original 'front' of the item was German
     const frontIsGerman = isGermanFirst;
     const backIsGerman = !isGermanFirst;
 
     // The flag for the foreign language is the subject's emoji.
     const foreignWordFlag = subject?.emoji || '🌐';
+    const germanFlag = '🇩🇪';
 
     // Assign flags based on whether the content is German or foreign.
     const frontFlag = frontIsGerman ? germanFlag : foreignWordFlag;
@@ -535,6 +533,7 @@ export default function VerbPracticePage() {
     // If the front is German, the back is foreign, and vice-versa.
     const textToSpeak = frontIsGerman ? currentCard.back : currentCard.front;
     
+    // Speaker appears on the back if the front is German
     const speakerIsOnBack = frontIsGerman;
 
 
@@ -674,11 +673,11 @@ export default function VerbPracticePage() {
                 </div>
             </div>
 
-            <div className="mt-auto w-full max-w-2xl flex flex-col items-center mx-auto pt-4">
-                <div className="w-full h-12 relative">
+            <div className="w-full max-w-2xl mx-auto pt-4">
+                <div className="h-12">
                     <div
                         className={cn(
-                            'absolute inset-0 flex justify-center items-center transition-all duration-300',
+                            'flex justify-center items-center transition-all duration-300',
                             (isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
                         )}
                     >
@@ -701,7 +700,7 @@ export default function VerbPracticePage() {
                     </div>
                     <div
                         className={cn(
-                            'absolute inset-0 flex justify-center items-center gap-2 transition-all duration-300',
+                            'flex justify-center items-center gap-2 transition-all duration-300',
                             (!isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
                         )}
                     >
@@ -731,14 +730,12 @@ export default function VerbPracticePage() {
                         )}
                     </div>
                 </div>
-                <div className="w-full text-center mt-2">
-                    {history.length > 0 && !isExiting ? (
+                <div className="w-full text-center mt-2 h-[36px]">
+                    {history.length > 0 && !isExiting && (
                         <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
                             <ChevronLeft className="mr-1 h-4 w-4" />
                             Zurück
                         </Button>
-                    ) : (
-                      <div className="h-[36px]" />
                     )}
                 </div>
             </div>
