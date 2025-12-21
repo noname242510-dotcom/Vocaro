@@ -525,7 +525,7 @@ export default function LearnPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-2xl mt-4 mx-auto flex-grow flex flex-col justify-center">
+      <div className="w-full max-w-2xl mx-auto flex-grow flex flex-col justify-center">
         <div
           key={currentCard.id}
           className={cn(
@@ -627,7 +627,7 @@ export default function LearnPage() {
         </div>
       </div>
       
-      <div className="w-full max-w-2xl mx-auto pt-4">
+      <div className="w-full max-w-2xl mx-auto pt-2">
         <div className="h-12">
             <div
                 className={cn(
