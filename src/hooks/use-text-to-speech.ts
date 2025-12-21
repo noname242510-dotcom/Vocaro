@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface UseTextToSpeechReturn {
   speak: (text: string, langHint?: string) => void;
@@ -30,14 +30,6 @@ const expandAbbreviation = (text: string, langCode: string): string => {
       return text.replace(/\be\.g\.\b/gi, 'for example').replace(/\bi\.e\.\b/gi, 'that is');
     case 'de-DE':
       return text.replace(/\bz\.B\.\b/gi, 'zum Beispiel').replace(/\bu\.a\.\b/gi, 'unter anderem');
-    case 'es-ES':
-      return text.replace(/\bp\. ej\.\b/gi, 'por ejemplo');
-    case 'it-IT':
-      return text.replace(/\bpe\. es\.\b/gi, 'per esempio');
-    case 'pt-PT':
-      return text.replace(/\bex\.\b/gi, 'por exemplo');
-    case 'ru-RU':
-      return text.replace(/\bт\. е\.\b/gi, 'то есть');
     default:
       return text;
   }
@@ -46,89 +38,71 @@ const expandAbbreviation = (text: string, langCode: string): string => {
 export const useTextToSpeech = (): UseTextToSpeechReturn => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
-  const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
-  const voicesReadyRef = useRef(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       setIsSupported(true);
 
-      const handleVoicesChanged = () => {
-        voicesRef.current = window.speechSynthesis.getVoices();
-        voicesReadyRef.current = true;
-        console.log('Voices loaded:', voicesRef.current.length);
-      };
-
-      window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-      handleVoicesChanged(); // sofort prüfen
-
-      return () => {
-        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-        window.speechSynthesis.cancel();
-      };
+      // Chrome lädt Stimmen manchmal verzögert
+      window.speechSynthesis.getVoices();
     }
   }, []);
 
   const speak = useCallback((rawText: string, languageHint?: string) => {
-    let ttsEnabled = localStorage.getItem('tts-enabled');
-    if (ttsEnabled === null) {
-      localStorage.setItem('tts-enabled', 'true');
-      ttsEnabled = 'true';
-    }
-
-    if (!isSupported || ttsEnabled !== 'true' || !rawText) return;
-
-    if (!voicesReadyRef.current) {
-      console.warn('TTS-Stimmen noch nicht bereit');
-      return;
-    }
+    if (!isSupported || !rawText) return;
 
     const languageCode = getLanguageCode(languageHint);
     const text = expandAbbreviation(rawText, languageCode).trim();
     if (!text) return;
 
-    // laufende Wiedergabe abbrechen
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
+    // 🔧 WICHTIG: alles vorher abbrechen
+    window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = languageCode;
     utterance.rate = 0.85;
+    utterance.pitch = 1;
+    utterance.volume = 1;
 
-    // Stimme wählen
-    const preferredVoiceURI = localStorage.getItem('tts-voice-uri');
-    let chosenVoice = undefined;
-
-    if (voicesRef.current.length > 0) {
-      if (preferredVoiceURI) {
-        chosenVoice = voicesRef.current.find(v => v.voiceURI === preferredVoiceURI);
-      }
-      if (!chosenVoice) {
-        chosenVoice = voicesRef.current.find(v => v.lang === languageCode) || null;
-      }
+    // Stimme NUR setzen, wenn wirklich vorhanden
+    const voices = window.speechSynthesis.getVoices();
+    const matchingVoice = voices.find(v => v.lang === languageCode);
+    if (matchingVoice) {
+      utterance.voice = matchingVoice;
     }
 
-    if (chosenVoice) utterance.voice = chosenVoice;
-
-    // Events
+    utterance.onstart = () => setIsPlaying(true);
     utterance.onend = () => setIsPlaying(false);
-    utterance.onerror = (e) => {
+    utterance.onerror = e => {
       console.error('TTS Fehler:', e);
       setIsPlaying(false);
     };
 
-    setIsPlaying(true);
-    console.log('TTS speak:', { text, languageCode, chosenVoice });
-    window.speechSynthesis.speak(utterance);
+    // ⏱ Chrome-Safe Delay
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+    }, 30);
+
+    // 🔍 Debug (optional)
+    console.log('TTS:', {
+      text,
+      languageCode,
+      voices: voices.length,
+      voice: matchingVoice?.name
+    });
+
   }, [isSupported]);
 
   const cancel = useCallback(() => {
-    if (isSupported) {
-      window.speechSynthesis.cancel();
-      setIsPlaying(false);
-    }
+    if (!isSupported) return;
+    window.speechSynthesis.cancel();
+    setIsPlaying(false);
   }, [isSupported]);
 
-  return { speak, cancel, isPlaying, isSupported };
+  return {
+    speak,
+    cancel,
+    isPlaying,
+    isSupported
+  };
 };

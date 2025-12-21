@@ -571,7 +571,7 @@ export default function VerbPracticePage() {
                 </p>
             </div>
 
-            <div className="w-full max-w-2xl mt-4 mx-auto flex-grow flex flex-col">
+            <div className="w-full max-w-2xl mt-4 mx-auto flex-grow flex flex-col justify-center">
                 <div
                     key={currentCard.id}
                     className={cn(
@@ -674,7 +674,7 @@ export default function VerbPracticePage() {
                 </div>
             </div>
 
-            <div className="mt-auto w-full max-w-2xl flex flex-col items-center mx-auto">
+            <div className="mt-auto w-full max-w-2xl flex flex-col items-center mx-auto pt-4">
                 <div className="w-full h-12 relative">
                     <div
                         className={cn(
@@ -731,12 +731,14 @@ export default function VerbPracticePage() {
                         )}
                     </div>
                 </div>
-                <div className="w-full text-center mt-2 h-[36px]">
-                    {history.length > 0 && !isExiting && (
+                <div className="w-full text-center mt-2">
+                    {history.length > 0 && !isExiting ? (
                         <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
                             <ChevronLeft className="mr-1 h-4 w-4" />
                             Zurück
                         </Button>
+                    ) : (
+                      <div className="h-[36px]" />
                     )}
                 </div>
             </div>
