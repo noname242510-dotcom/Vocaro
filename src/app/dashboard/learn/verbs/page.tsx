@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -50,7 +49,7 @@ interface PracticeItem {
     hint?: string; // Tense can be a hint now
 }
 
-type AnswerStatus = 'unanswered' | 'correct' | 'incorrect' | 'accepted';
+type AnswerStatus = 'unanswered' | 'correct' | 'incorrect' | 'accepted' | 'omitted-correct';
 
 interface VerbLearnState {
   practiceItems: PracticeItem[];
@@ -61,31 +60,55 @@ interface VerbLearnState {
 }
 
 
-const DiffHighlight = ({userInput, correctAnswer}: {userInput: string, correctAnswer: string}) => {
-    const userChars = userInput.trim().split('');
-    const correctChars = correctAnswer.trim().split('');
+const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: string, correctAnswer: string, status: AnswerStatus }) => {
+    // 1. Incorrect case: show user input with diff and then the correct answer below
+    if (status === 'incorrect') {
+        const userChars = userInput.trim().split('');
+        const correctChars = correctAnswer.trim().split('');
+        return (
+            <>
+                <p className="text-xl font-mono text-center mb-1">
+                    {userChars.map((char, index) => (
+                        <span key={index} className={cn('border-b-2', index < correctChars.length && char.toLowerCase() === correctChars[index].toLowerCase() ? 'border-transparent' : 'border-destructive')}>
+                            {char}
+                        </span>
+                    ))}
+                </p>
+                <p className="text-4xl font-bold mt-4">{correctAnswer}</p>
+            </>
+        );
+    }
+    
+    // 2. Omitted-correct case: show correct answer with yellow underline for optional part
+    if (status === 'omitted-correct') {
+        const optionalPartRegex = /(\([^)]+\))/g;
+        const parts = [];
+        let lastIndex = 0;
+        let match;
+        
+        while ((match = optionalPartRegex.exec(correctAnswer)) !== null) {
+            if (match.index > lastIndex) {
+                parts.push(correctAnswer.substring(lastIndex, match.index));
+            }
+            parts.push(<span key={match.index} className="border-b-2 border-yellow-400">{match[0]}</span>);
+            lastIndex = optionalPartRegex.lastIndex;
+        }
 
-    return (
-        <div className="text-center">
-            
-            <p className="text-xl font-mono text-center mb-1">
-            {userChars.map((char, index) => (
-                <span 
-                    key={index}
-                    className={cn(
-                        "border-b-2",
-                        index < correctChars.length && char.toLowerCase() === correctChars[index].toLowerCase()
-                            ? 'border-transparent'
-                            : 'border-destructive'
-                    )}
-                >
-                    {char}
-                </span>
-            ))}
-            </p>
-        </div>
-    );
-};
+        if (lastIndex < correctAnswer.length) {
+            parts.push(correctAnswer.substring(lastIndex));
+        }
+
+        return <p className="text-4xl font-bold mt-4">{parts}</p>;
+    }
+    
+    // 3. Fully correct or accepted: just show the correct answer
+    if (status === 'correct' || status === 'accepted') {
+        return <p className="text-4xl font-bold mt-4">{correctAnswer}</p>;
+    }
+
+    // Default: nothing
+    return null;
+}
 
 const germanPronounMap: Record<string, string> = {
     "ich": "ich",
@@ -268,7 +291,7 @@ export default function VerbPracticePage() {
         }
     }, [isFlipped]);
 
-    const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted').length;
+    const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted' || status === 'omitted-correct').length;
     const progress = totalItemCount > 0 ? (correctAnswersCount / totalItemCount) * 100 : 0;
 
     const saveToHistory = () => {
@@ -374,7 +397,7 @@ export default function VerbPracticePage() {
 
     const handleCheckAnswer = () => {
         if (isFlipped) {
-          const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted';
+          const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted' || answerStatus === 'omitted-correct';
           setIsExiting(true);
           setTimeout(() => {
             setIsFlipped(false);
@@ -389,11 +412,36 @@ export default function VerbPracticePage() {
 
         const currentCard = practiceItems[currentIndex];
         const expectedAnswer = currentCard.back;
+        
+        const userInputClean = userInput.trim().toLowerCase();
+        const expectedAnswerOriginal = expectedAnswer.trim();
+        const expectedAnswerClean = expectedAnswerOriginal.toLowerCase();
+        
+        let isCorrect = false;
+        let partialMatch = false;
 
-        const isCorrect = userInput.trim().toLowerCase() === expectedAnswer.trim().toLowerCase();
+        const optionalPartRegex = /\(([^)]+)\)/g;
+        const match = expectedAnswerClean.match(optionalPartRegex);
+        
+        if (match) {
+            const withParens = expectedAnswerClean;
+            const withoutParens = expectedAnswerClean.replace(/[()]/g, '');
+            const withoutOptionalPart = expectedAnswerClean.replace(optionalPartRegex, '').replace(/\s+/g, ' ').trim();
+            
+            const possibleAnswers = [withParens, withoutParens, withoutOptionalPart];
+            
+            if (possibleAnswers.includes(userInputClean)) {
+                isCorrect = true;
+                if (userInputClean === withoutOptionalPart && withParens !== withoutOptionalPart) {
+                    partialMatch = true;
+                }
+            }
+        } else {
+            isCorrect = userInputClean === expectedAnswerClean;
+        }
 
         if (isCorrect) {
-          setAnswerStatus('correct');
+          setAnswerStatus(partialMatch ? 'omitted-correct' : 'correct');
           if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
             setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
           }
@@ -441,12 +489,10 @@ export default function VerbPracticePage() {
         setIsTypedMode(newMode);
         localStorage.setItem('learn-mode-typed', String(newMode));
         
-        // If we switch modes while the answer is already shown and correct, stay flipped.
-        if (isFlipped && (answerStatus === 'correct' || answerStatus === 'accepted')) {
+        if (isFlipped && (answerStatus === 'correct' || answerStatus === 'accepted' || answerStatus === 'omitted-correct')) {
             return;
         }
 
-        // Otherwise, reset to the front of the card.
         setUserInput('');
         setAnswerStatus('unanswered');
         setIsFlipped(false);
@@ -507,7 +553,9 @@ export default function VerbPracticePage() {
       
     const FeedbackIcon = ({ status }: { status: AnswerStatus }) => {
         switch (status) {
-            case 'correct': return <Smile className="h-10 w-10" />;
+            case 'correct':
+            case 'omitted-correct':
+                return <Smile className="h-10 w-10" />;
             case 'incorrect': return <Frown className="h-10 w-10" />;
             case 'accepted': return <Meh className="h-10 w-10" />;
             default: return <div className="h-10 w-10" />;
@@ -570,7 +618,7 @@ export default function VerbPracticePage() {
                 </p>
             </div>
 
-            <div className="w-full max-w-2xl mx-auto flex-grow flex flex-col justify-center">
+            <div className="w-full max-w-2xl mx-auto flex-grow flex flex-col justify-center my-2">
                 <div
                     key={currentCard.id}
                     className={cn(
@@ -643,21 +691,15 @@ export default function VerbPracticePage() {
                                 <p className="text-4xl font-bold text-center">{currentCard.front}</p>
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
-                                {isTypedMode && answerStatus === 'incorrect' ? (
+                                {isTypedMode && answerStatus !== 'unanswered' ? (
                                     <div className="flex flex-col items-center justify-center text-center">
-                                    <DiffHighlight userInput={userInput} correctAnswer={currentCard.back} />
-                                    <p className="text-4xl font-bold mt-4">{currentCard.back}</p>
-                                    <div className="mt-4">
-                                        <FeedbackIcon status={answerStatus} />
-                                    </div>
+                                        <AnswerFeedback userInput={userInput} correctAnswer={currentCard.back} status={answerStatus} />
+                                        <div className="mt-4">
+                                            <FeedbackIcon status={answerStatus} />
+                                        </div>
                                     </div>
                                 ) : (
                                     <p className="text-4xl font-bold text-center">{currentCard.back}</p>
-                                )}
-                                {isTypedMode && (answerStatus === 'correct' || answerStatus === 'accepted') && (
-                                    <div className="mt-4">
-                                        <FeedbackIcon status={answerStatus} />
-                                    </div>
                                 )}
                             </div>
                         </div>
@@ -742,5 +784,3 @@ export default function VerbPracticePage() {
         </div>
     );
 }
-
-    
