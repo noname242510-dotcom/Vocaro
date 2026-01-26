@@ -53,6 +53,24 @@ export default function RootLayout({
           </TaskProvider>
         </FirebaseClientProvider>
         <ClientToaster />
+
+        {/* --- HIER KOMMT DAS SKRIPT REIN --- */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker registriert mit Scope: ', registration.scope);
+                  }, function(err) {
+                    console.log('ServiceWorker Registrierung fehlgeschlagen: ', err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
+        {/* ---------------------------------- */}
       </body>
     </html>
   );

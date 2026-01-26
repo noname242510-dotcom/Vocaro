@@ -46,3 +46,6 @@ firestore-debug.log
 
 #auth Admin SDK key
 firebase-service-account.json
+
+#manuelle änderungen
+node_modules
