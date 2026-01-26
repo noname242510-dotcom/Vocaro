@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Check, Loader2, RotateCcw, X, Lightbulb, Pencil, ChevronLeft, Smile, Frown, Meh, Volume2 } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, RotateCcw, X, Lightbulb, Pencil, ChevronLeft, Smile, Frown, Meh } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Verb, VerbTense, Subject } from '@/lib/types';
 import {
@@ -61,25 +61,71 @@ interface VerbLearnState {
 
 
 const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: string, correctAnswer: string, status: AnswerStatus }) => {
-    // 1. Incorrect case: show user input with diff and then the correct answer below
     if (status === 'incorrect') {
-        const userChars = userInput.trim().split('');
-        const correctChars = correctAnswer.trim().split('');
+        const lcs = (a: string[], b: string[]) => {
+            const m = a.length;
+            const n = b.length;
+            const dp = Array(m + 1).fill(0).map(() => Array(n + 1).fill(0));
+            const aLower = a.map(w => w.toLowerCase());
+            const bLower = b.map(w => w.toLowerCase());
+
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    if (aLower[i - 1] === bLower[j - 1]) {
+                        dp[i][j] = dp[i - 1][j - 1] + 1;
+                    } else {
+                        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                    }
+                }
+            }
+
+            let i = m;
+            let j = n;
+            const diff: { type: 'correct' | 'extra' | 'missing', value: string }[] = [];
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && aLower[i - 1] === bLower[j - 1]) {
+                    diff.unshift({ type: 'correct', value: b[j - 1] });
+                    i--;
+                    j--;
+                } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+                    diff.unshift({ type: 'missing', value: b[j - 1] });
+                    j--;
+                } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i - 1][j])) {
+                    diff.unshift({ type: 'extra', value: a[i - 1] });
+                    i--;
+                } else {
+                    break;
+                }
+            }
+            return diff;
+        };
+        
+        const userWords = userInput.trim().split(/\s+/).filter(w => w);
+        const correctWords = correctAnswer.trim().split(/\s+/).filter(w => w);
+        const diff = lcs(userWords, correctWords);
+
+        const displayParts: React.ReactNode[] = [];
+        diff.forEach((part, index) => {
+            if (part.type === 'correct') {
+                displayParts.push(<span key={`c-${index}`} className="px-1">{part.value}</span>);
+            } else if (part.type === 'extra') {
+                displayParts.push(<span key={`e-${index}`} className="px-1 text-destructive line-through">{part.value}</span>);
+            } else if (part.type === 'missing') {
+                displayParts.push(<span key={`m-${index}`} className="inline-block self-end h-6 w-8 border-b-2 border-destructive mx-1" title={`Fehlendes Wort: ${part.value}`}></span>);
+            }
+        });
+
         return (
             <>
-                <p className="text-xl font-mono text-center mb-1">
-                    {userChars.map((char, index) => (
-                        <span key={index} className={cn('border-b-2', index < correctChars.length && char.toLowerCase() === correctChars[index].toLowerCase() ? 'border-transparent' : 'border-destructive')}>
-                            {char}
-                        </span>
-                    ))}
-                </p>
+                <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
+                    {displayParts}
+                </div>
                 <p className="text-4xl font-bold mt-4">{correctAnswer}</p>
             </>
         );
     }
     
-    // 2. Omitted-correct case: show correct answer with yellow underline for optional part
+    // Omitted-correct case: show correct answer with yellow underline for optional part
     if (status === 'omitted-correct') {
         const optionalPartRegex = /(\([^)]+\))/g;
         const parts = [];
@@ -101,7 +147,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
         return <p className="text-4xl font-bold mt-4">{parts}</p>;
     }
     
-    // 3. Fully correct or accepted: just show the correct answer
+    // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
         return <p className="text-4xl font-bold mt-4">{correctAnswer}</p>;
     }
