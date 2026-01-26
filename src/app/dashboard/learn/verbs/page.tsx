@@ -62,6 +62,20 @@ interface VerbLearnState {
 
 const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: string, correctAnswer: string, status: AnswerStatus }) => {
     if (status === 'incorrect') {
+        const areWordsEqual = (userWordLower: string, correctWordLower: string) => {
+            if (userWordLower === correctWordLower) {
+                return true;
+            }
+            const optionalMatch = correctWordLower.match(/^\((.*)\)$/);
+            if (optionalMatch) {
+                const content = optionalMatch[1];
+                if (userWordLower === content) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
         const lcs = (a: string[], b: string[]) => {
             const m = a.length;
             const n = b.length;
@@ -71,7 +85,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
 
             for (let i = 1; i <= m; i++) {
                 for (let j = 1; j <= n; j++) {
-                    if (aLower[i - 1] === bLower[j - 1]) {
+                    if (areWordsEqual(aLower[i - 1], bLower[j - 1])) {
                         dp[i][j] = dp[i - 1][j - 1] + 1;
                     } else {
                         dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
@@ -83,8 +97,8 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             let j = n;
             const diff: { type: 'correct' | 'extra' | 'missing', value: string }[] = [];
             while (i > 0 || j > 0) {
-                if (i > 0 && j > 0 && aLower[i - 1] === bLower[j - 1]) {
-                    diff.unshift({ type: 'correct', value: b[j - 1] });
+                if (i > 0 && j > 0 && areWordsEqual(aLower[i - 1], bLower[j - 1])) {
+                    diff.unshift({ type: 'correct', value: a[i - 1] });
                     i--;
                     j--;
                 } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
@@ -105,15 +119,22 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
         const diff = lcs(userWords, correctWords);
 
         const displayParts: React.ReactNode[] = [];
-        diff.forEach((part, index) => {
-            if (part.type === 'correct') {
-                displayParts.push(<span key={`c-${index}`} className="px-1">{part.value}</span>);
-            } else if (part.type === 'extra') {
-                displayParts.push(<span key={`e-${index}`} className="px-1 text-destructive line-through">{part.value}</span>);
-            } else if (part.type === 'missing') {
-                displayParts.push(<span key={`m-${index}`} className="inline-block self-end h-6 w-8 border-b-2 border-destructive mx-1" title={`Fehlendes Wort: ${part.value}`}></span>);
+        for (let i = 0; i < diff.length; i++) {
+            const current = diff[i];
+            const next = i + 1 < diff.length ? diff[i + 1] : null;
+
+            if (current.type === 'extra' && next && next.type === 'missing') {
+                displayParts.push(<span key={`s-${i}`} className="px-1 text-destructive line-through">{current.value}</span>);
+                i++;
+            } else if (current.type === 'correct') {
+                displayParts.push(<span key={`c-${i}`} className="px-1">{current.value}</span>);
+            } else if (current.type === 'extra') {
+                displayParts.push(<span key={`e-${i}`} className="px-1 text-destructive line-through">{current.value}</span>);
+            } else if (current.type === 'missing') {
+                displayParts.push(<span key={`m-${i}`} className="inline-block self-end h-6 w-8 border-b-2 border-destructive mx-1" title={`Fehlendes Wort: ${current.value}`}></span>);
             }
-        });
+        }
+
 
         return (
             <>
