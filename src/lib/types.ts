@@ -20,6 +20,11 @@ export type VocabularyItem = {
   id: string;
   term: string;
   definition: string;
+  phonetic?: string;
+  relatedWord?: {
+    language: string;
+    word: string;
+  };
   notes?: string;
   isSelected?: boolean;
 };

@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronDown, Pen, Trash2, Loader2, Plus, MoreHorizontal } from 'lucide-react';
+import { ChevronDown, Pen, Trash2, Loader2, Plus, MoreHorizontal, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import {
@@ -39,6 +39,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 
 interface StackItemProps {
@@ -141,7 +142,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-2xl bg-card">
         <div className="w-full p-4 flex items-center justify-between group">
-           <div className="flex items-center gap-4 flex-1">
+           <div className="flex items-center gap-4 flex-1 min-w-0">
               <div onClick={(e) => e.stopPropagation()}>
                 <Checkbox 
                     checked={allVisibleInStackSelected}
@@ -149,17 +150,17 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                 />
               </div>
               <CollapsibleTrigger asChild>
-                <div className="cursor-pointer flex-1 flex items-center gap-2">
-                    <h3 className="font-headline text-lg">{stack.name}</h3>
-                    <Badge variant="secondary">
-                        {vocabulary.length || 0}
-                        <span className="hidden sm:inline">&nbsp;Vokabeln</span>
-                    </Badge>
+                <div className="cursor-pointer flex-1 flex items-center gap-2 min-w-0">
+                    <h3 className="font-headline text-lg truncate">{stack.name}</h3>
                 </div>
               </CollapsibleTrigger>
           </div>
-          <div className="flex items-center gap-1">
-            
+          <div className="flex items-center gap-1 md:gap-2">
+            <Badge variant="secondary">
+                {vocabulary.length || 0}
+                <span className="hidden sm:inline">&nbsp;Vokabeln</span>
+            </Badge>
+
             {/* Desktop Buttons */}
             <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onAddVocab(stack)}>
@@ -228,6 +229,20 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                     <span className="font-medium break-words hyphens-auto">{displayTermFirst ? item.term : item.definition}</span>
                     <span className="text-muted-foreground break-words hyphens-auto">{displayTermFirst ? item.definition : item.term}</span>
                   </label>
+                  {item.relatedWord && (
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                            <Languages className="h-4 w-4" />
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-2">
+                        <div className="text-sm">
+                            <span className="font-semibold">{item.relatedWord.language}:</span> {item.relatedWord.word}
+                        </div>
+                        </PopoverContent>
+                    </Popover>
+                  )}
                 </Card>
               ))
             ) : (

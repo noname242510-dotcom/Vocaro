@@ -20,6 +20,7 @@ import {
   Loader2,
   Search,
   Settings2,
+  Languages,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -111,6 +112,7 @@ export default function SubjectDetailPage() {
   const [activeStackId, setActiveStackId] = useState<string | null>(null);
   const [manualTerm, setManualTerm] = useState('');
   const [manualDefinition, setManualDefinition] = useState('');
+  const [manualPhonetic, setManualPhonetic] = useState('');
   const [manualNotes, setManualNotes] = useState('');
   const [isAddingManually, setIsAddingManually] = useState(false);
   const [isAddVocabDialogOpen, setIsAddVocabDialogOpen] = useState(false);
@@ -322,6 +324,8 @@ export default function SubjectDetailPage() {
             await addDoc(vocabCollectionRef, {
                 term: vocabItem.term,
                 definition: vocabItem.definition,
+                phonetic: vocabItem.phonetic || '',
+                relatedWord: vocabItem.relatedWord || null,
                 notes: vocabItem.notes || '',
                 createdAt: serverTimestamp(),
             });
@@ -369,6 +373,7 @@ export default function SubjectDetailPage() {
         await addDoc(collection(stackRef, 'vocabulary'), {
             term: manualTerm,
             definition: manualDefinition,
+            phonetic: manualPhonetic,
             notes: manualNotes,
             createdAt: serverTimestamp(),
         });
@@ -376,6 +381,7 @@ export default function SubjectDetailPage() {
         toast({ title: 'Erfolg', description: 'Vokabel hinzugefügt.' });
         setManualTerm('');
         setManualDefinition('');
+        setManualPhonetic('');
         setManualNotes('');
         
         if (closeOnFinish) {
@@ -487,6 +493,7 @@ export default function SubjectDetailPage() {
     setNewStackName('');
     setManualTerm('');
     setManualDefinition('');
+    setManualPhonetic('');
     setManualNotes('');
     setPreviewImage(null);
     setActiveStackId(null);
@@ -949,7 +956,7 @@ export default function SubjectDetailPage() {
 
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
+      <div className="fixed bottom-6 md:bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
          <div className="p-2 flex items-center justify-between gap-2">
             {activeTab === 'vocabulary' && (
               <>
@@ -1024,6 +1031,10 @@ export default function SubjectDetailPage() {
                             <div className="grid gap-2">
                               <Label htmlFor="definition">Deutsches Wort</Label>
                               <Input id="definition" placeholder="z.B., Hallo" value={manualDefinition} onChange={e => setManualDefinition(e.target.value)} />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="phonetic">Lautschrift (optional)</Label>
+                              <Input id="phonetic" placeholder="z.B. /ˈhæloʊ/" value={manualPhonetic} onChange={e => setManualPhonetic(e.target.value)} />
                             </div>
                              <div className="grid gap-2">
                               <Label htmlFor="notes">Hinweise (optional)</Label>

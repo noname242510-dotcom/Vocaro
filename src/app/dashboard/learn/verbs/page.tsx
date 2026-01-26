@@ -145,7 +145,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className="text-4xl font-bold mt-4">{correctAnswer}</p>
+                <p className="text-3xl md:text-4xl font-bold mt-4">{correctAnswer}</p>
             </>
         );
     }
@@ -169,12 +169,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className="text-4xl font-bold mt-4">{parts}</p>;
+        return <p className="text-3xl md:text-4xl font-bold mt-4">{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className="text-4xl font-bold mt-4">{correctAnswer}</p>;
+        return <p className="text-3xl md:text-4xl font-bold mt-4">{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -301,9 +301,11 @@ export default function VerbPracticePage() {
         const currentCard = practiceItems[currentIndex];
         const expectedAnswer = currentCard.back;
         
-        const userInputClean = userInput.trim().toLowerCase();
+        const normalize = (str: string) => str.replace(/['´`]/g, "'");
+
+        const userInputClean = normalize(userInput.trim()).toLowerCase();
         const expectedAnswerOriginal = expectedAnswer.trim();
-        const expectedAnswerClean = expectedAnswerOriginal.toLowerCase();
+        const expectedAnswerClean = normalize(expectedAnswerOriginal).toLowerCase();
         
         let isCorrect = false;
         let partialMatch = false;
@@ -316,11 +318,11 @@ export default function VerbPracticePage() {
             const withoutParens = expectedAnswerClean.replace(/[()]/g, '');
             const withoutOptionalPart = expectedAnswerClean.replace(optionalPartRegex, '').replace(/\s+/g, ' ').trim();
             
-            const possibleAnswers = [withParens, withoutParens, withoutOptionalPart];
+            const possibleAnswers = [withParens, withoutParens, withoutOptionalPart].map(normalize);
             
             if (possibleAnswers.includes(userInputClean)) {
                 isCorrect = true;
-                if (userInputClean === withoutOptionalPart && withParens !== withoutOptionalPart) {
+                if (userInputClean === normalize(withoutOptionalPart) && withParens !== withoutOptionalPart) {
                     partialMatch = true;
                 }
             }
@@ -346,12 +348,58 @@ export default function VerbPracticePage() {
 
     const handleCheckAnswerRef = useRef(handleCheckAnswer);
     handleCheckAnswerRef.current = handleCheckAnswer;
-  
+    
+    const handleClassicAnswer = (knewIt: boolean) => {
+        if (!isFlipped || isExiting) return;
+
+        saveToHistory();
+    
+        const currentCard = practiceItems[currentIndex];
+
+        if (knewIt) {
+            if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
+                setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+            }
+            triggerHapticFeedback('light');
+        } else {
+            if (!incorrectlyAnsweredIds.has(currentCard.id)) {
+                setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
+            }
+            setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
+            triggerHapticFeedback('heavy');
+        }
+        
+        setIsExiting(true);
+        setTimeout(() => {
+          setIsFlipped(false);
+          goToNextCard(knewIt);
+          setIsExiting(false);
+        }, 500); // Duration matches animation
+    };
+    
+    const handleClassicAnswerRef = useRef(handleClassicAnswer);
+    handleClassicAnswerRef.current = handleClassicAnswer;
+
+    const handleFlipCard = () => {
+        saveToHistory();
+        setIsFlipped(true);
+    };
+
     useEffect(() => {
       const handleGlobalKeyDown = (event: KeyboardEvent) => {
         if (document.querySelector('[role="dialog"]')) return;
-        if (event.key === 'Enter' && isFlipped && isTypedMode && !isExiting) {
-          handleCheckAnswerRef.current();
+        if (event.key === 'Enter' && !isExiting) {
+          if (isTypedMode) {
+              if (isFlipped) {
+                handleCheckAnswerRef.current();
+              }
+          } else {
+              if (!isFlipped) {
+                  handleFlipCard();
+              } else {
+                  handleClassicAnswerRef.current(true); // Assume 'knew it'
+              }
+          }
         }
       };
   
@@ -506,39 +554,6 @@ export default function VerbPracticePage() {
           setAnswerStatus('unanswered');
           setIsFlipped(false);
         }
-    };
-
-    const handleClassicAnswer = (knewIt: boolean) => {
-        if (!isFlipped || isExiting) return;
-
-        saveToHistory();
-    
-        const currentCard = practiceItems[currentIndex];
-
-        if (knewIt) {
-            if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
-                setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
-            }
-            triggerHapticFeedback('light');
-        } else {
-            if (!incorrectlyAnsweredIds.has(currentCard.id)) {
-                setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
-            }
-            setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
-            triggerHapticFeedback('heavy');
-        }
-        
-        setIsExiting(true);
-        setTimeout(() => {
-          setIsFlipped(false);
-          goToNextCard(knewIt);
-          setIsExiting(false);
-        }, 500); // Duration matches animation
-    };
-    
-    const handleFlipCard = () => {
-        saveToHistory();
-        setIsFlipped(true);
     };
     
     const handleMarkAsCorrect = () => {
@@ -703,11 +718,11 @@ export default function VerbPracticePage() {
                 </p>
             </div>
 
-            <div className="w-full max-w-2xl mx-auto flex-grow flex flex-col justify-center my-2">
+            <div className="w-full max-w-2xl mx-auto flex-grow flex flex-col justify-center my-0">
                 <div
                     key={currentCard.id}
                     className={cn(
-                        "relative w-full h-80 flex flex-col items-center justify-center p-6 rounded-2xl glass-effect border transition-opacity duration-300",
+                        "relative w-full h-80 flex flex-col items-center justify-center p-4 md:p-6 rounded-2xl glass-effect border transition-opacity duration-300",
                          !isExiting ? 'opacity-100' : 'opacity-0'
                     )}
                 >
@@ -764,16 +779,16 @@ export default function VerbPracticePage() {
                             </div>
                         </div>
                     </div>
-                     <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-12">
-                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{currentCard.front}</p>
-                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{currentCard.back}</p>
+                     <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
+                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-3xl md:text-4xl font-bold text-center">{currentCard.front}</p>
+                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-3xl md:text-4xl font-bold text-center">{currentCard.back}</p>
                         
                         <div className={cn(
                             "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
                             isFlipped && "[transform:rotateY(180deg)]"
                         )}>
                             <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                                <p className="text-4xl font-bold text-center">{currentCard.front}</p>
+                                <p className="text-3xl md:text-4xl font-bold text-center">{currentCard.front}</p>
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                                 {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -784,7 +799,7 @@ export default function VerbPracticePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-4xl font-bold text-center">{currentCard.back}</p>
+                                    <p className="text-3xl md:text-4xl font-bold text-center">{currentCard.back}</p>
                                 )}
                             </div>
                         </div>
@@ -800,7 +815,7 @@ export default function VerbPracticePage() {
                 </div>
             </div>
 
-            <div className="w-full max-w-2xl mx-auto pt-2">
+            <div className="w-full max-w-2xl mx-auto pt-0">
                 <div className="h-12">
                     <div
                         className={cn(

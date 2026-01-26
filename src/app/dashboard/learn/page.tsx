@@ -88,7 +88,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
                     diff.unshift({ type: 'missing', value: correctWordsCopy[j-1] });
                     j--;
-                } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i - 1][j])) {
+                } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i][j - 1])) {
                     diff.unshift({ type: 'extra', value: userWordsCopy[i-1] });
                     i--;
                 } else {
@@ -134,7 +134,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className="text-4xl font-bold mt-4">{correctAnswer}</p>
+                <p className="text-3xl md:text-4xl font-bold mt-4">{correctAnswer}</p>
             </>
         );
     }
@@ -158,12 +158,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className="text-4xl font-bold mt-4">{parts}</p>;
+        return <p className="text-3xl md:text-4xl font-bold mt-4">{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className="text-4xl font-bold mt-4">{correctAnswer}</p>;
+        return <p className="text-3xl md:text-4xl font-bold mt-4">{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -270,9 +270,11 @@ export default function LearnPage() {
     const currentCard = vocabulary[currentIndex];
     const expectedAnswer = isTermFirst ? currentCard.definition : currentCard.term;
 
-    const userInputClean = userInput.trim().toLowerCase();
+    const normalize = (str: string) => str.replace(/['´`]/g, "'");
+
+    const userInputClean = normalize(userInput.trim()).toLowerCase();
     const expectedAnswerOriginal = expectedAnswer.trim();
-    const expectedAnswerClean = expectedAnswerOriginal.toLowerCase();
+    const expectedAnswerClean = normalize(expectedAnswerOriginal).toLowerCase();
     
     let isCorrect = false;
     let partialMatch = false;
@@ -289,12 +291,12 @@ export default function LearnPage() {
         // Answer without the optional part, e.g. "run"
         const withoutOptionalPart = expectedAnswerClean.replace(optionalPartRegex, '').replace(/\s+/g, ' ').trim();
         
-        const possibleAnswers = [withParens, withoutParens, withoutOptionalPart];
+        const possibleAnswers = [withParens, withoutParens, withoutOptionalPart].map(normalize);
         
         if (possibleAnswers.includes(userInputClean)) {
             isCorrect = true;
             // Mark as partial match if the optional part was omitted
-            if (userInputClean === withoutOptionalPart && withParens !== withoutOptionalPart) {
+            if (userInputClean === normalize(withoutOptionalPart) && withParens !== withoutOptionalPart) {
                 partialMatch = true;
             }
         }
@@ -321,12 +323,55 @@ export default function LearnPage() {
 
   const handleCheckAnswerRef = useRef(handleCheckAnswer);
   handleCheckAnswerRef.current = handleCheckAnswer;
+  
+  const handleClassicAnswer = (knewIt: boolean) => {
+    if (!isFlipped || isExiting) return;
+
+    const currentCard = vocabulary[currentIndex];
+    
+    if (knewIt) {
+        if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
+            setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+        }
+        triggerHapticFeedback('light');
+    } else {
+        if (!incorrectlyAnsweredIds.has(currentCard.id)) {
+            setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
+        }
+        setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
+        triggerHapticFeedback('heavy');
+    }
+    
+    setIsExiting(true);
+    setTimeout(() => {
+        setIsFlipped(false);
+        goToNextCard(knewIt);
+        setIsExiting(false);
+    }, 500); // Duration matches animation
+  };
+
+  const handleClassicAnswerRef = useRef(handleClassicAnswer);
+  handleClassicAnswerRef.current = handleClassicAnswer;
+
+  const handleFlipCard = () => {
+    setIsFlipped(true);
+  };
 
   useEffect(() => {
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
       if (document.querySelector('[role="dialog"]')) return;
-      if (event.key === 'Enter' && isFlipped && isTypedMode && !isExiting) {
-        handleCheckAnswerRef.current();
+      if (event.key === 'Enter' && !isExiting) {
+        if (isTypedMode) {
+            if (isFlipped) {
+                handleCheckAnswerRef.current();
+            }
+        } else {
+            if (!isFlipped) {
+                handleFlipCard();
+            } else {
+                handleClassicAnswerRef.current(true); // Assume 'knew it'
+            }
+        }
       }
     };
 
@@ -476,36 +521,6 @@ export default function LearnPage() {
       setAnswerStatus('unanswered');
       setIsFlipped(false);
     }
-  };
-  
-  const handleClassicAnswer = (knewIt: boolean) => {
-    if (!isFlipped || isExiting) return;
-
-    const currentCard = vocabulary[currentIndex];
-    
-    if (knewIt) {
-        if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
-            setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
-        }
-        triggerHapticFeedback('light');
-    } else {
-        if (!incorrectlyAnsweredIds.has(currentCard.id)) {
-            setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
-        }
-        setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
-        triggerHapticFeedback('heavy');
-    }
-    
-    setIsExiting(true);
-    setTimeout(() => {
-        setIsFlipped(false);
-        goToNextCard(knewIt);
-        setIsExiting(false);
-    }, 500); // Duration matches animation
-  };
-
-  const handleFlipCard = () => {
-    setIsFlipped(true);
   };
   
   const handleMarkAsCorrect = () => {
@@ -667,11 +682,11 @@ export default function LearnPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-2xl mx-auto flex-grow flex flex-col justify-center my-2">
+      <div className="w-full max-w-2xl mx-auto flex-grow flex flex-col justify-center my-0">
         <div
           key={currentCard.id}
           className={cn(
-            "relative w-full h-80 flex flex-col items-center justify-center p-6 rounded-2xl glass-effect border transition-opacity duration-300",
+            "relative w-full h-80 flex flex-col items-center justify-center p-4 md:p-6 rounded-2xl glass-effect border transition-opacity duration-300",
             !isExiting ? 'opacity-100' : 'opacity-0',
           )}
         >
@@ -697,18 +712,29 @@ export default function LearnPage() {
                 </div>
             </div>
           </div>
+
+          {currentCard.phonetic && backIsForeign && (
+             <div className="absolute bottom-4 left-4 h-10 [perspective:1000px]">
+                <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                    <div className="[backface-visibility:hidden] w-full h-full"></div>
+                    <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                         <p className="text-lg text-muted-foreground font-mono">/{currentCard.phonetic}/</p>
+                    </div>
+                </div>
+            </div>
+          )}
           
-          <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-12">
+          <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
             {/* These two are invisible but establish the grid area's size */}
-            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{frontWord}</p>
-            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-4xl font-bold text-center">{backWord}</p>
+            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-3xl md:text-4xl font-bold text-center">{frontWord}</p>
+            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-3xl md:text-4xl font-bold text-center">{backWord}</p>
             
             <div className={cn(
                 "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
                 isFlipped && "[transform:rotateY(180deg)]"
             )}>
                 <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                    <p className="text-4xl font-bold text-center">{frontWord}</p>
+                    <p className="text-3xl md:text-4xl font-bold text-center">{frontWord}</p>
                 </div>
                 <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                     {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -719,7 +745,12 @@ export default function LearnPage() {
                            </div>
                         </div>
                     ) : (
-                        <p className="text-4xl font-bold text-center">{backWord}</p>
+                       <div className="flex flex-col items-center justify-center text-center">
+                            <p className="text-3xl md:text-4xl font-bold">{backWord}</p>
+                            {backIsForeign && currentCard.phonetic && (
+                                <p className="mt-2 text-lg text-muted-foreground font-mono">/{currentCard.phonetic}/</p>
+                            )}
+                        </div>
                     )}
                 </div>
             </div>
@@ -763,7 +794,7 @@ export default function LearnPage() {
         </div>
       </div>
       
-      <div className="w-full max-w-2xl mx-auto pt-2">
+      <div className="w-full max-w-2xl mx-auto pt-0">
         <div className="h-12">
             <div
                 className={cn(

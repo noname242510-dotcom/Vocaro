@@ -12,6 +12,7 @@ import { GlobalVerbResultListener } from "@/components/global-verb-result-listen
 export const metadata: Metadata = {
   title: "Vocaro",
   description: "Foto hochladen. Vokabeln lernen.",
+  manifest: '/manifest.json', // Hier wird es verknüpft!
   icons: {
     icon: '/icon.svg',
     apple: '/icon.svg',
