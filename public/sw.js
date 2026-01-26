@@ -1,21 +1,24 @@
 const CACHE_NAME = 'vocaro-v1';
+// Nur Dateien auflisten, die wirklich im /public Ordner existieren!
 const ASSETS = [
   '/',
-  '/index.html',
   '/manifest.json',
-  // Hier kannst du später deine CSS oder Bilder-Namen ergänzen
+  '/icon-192x192.png' // Stelle sicher, dass dieses Bild in /public liegt!
 ];
 
-// Installieren des Service Workers
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+      // Wir nutzen .add() statt .addAll() oder fangen Fehler ab
+      return Promise.all(
+        ASSETS.map(url => {
+          return cache.add(url).catch(err => console.log('Cache-Fehler für:', url, err));
+        })
+      );
     })
   );
 });
 
-// Dateien aus dem Cache laden (Offline-Modus)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
