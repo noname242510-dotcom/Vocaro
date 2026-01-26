@@ -63,17 +63,9 @@ interface VerbLearnState {
 const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: string, correctAnswer: string, status: AnswerStatus }) => {
     if (status === 'incorrect') {
         const areWordsEqual = (userWordLower: string, correctWordLower: string) => {
-            if (userWordLower === correctWordLower) {
-                return true;
-            }
-            const optionalMatch = correctWordLower.match(/^\((.*)\)$/);
-            if (optionalMatch) {
-                const content = optionalMatch[1];
-                if (userWordLower === content) {
-                    return true;
-                }
-            }
-            return false;
+            // Treat "(to)" and "to" as equal
+            const normalizedCorrect = correctWordLower.replace(/^\((.*)\)$/, '$1');
+            return userWordLower === normalizedCorrect;
         };
 
         const lcs = (a: string[], b: string[]) => {
@@ -85,7 +77,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
 
             for (let i = 1; i <= m; i++) {
                 for (let j = 1; j <= n; j++) {
-                    if (areWordsEqual(aLower[i - 1], bLower[j - 1])) {
+                     if (areWordsEqual(aLower[i - 1], bLower[j - 1])) {
                         dp[i][j] = dp[i - 1][j - 1] + 1;
                     } else {
                         dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
@@ -95,23 +87,39 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
 
             let i = m;
             let j = n;
-            const diff: { type: 'correct' | 'extra' | 'missing', value: string }[] = [];
+            const diff: { type: 'correct' | 'extra' | 'missing' | 'substitution', value: string, original?: string }[] = [];
+            const userWordsCopy = [...a];
+            const correctWordsCopy = [...b];
+            
             while (i > 0 || j > 0) {
                 if (i > 0 && j > 0 && areWordsEqual(aLower[i - 1], bLower[j - 1])) {
-                    diff.unshift({ type: 'correct', value: a[i - 1] });
+                    diff.unshift({ type: 'correct', value: userWordsCopy[i-1] });
                     i--;
                     j--;
                 } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-                    diff.unshift({ type: 'missing', value: b[j - 1] });
+                    diff.unshift({ type: 'missing', value: correctWordsCopy[j-1] });
                     j--;
                 } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i - 1][j])) {
-                    diff.unshift({ type: 'extra', value: a[i - 1] });
+                    diff.unshift({ type: 'extra', value: userWordsCopy[i-1] });
                     i--;
                 } else {
                     break;
                 }
             }
-            return diff;
+
+            // A second pass to detect substitutions
+            const finalDiff: { type: 'correct' | 'extra' | 'missing' | 'substitution', value: string, original?: string }[] = [];
+            for(let k = 0; k < diff.length; k++) {
+                if (diff[k].type === 'extra' && k + 1 < diff.length && diff[k+1].type === 'missing') {
+                    finalDiff.push({ type: 'substitution', value: diff[k].value, original: diff[k+1].value });
+                    k++; // Skip the next one since we've combined it
+                } else {
+                    finalDiff.push(diff[k]);
+                }
+            }
+
+
+            return finalDiff;
         };
         
         const userWords = userInput.trim().split(/\s+/).filter(w => w);
@@ -119,21 +127,17 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
         const diff = lcs(userWords, correctWords);
 
         const displayParts: React.ReactNode[] = [];
-        for (let i = 0; i < diff.length; i++) {
-            const current = diff[i];
-            const next = i + 1 < diff.length ? diff[i + 1] : null;
-
-            if (current.type === 'extra' && next && next.type === 'missing') {
-                displayParts.push(<span key={`s-${i}`} className="px-1 text-destructive line-through">{current.value}</span>);
-                i++;
-            } else if (current.type === 'correct') {
-                displayParts.push(<span key={`c-${i}`} className="px-1">{current.value}</span>);
-            } else if (current.type === 'extra') {
-                displayParts.push(<span key={`e-${i}`} className="px-1 text-destructive line-through">{current.value}</span>);
-            } else if (current.type === 'missing') {
-                displayParts.push(<span key={`m-${i}`} className="inline-block self-end h-6 w-8 border-b-2 border-destructive mx-1" title={`Fehlendes Wort: ${current.value}`}></span>);
+        diff.forEach((part, i) => {
+            if (part.type === 'correct') {
+                displayParts.push(<span key={`c-${i}`} className="px-1">{part.value}</span>);
+            } else if (part.type === 'extra') {
+                displayParts.push(<span key={`e-${i}`} className="px-1 text-destructive line-through">{part.value}</span>);
+            } else if (part.type === 'missing') {
+                displayParts.push(<span key={`m-${i}`} className="inline-block self-end h-6 w-8 border-b-2 border-destructive mx-1" title={`Fehlendes Wort: ${part.value}`}></span>);
+            } else if (part.type === 'substitution') {
+                displayParts.push(<span key={`s-${i}`} className="px-1 text-destructive line-through">{part.value}</span>);
             }
-        }
+        })
 
 
         return (
@@ -240,6 +244,122 @@ export default function VerbPracticePage() {
     // Ref for auto-play logic
     const speakerButtonRef = useRef<{ play: () => void }>(null);
 
+    const finishSession = () => {
+        const incorrectCount = incorrectlyAnsweredIds.size;
+        const correctCount = totalItemCount - incorrectCount;
+        const finalScore = totalItemCount > 0 ? Math.round((correctCount / totalItemCount) * 100) : 0;
+        
+        const confettiEnabled = localStorage.getItem('enable-confetti') !== 'false';
+        if (finalScore >= 90 && confettiEnabled) {
+            setShowConfetti(true);
+        }
+        setShowResults(true);
+    };
+
+    const goToNextCard = (isCorrect: boolean) => {
+        const currentCard = practiceItems[currentIndex];
+        let remainingCards = [...practiceItems];
+
+        setAnswerStatus('unanswered');
+        setUserInput('');
+      
+        if (isCorrect) {
+          remainingCards.splice(currentIndex, 1);
+           if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
+              setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+           }
+        } else {
+          const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
+          remainingCards.push(cardToRepeat);
+        }
+      
+        if (remainingCards.length === 0) {
+          finishSession();
+        } else {
+          const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
+          
+          setPracticeItems(remainingCards);
+          setCurrentIndex(newIndex);
+        }
+    };
+
+    const handleCheckAnswer = () => {
+        if (isFlipped) {
+          const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted' || answerStatus === 'omitted-correct';
+          setIsExiting(true);
+          setTimeout(() => {
+            setIsFlipped(false);
+            goToNextCard(isCorrect);
+            setIsExiting(false);
+          }, 500); // Duration matches animation
+          return;
+        }
+
+        saveToHistory();
+        setIsFlipped(true);
+
+        const currentCard = practiceItems[currentIndex];
+        const expectedAnswer = currentCard.back;
+        
+        const userInputClean = userInput.trim().toLowerCase();
+        const expectedAnswerOriginal = expectedAnswer.trim();
+        const expectedAnswerClean = expectedAnswerOriginal.toLowerCase();
+        
+        let isCorrect = false;
+        let partialMatch = false;
+
+        const optionalPartRegex = /\(([^)]+)\)/g;
+        const match = expectedAnswerClean.match(optionalPartRegex);
+        
+        if (match) {
+            const withParens = expectedAnswerClean;
+            const withoutParens = expectedAnswerClean.replace(/[()]/g, '');
+            const withoutOptionalPart = expectedAnswerClean.replace(optionalPartRegex, '').replace(/\s+/g, ' ').trim();
+            
+            const possibleAnswers = [withParens, withoutParens, withoutOptionalPart];
+            
+            if (possibleAnswers.includes(userInputClean)) {
+                isCorrect = true;
+                if (userInputClean === withoutOptionalPart && withParens !== withoutOptionalPart) {
+                    partialMatch = true;
+                }
+            }
+        } else {
+            isCorrect = userInputClean === expectedAnswerClean;
+        }
+
+        if (isCorrect) {
+          setAnswerStatus(partialMatch ? 'omitted-correct' : 'correct');
+          if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
+            setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+          }
+          triggerHapticFeedback('light');
+        } else {
+          setAnswerStatus('incorrect');
+          if (!incorrectlyAnsweredIds.has(currentCard.id)) {
+            setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
+          }
+          setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
+          triggerHapticFeedback('heavy', 'heavy'); // Double tap
+        }
+    };
+
+    const handleCheckAnswerRef = useRef(handleCheckAnswer);
+    handleCheckAnswerRef.current = handleCheckAnswer;
+  
+    useEffect(() => {
+      const handleGlobalKeyDown = (event: KeyboardEvent) => {
+        if (document.querySelector('[role="dialog"]')) return;
+        if (event.key === 'Enter' && isFlipped && isTypedMode && !isExiting) {
+          handleCheckAnswerRef.current();
+        }
+      };
+  
+      document.addEventListener('keydown', handleGlobalKeyDown);
+      return () => {
+        document.removeEventListener('keydown', handleGlobalKeyDown);
+      };
+    }, [isFlipped, isTypedMode, isExiting]);
 
     useEffect(() => {
         const germanFirstSetting = localStorage.getItem('query-direction-verbs') === 'true';
@@ -388,47 +508,6 @@ export default function VerbPracticePage() {
         }
     };
 
-
-    const finishSession = () => {
-        const incorrectCount = incorrectlyAnsweredIds.size;
-        const correctCount = totalItemCount - incorrectCount;
-        const finalScore = totalItemCount > 0 ? Math.round((correctCount / totalItemCount) * 100) : 0;
-        
-        const confettiEnabled = localStorage.getItem('enable-confetti') !== 'false';
-        if (finalScore >= 90 && confettiEnabled) {
-            setShowConfetti(true);
-        }
-        setShowResults(true);
-    };
-
-
-    const goToNextCard = (isCorrect: boolean) => {
-        const currentCard = practiceItems[currentIndex];
-        let remainingCards = [...practiceItems];
-
-        setAnswerStatus('unanswered');
-        setUserInput('');
-      
-        if (isCorrect) {
-          remainingCards.splice(currentIndex, 1);
-           if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
-              setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
-           }
-        } else {
-          const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
-          remainingCards.push(cardToRepeat);
-        }
-      
-        if (remainingCards.length === 0) {
-          finishSession();
-        } else {
-          const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
-          
-          setPracticeItems(remainingCards);
-          setCurrentIndex(newIndex);
-        }
-    };
-    
     const handleClassicAnswer = (knewIt: boolean) => {
         if (!isFlipped || isExiting) return;
 
@@ -460,67 +539,6 @@ export default function VerbPracticePage() {
     const handleFlipCard = () => {
         saveToHistory();
         setIsFlipped(true);
-    };
-
-    const handleCheckAnswer = () => {
-        if (isFlipped) {
-          const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted' || answerStatus === 'omitted-correct';
-          setIsExiting(true);
-          setTimeout(() => {
-            setIsFlipped(false);
-            goToNextCard(isCorrect);
-            setIsExiting(false);
-          }, 500); // Duration matches animation
-          return;
-        }
-
-        saveToHistory();
-        setIsFlipped(true);
-
-        const currentCard = practiceItems[currentIndex];
-        const expectedAnswer = currentCard.back;
-        
-        const userInputClean = userInput.trim().toLowerCase();
-        const expectedAnswerOriginal = expectedAnswer.trim();
-        const expectedAnswerClean = expectedAnswerOriginal.toLowerCase();
-        
-        let isCorrect = false;
-        let partialMatch = false;
-
-        const optionalPartRegex = /\(([^)]+)\)/g;
-        const match = expectedAnswerClean.match(optionalPartRegex);
-        
-        if (match) {
-            const withParens = expectedAnswerClean;
-            const withoutParens = expectedAnswerClean.replace(/[()]/g, '');
-            const withoutOptionalPart = expectedAnswerClean.replace(optionalPartRegex, '').replace(/\s+/g, ' ').trim();
-            
-            const possibleAnswers = [withParens, withoutParens, withoutOptionalPart];
-            
-            if (possibleAnswers.includes(userInputClean)) {
-                isCorrect = true;
-                if (userInputClean === withoutOptionalPart && withParens !== withoutOptionalPart) {
-                    partialMatch = true;
-                }
-            }
-        } else {
-            isCorrect = userInputClean === expectedAnswerClean;
-        }
-
-        if (isCorrect) {
-          setAnswerStatus(partialMatch ? 'omitted-correct' : 'correct');
-          if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
-            setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
-          }
-          triggerHapticFeedback('light');
-        } else {
-          setAnswerStatus('incorrect');
-          if (!incorrectlyAnsweredIds.has(currentCard.id)) {
-            setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
-          }
-          setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
-          triggerHapticFeedback('heavy', 'heavy'); // Double tap
-        }
     };
     
     const handleMarkAsCorrect = () => {
@@ -798,7 +816,7 @@ export default function VerbPracticePage() {
                                 value={userInput}
                                 onChange={(e) => setUserInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                                className="text-center text-lg h-12 rounded-full"
+                                className="text-center text-lg md:text-2xl h-12 rounded-full"
                                 autoFocus
                             />
                             <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
