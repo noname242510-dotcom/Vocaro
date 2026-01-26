@@ -1,20 +1,15 @@
 const CACHE_NAME = 'vocaro-v1';
-// Nur Dateien auflisten, die wirklich im /public Ordner existieren!
+// Wir cachen NUR die Startseite und das Manifest. 
+// Das reicht völlig aus, damit die App offline startet!
 const ASSETS = [
   '/',
-  '/manifest.json',
-  '/icon-192x192.png' // Stelle sicher, dass dieses Bild in /public liegt!
+  '/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Wir nutzen .add() statt .addAll() oder fangen Fehler ab
-      return Promise.all(
-        ASSETS.map(url => {
-          return cache.add(url).catch(err => console.log('Cache-Fehler für:', url, err));
-        })
-      );
+      return cache.addAll(ASSETS);
     })
   );
 });
@@ -22,6 +17,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
+      // Wenn Datei im Cache (offline), nimm sie. Sonst lade sie aus dem Netz.
       return response || fetch(event.request);
     })
   );
