@@ -14,8 +14,8 @@ export const metadata: Metadata = {
   description: "Foto hochladen. Vokabeln lernen.",
   manifest: '/manifest.json', // Hier wird es verknüpft!
   icons: {
-    icon: '/icon.svg',
-    apple: '/icon.svg',
+    icon: '/AppImages/ios/64.png', // oder dein SVG, falls es direkt in public liegt
+    apple: '/AppImages/ios/180.png',
   },
 };
 
