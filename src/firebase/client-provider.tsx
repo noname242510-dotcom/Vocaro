@@ -3,6 +3,7 @@
 import React, { useState, useEffect, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
+import { setPersistence, browserLocalPersistence } from 'firebase/auth'; // <--- NEU HINZUGEFÜGT
 import type { getSdks } from '@/firebase';
 
 type FirebaseServices = Awaited<ReturnType<typeof getSdks>>;
@@ -15,17 +16,25 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
 
   useEffect(() => {
-    // Initialize Firebase on the client side, once per component mount.
     const init = async () => {
       const services = await initializeFirebase();
+      
+      // --- DIESEN BLOCK HINZUFÜGEN ---
+      // Das sorgt dafür, dass die Anmeldung in der PWA gespeichert bleibt
+      try {
+        await setPersistence(services.auth, browserLocalPersistence);
+        console.log("Firebase Persistence auf LOCAL gesetzt.");
+      } catch (error) {
+        console.error("Fehler beim Setzen der Persistence:", error);
+      }
+      // -------------------------------
+
       setFirebaseServices(services);
     };
     init();
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
   if (!firebaseServices) {
-    // You can render a loading spinner or null here
-    // Crucially, we don't render children until services are ready.
     return null; 
   }
 
