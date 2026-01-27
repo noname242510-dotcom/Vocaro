@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -37,17 +38,20 @@ export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave
     relatedLanguage: '',
     relatedWord: '',
   });
+  const [originalData, setOriginalData] = useState<typeof formData | null>(null);
 
   useEffect(() => {
     if (vocabItem) {
-      setFormData({
+      const initialData = {
         term: vocabItem.term || '',
         definition: vocabItem.definition || '',
         phonetic: vocabItem.phonetic || '',
         notes: vocabItem.notes || '',
         relatedLanguage: vocabItem.relatedWord?.language || '',
         relatedWord: vocabItem.relatedWord?.word || '',
-      });
+      };
+      setFormData(initialData);
+      setOriginalData(initialData);
     }
   }, [vocabItem]);
   
@@ -95,9 +99,16 @@ export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave
     setFormData(prev => ({ ...prev, [id]: value }));
   };
 
+  const handleReset = () => {
+    if (originalData) {
+      setFormData(originalData);
+    }
+  };
+
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Vokabel bearbeiten</DialogTitle>
           <DialogDescription>Ändere die Details für diese Vokabel.</DialogDescription>
@@ -107,13 +118,13 @@ export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave
             <Label htmlFor="term" className="text-right">
               Fremdwort
             </Label>
-            <Input id="term" value={formData.term} onChange={handleInputChange} className="col-span-3" />
+            <Textarea id="term" value={formData.term} onChange={handleInputChange} className="col-span-3" rows={2} />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="definition" className="text-right">
               Deutsch
             </Label>
-            <Input id="definition" value={formData.definition} onChange={handleInputChange} className="col-span-3" />
+            <Textarea id="definition" value={formData.definition} onChange={handleInputChange} className="col-span-3" rows={2} />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="phonetic" className="text-right">
@@ -137,12 +148,15 @@ export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave
             </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Speichern
-          </Button>
+        <DialogFooter className="sm:justify-between">
+            <Button variant="ghost" onClick={handleReset}>Zurücksetzen</Button>
+            <div className="flex gap-2">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
+                <Button onClick={handleSave} disabled={isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Speichern
+                </Button>
+            </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

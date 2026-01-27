@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Check, Loader2, RotateCcw, X, Lightbulb, Pencil, ChevronLeft, Smile, Frown, Meh } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, RotateCcw, X, Lightbulb, Pencil, ChevronLeft, Smile, Frown, Meh, Volume2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Verb, VerbTense, Subject } from '@/lib/types';
 import {
@@ -25,7 +25,7 @@ import { Confetti } from '@/components/confetti';
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { SpeakerButton } from '@/components/speaker-button';
+import { useTextToSpeech } from '@/hooks/use-text-to-speech';
 import { useFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -241,8 +241,7 @@ export default function VerbPracticePage() {
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
 
-    // Ref for auto-play logic
-    const speakerButtonRef = useRef<{ play: () => void }>(null);
+    const { speak, isPlaying } = useTextToSpeech();
 
     const finishSession = () => {
         const incorrectCount = incorrectlyAnsweredIds.size;
@@ -522,11 +521,20 @@ export default function VerbPracticePage() {
         }
     }, [currentIndex, isExiting, isTypedMode]);
     
+    const currentCard = practiceItems[currentIndex];
+    const languageHint = subject?.name || 'English';
+
     useEffect(() => {
-        if (isFlipped && speakerButtonRef.current) {
-          speakerButtonRef.current.play();
+        if (currentCard && !isFlipped) {
+            const isEnabled = localStorage.getItem('tts-enabled') !== 'false';
+            const textToSpeak = isGermanFirst ? currentCard.back : currentCard.front;
+            
+            if (isEnabled) {
+                speak(textToSpeak, languageHint);
+            }
         }
-    }, [isFlipped]);
+    }, [isFlipped, currentIndex, currentCard, speak, isGermanFirst, languageHint]);
+
 
     const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted' || status === 'omitted-correct').length;
     const progress = totalItemCount > 0 ? (correctAnswersCount / totalItemCount) * 100 : 0;
@@ -619,8 +627,6 @@ export default function VerbPracticePage() {
         </div>;
     }
 
-    const currentCard = practiceItems[currentIndex];
-
     if (!currentCard && !showResults) {
         return <div className="flex flex-col items-center justify-center h-screen text-center">
            <p>Keine Verben für diese Sitzung geladen.</p>
@@ -664,12 +670,8 @@ export default function VerbPracticePage() {
         }
     };
     
-    // This is used for TTS
-    const languageHint = subject?.name || 'English';
-
     // Check if the original 'front' of the item was German
     const frontIsGerman = isGermanFirst;
-    const backIsGerman = !isGermanFirst;
 
     // The flag for the foreign language is the subject's emoji.
     const foreignWordFlag = subject?.emoji || '🌐';
@@ -677,19 +679,15 @@ export default function VerbPracticePage() {
 
     // Assign flags based on whether the content is German or foreign.
     const frontFlag = frontIsGerman ? germanFlag : foreignWordFlag;
-    const backFlag = backIsGerman ? germanFlag : foreignWordFlag;
+    const backFlag = frontIsGerman ? foreignWordFlag : germanFlag;
 
     // The text to be spoken is always the foreign language text.
     // If the front is German, the back is foreign, and vice-versa.
     const textToSpeak = frontIsGerman ? currentCard.back : currentCard.front;
-    
-    // Speaker appears on the back if the front is German
-    const speakerIsOnBack = frontIsGerman;
-
 
     return (
-        <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)] -mx-4 sm:mx-0">
-            <div className="w-full max-w-4xl px-4 sm:px-0 mx-auto">
+        <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-9rem)] -mx-4 sm:mx-auto sm:w-full sm:max-w-4xl">
+            <div className="w-full px-4 sm:px-0 mx-auto">
                 <div className="flex items-center justify-between mb-2">
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -714,17 +712,17 @@ export default function VerbPracticePage() {
                         <Pencil className="h-5 w-5" />
                     </Button>
                 </div>
-                <Progress value={progress} className="h-2 w-full mb-1" />
-                <p className="text-sm text-muted-foreground text-center">
+                <Progress value={progress} className="h-2 w-full" />
+                <p className="text-sm text-muted-foreground text-center mt-1">
                     ({correctAnswersCount}/{totalItemCount})
                 </p>
             </div>
 
-            <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col justify-center gap-2">
+            <div className="w-full mx-auto flex-grow flex flex-col justify-center gap-2 sm:gap-4 px-4 sm:px-0">
                 <div
                     key={currentCard.id}
                     className={cn(
-                        "relative w-full h-80 flex flex-col items-center justify-center p-4 md:p-6 rounded-2xl glass-effect border transition-opacity duration-300",
+                        "relative w-full min-h-[20rem] flex flex-col items-center justify-center p-4 md:p-6 rounded-2xl glass-effect border transition-opacity duration-300",
                          !isExiting ? 'opacity-100' : 'opacity-0'
                     )}
                 >
@@ -742,11 +740,15 @@ export default function VerbPracticePage() {
 
                      <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
                         <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                            <div className={cn("absolute inset-0 [backface-visibility:hidden]", speakerIsOnBack && "opacity-0")}>
-                                <SpeakerButton ref={!speakerIsOnBack ? speakerButtonRef : null} text={textToSpeak} languageHint={languageHint} />
+                            <div className={cn("absolute inset-0 [backface-visibility:hidden]", frontIsGerman && "opacity-0")}>
+                               <button className="w-full h-full" onClick={() => speak(textToSpeak, languageHint)} disabled={isPlaying}>
+                                  <Volume2 className={cn("h-5 w-5 mx-auto", isPlaying && "animate-pulse")} />
+                                </button>
                             </div>
-                            <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !speakerIsOnBack && "opacity-0")}>
-                               <SpeakerButton ref={speakerIsOnBack ? speakerButtonRef : null} text={textToSpeak} languageHint={languageHint} />
+                            <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !frontIsGerman && "opacity-0")}>
+                                <button className="w-full h-full" onClick={() => speak(textToSpeak, languageHint)} disabled={isPlaying}>
+                                  <Volume2 className={cn("h-5 w-5 mx-auto", isPlaying && "animate-pulse")} />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -782,17 +784,15 @@ export default function VerbPracticePage() {
                         </div>
                     </div>
                      <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
-                        <div className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-3xl font-bold text-center w-full overflow-x-auto whitespace-nowrap">{currentCard.front}</div>
-                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-3xl font-bold text-center">{currentCard.back}</p>
+                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-xl md:text-3xl font-bold text-center w-full break-words">{currentCard.front}</p>
+                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-xl md:text-3xl font-bold text-center break-words">{currentCard.back}</p>
                         
                         <div className={cn(
                             "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
                             isFlipped && "[transform:rotateY(180deg)]"
                         )}>
                             <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                                <div className="w-full overflow-x-auto whitespace-nowrap text-center no-scrollbar">
-                                    <p className="text-2xl md:text-3xl font-bold text-center inline-block">{currentCard.front}</p>
-                                </div>
+                                <p className="text-xl md:text-3xl font-bold text-center break-words">{currentCard.front}</p>
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                                 {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -803,9 +803,7 @@ export default function VerbPracticePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="w-full overflow-x-auto whitespace-nowrap text-center no-scrollbar">
-                                        <p className="text-2xl md:text-3xl font-bold text-center inline-block">{currentCard.back}</p>
-                                    </div>
+                                    <p className="text-xl md:text-3xl font-bold text-center break-words">{currentCard.back}</p>
                                 )}
                             </div>
                         </div>
@@ -820,8 +818,8 @@ export default function VerbPracticePage() {
                     )}
                 </div>
 
-                <div className="w-full max-w-2xl mx-auto">
-                    <div className="h-12 mb-4">
+                <div className="w-full max-w-2xl mx-auto sm:mt-2">
+                    <div className="h-12 mb-2 sm:mb-4">
                         <div
                             className={cn(
                                 'flex justify-center items-center transition-all duration-300',
@@ -842,7 +840,7 @@ export default function VerbPracticePage() {
                                 <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
                                 </div>
                             ) : (
-                                <Button size="lg" className="w-full" onClick={handleFlipCard}>Umdrehen</Button>
+                                <Button size="lg" className="w-full h-12" onClick={handleFlipCard}>Umdrehen</Button>
                             )}
                         </div>
                         <div
@@ -852,7 +850,7 @@ export default function VerbPracticePage() {
                             )}
                         >
                             {isTypedMode ? (
-                                <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
+                                <Button size="lg" className="w-full h-12" onClick={handleCheckAnswer}>
                                     Weiter
                                 </Button>
                             ) : (
