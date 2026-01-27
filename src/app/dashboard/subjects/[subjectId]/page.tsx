@@ -58,6 +58,8 @@ import { doc, collection, addDoc, writeBatch, serverTimestamp, getDocs, updateDo
 import { StackItem } from './_components/stack-item';
 import { VerbCard } from './_components/verb-card';
 import { VerbDialog } from './_components/verb-dialog';
+import { VocabDialog } from './_components/vocab-dialog';
+
 
 import {
   AlertDialog,
@@ -117,6 +119,8 @@ export default function SubjectDetailPage() {
   const [isAddingManually, setIsAddingManually] = useState(false);
   const [isAddVocabDialogOpen, setIsAddVocabDialogOpen] = useState(false);
   const [isDeleteVocabDialogOpen, setIsDeleteVocabDialogOpen] = useState(false);
+  const [editingVocab, setEditingVocab] = useState<VocabularyItem | null>(null);
+  const [isVocabDialogOpen, setIsVocabDialogOpen] = useState(false);
   
   // Subject state
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -190,6 +194,20 @@ export default function SubjectDetailPage() {
       setAllVocabulary(vocabData);
     }
   };
+  
+  const handleEditVocab = (vocab: VocabularyItem) => {
+    setEditingVocab(vocab);
+    setIsVocabDialogOpen(true);
+  };
+  
+  const handleSaveVocab = async (stackId: string, vocabId: string, data: Partial<VocabularyItem>) => {
+    if (!user || !firestore) return;
+    const vocabDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stackId, 'vocabulary', vocabId);
+    await updateDoc(vocabDocRef, data);
+    toast({ title: "Gespeichert", description: "Die Vokabel wurde aktualisiert." });
+    fetchAllVocab(); // Refetch all vocab to show updated data
+  };
+
 
   useEffect(() => {
     fetchAllVocab();
@@ -821,6 +839,7 @@ export default function SubjectDetailPage() {
                   onRename={() => { forceUpdate(); fetchAllVocab(); }}
                   onSelectionChange={handleSelectionChange}
                   onAddVocab={openAddVocabDialog}
+                  onEditVocab={handleEditVocab}
                 />
               ))}
             </div>
@@ -956,7 +975,7 @@ export default function SubjectDetailPage() {
 
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-6 md:bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
+      <div className="fixed bottom-16 md:bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
          <div className="p-2 flex items-center justify-between gap-2">
             {activeTab === 'vocabulary' && (
               <>
@@ -1099,6 +1118,15 @@ export default function SubjectDetailPage() {
         subjectId={subjectId}
         existingVerb={editingVerb}
       />
+      {editingVocab && (
+        <VocabDialog 
+            isOpen={isVocabDialogOpen}
+            onOpenChange={setIsVocabDialogOpen}
+            vocabItem={editingVocab}
+            subjectId={subjectId}
+            onSave={handleSaveVocab}
+        />
+      )}
     </div>
   );
 }

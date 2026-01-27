@@ -5,13 +5,13 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft, Smile, Frown, Meh } from 'lucide-react';
+import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft, Smile, Frown, Meh, Languages } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Confetti } from '@/components/confetti';
 import { useFirebase } from '@/firebase';
-import { collection, getDocs, query, where, documentId, collectionGroup, getDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, query, where, documentId, collectionGroup, getDoc, doc, updateDoc } from 'firebase/firestore';
 import type { VocabularyItem, Subject } from '@/lib/types';
 import {
   AlertDialog,
@@ -28,6 +28,8 @@ import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SpeakerButton } from '@/components/speaker-button';
+import { VocabDialog } from '../subjects/[subjectId]/_components/vocab-dialog';
+
 
 // Function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -88,7 +90,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
                     diff.unshift({ type: 'missing', value: correctWordsCopy[j-1] });
                     j--;
-                } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i][j - 1])) {
+                } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i - 1][j])) {
                     diff.unshift({ type: 'extra', value: userWordsCopy[i-1] });
                     i--;
                 } else {
@@ -195,16 +197,18 @@ export default function LearnPage() {
   const [isExiting, setIsExiting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
-  const [isTermFirst, setIsTermFirst] = useState(true);
+  const [isTermFirst, setIsTermFirst] = useState(false); // Default to German first
   const [shouldShowHints, setShouldShowHints] = useState(true);
 
   const [history, setHistory] = useState<LearnState[]>([]);
   
-  // Typed Input Mode State
   const [isTypedMode, setIsTypedMode] = useState(false);
   const [userInput, setUserInput] = useState('');
   const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
   const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
+  
+  const [editingVocab, setEditingVocab] = useState<VocabularyItem | null>(null);
+  const [isVocabDialogOpen, setIsVocabDialogOpen] = useState(false);
 
   // Ref for auto-play logic
   const speakerButtonRef = useRef<{ play: () => void }>(null);
@@ -270,38 +274,32 @@ export default function LearnPage() {
     const currentCard = vocabulary[currentIndex];
     const expectedAnswer = isTermFirst ? currentCard.definition : currentCard.term;
 
-    const normalize = (str: string) => str.replace(/['´`]/g, "'");
+    const normalize = (str: string) => str.replace(/['´`]/g, "'").toLowerCase();
 
-    const userInputClean = normalize(userInput.trim()).toLowerCase();
+    const userInputClean = normalize(userInput.trim());
     const expectedAnswerOriginal = expectedAnswer.trim();
-    const expectedAnswerClean = normalize(expectedAnswerOriginal).toLowerCase();
+    const expectedAnswerClean = normalize(expectedAnswerOriginal);
     
     let isCorrect = false;
     let partialMatch = false;
 
-    // Regex to find content inside parentheses, e.g., "(to) run" -> finds "(to)"
     const optionalPartRegex = /\(([^)]+)\)/g;
     const match = expectedAnswerClean.match(optionalPartRegex);
     
     if (match) {
-        // Answer with parentheses, e.g. "(to) run"
         const withParens = expectedAnswerClean;
-        // Answer without parentheses but with content, e.g. "to run"
         const withoutParens = expectedAnswerClean.replace(/[()]/g, '');
-        // Answer without the optional part, e.g. "run"
         const withoutOptionalPart = expectedAnswerClean.replace(optionalPartRegex, '').replace(/\s+/g, ' ').trim();
         
         const possibleAnswers = [withParens, withoutParens, withoutOptionalPart].map(normalize);
         
         if (possibleAnswers.includes(userInputClean)) {
             isCorrect = true;
-            // Mark as partial match if the optional part was omitted
             if (userInputClean === normalize(withoutOptionalPart) && withParens !== withoutOptionalPart) {
                 partialMatch = true;
             }
         }
     } else {
-        // No optional parts, simple comparison
         isCorrect = userInputClean === expectedAnswerClean;
     }
 
@@ -362,9 +360,7 @@ export default function LearnPage() {
       if (document.querySelector('[role="dialog"]')) return;
       if (event.key === 'Enter' && !isExiting) {
         if (isTypedMode) {
-            if (isFlipped) {
-                handleCheckAnswerRef.current();
-            }
+            handleCheckAnswerRef.current();
         } else {
             if (!isFlipped) {
                 handleFlipCard();
@@ -383,8 +379,8 @@ export default function LearnPage() {
 
   useEffect(() => {
     // Load settings from local storage
-    const termFirstSetting = localStorage.getItem('query-direction-flashcards') !== 'true';
-    setIsTermFirst(termFirstSetting);
+    const queryDirectionSetting = localStorage.getItem('query-direction-flashcards');
+    setIsTermFirst(queryDirectionSetting === 'false'); // 'false' means term first, 'true' or null means definition first.
     
     const showHintsSetting = localStorage.getItem('show-vocab-hints') !== 'false';
     setShouldShowHints(showHintsSetting);
@@ -397,16 +393,12 @@ export default function LearnPage() {
     const fetchVocab = async () => {
       const vocabIdsJson = sessionStorage.getItem('learn-session-vocab');
       const storedSubjectId = sessionStorage.getItem('learn-session-subject');
-
       
-
       if (!vocabIdsJson || !storedSubjectId) {
         setError('Keine Vokabeln für die Lernsitzung gefunden.');
         setIsLoading(false);
         return;
       }
-
-
       
       setSubjectId(storedSubjectId);
 
@@ -492,10 +484,10 @@ export default function LearnPage() {
   }, [currentIndex, isExiting, isTypedMode]);
   
   useEffect(() => {
-    if (isFlipped && speakerButtonRef.current) {
+    if (!isFlipped && speakerButtonRef.current) {
       speakerButtonRef.current.play();
     }
-  }, [isFlipped]);
+  }, [isFlipped, currentIndex]);
 
   const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted' || status === 'omitted-correct').length;
   const progress = totalVocabCount > 0 ? (correctAnswersCount / totalVocabCount) * 100 : 0;
@@ -563,6 +555,25 @@ export default function LearnPage() {
     setUserInput('');
     setAnswerStatus('unanswered');
     setIsFlipped(false);
+  };
+  
+  const handleEditVocab = () => {
+    setEditingVocab(vocabulary[currentIndex]);
+    setIsVocabDialogOpen(true);
+  };
+  
+  const handleSaveVocab = async (stackId: string, vocabId: string, data: Partial<VocabularyItem>) => {
+    if (!user || !firestore || !subjectId) return;
+
+    const vocabDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stackId, 'vocabulary', vocabId);
+    try {
+        await updateDoc(vocabDocRef, data);
+        // Optimistically update local state
+        setVocabulary(current => current.map(v => v.id === vocabId ? { ...v, ...data } : v));
+        setInitialVocab(current => current.map(v => v.id === vocabId ? { ...v, ...data } : v));
+    } catch (e) {
+        console.error("Failed to update vocab:", e);
+    }
   };
 
 
@@ -637,229 +648,249 @@ export default function LearnPage() {
   const foreignFlag = subject?.emoji || '🌐';
   const germanFlag = '🇩🇪';
 
-  // Determine which side is foreign and which is German
   const frontIsForeign = isTermFirst;
   const backIsForeign = !isTermFirst;
 
-  // Assign words and flags based on that
   const frontWord = frontIsForeign ? currentCard.term : currentCard.definition;
   const frontFlag = frontIsForeign ? foreignFlag : germanFlag;
 
   const backWord = backIsForeign ? currentCard.term : currentCard.definition;
   const backFlag = backIsForeign ? foreignFlag : germanFlag;
+  
+  const formattedPhonetic = currentCard.phonetic ? currentCard.phonetic.replace(/^\/|\/$/g, '') : '';
+
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)]">
-      <div className="w-full max-w-2xl px-4 sm:px-0 mx-auto">
-        <div className="flex items-center justify-between mb-2">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Abfrage beenden?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Möchtest du die aktuelle Lernsitzung wirklich beenden und zum Fach zurückkehren? Dein Fortschritt geht verloren.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleBackToSelection}>Beenden</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            
-            <Button variant={isTypedMode ? 'default' : 'ghost'} size="icon" onClick={toggleInputMode}>
-                <Pencil className="h-5 w-5" />
-            </Button>
+    <>
+      <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)] -mx-4 sm:mx-0">
+        <div className="w-full max-w-2xl px-4 sm:px-0 mx-auto">
+          <div className="flex items-center justify-between mb-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Abfrage beenden?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Möchtest du die aktuelle Lernsitzung wirklich beenden und zum Fach zurückkehren? Dein Fortschritt geht verloren.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBackToSelection}>Beenden</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              
+              <Button variant={isTypedMode ? 'default' : 'ghost'} size="icon" onClick={toggleInputMode}>
+                  <Pencil className="h-5 w-5" />
+              </Button>
+          </div>
+          <Progress value={progress} className="h-2 w-full mb-1" />
+          <p className="text-sm text-muted-foreground text-center">
+            ({correctAnswersCount}/{totalVocabCount})
+          </p>
         </div>
-        <Progress value={progress} className="h-2 w-full mb-1" />
-        <p className="text-sm text-muted-foreground text-center">
-          ({correctAnswersCount}/{totalVocabCount})
-        </p>
-      </div>
 
-      <div className="w-full max-w-2xl mx-auto flex-grow flex flex-col justify-center my-0">
-        <div
-          key={currentCard.id}
-          className={cn(
-            "relative w-full h-80 flex flex-col items-center justify-center p-4 md:p-6 rounded-2xl glass-effect border transition-opacity duration-300",
-            !isExiting ? 'opacity-100' : 'opacity-0',
-          )}
-        >
-          <div className="absolute top-4 left-4 text-3xl [perspective:1000px]">
-            <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                <div className="[backface-visibility:hidden]">
-                    <span>{frontFlag}</span>
-                </div>
-                <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                    <span>{backFlag}</span>
-                </div>
+        <div className="w-full max-w-2xl mx-auto flex-grow flex flex-col justify-between my-2">
+          <div
+            key={currentCard.id}
+            className={cn(
+              "relative w-full h-80 flex flex-col items-center justify-center p-4 md:p-6 rounded-2xl glass-effect border transition-opacity duration-300",
+              !isExiting ? 'opacity-100' : 'opacity-0',
+            )}
+          >
+            <div className="absolute top-4 left-4 text-3xl [perspective:1000px]">
+              <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                  <div className="[backface-visibility:hidden]">
+                      <span>{frontFlag}</span>
+                  </div>
+                  <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                      <span>{backFlag}</span>
+                  </div>
+              </div>
             </div>
-          </div>
-          
-           <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
-             <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                {/* Speaker for the foreign word */}
-                <div className={cn("absolute inset-0 [backface-visibility:hidden]", !frontIsForeign && "opacity-0")}>
-                    <SpeakerButton ref={frontIsForeign ? speakerButtonRef : null} text={currentCard.term} languageHint={languageHint} />
-                </div>
-                <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !backIsForeign && "opacity-0")}>
-                    <SpeakerButton ref={backIsForeign ? speakerButtonRef : null} text={currentCard.term} languageHint={languageHint} />
-                </div>
-            </div>
-          </div>
-
-          {currentCard.phonetic && backIsForeign && (
-             <div className="absolute bottom-4 left-4 h-10 [perspective:1000px]">
-                <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                    <div className="[backface-visibility:hidden] w-full h-full"></div>
-                    <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                         <p className="text-lg text-muted-foreground font-mono">/{currentCard.phonetic}/</p>
-                    </div>
-                </div>
-            </div>
-          )}
-          
-          <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
-            {/* These two are invisible but establish the grid area's size */}
-            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-3xl md:text-4xl font-bold text-center">{frontWord}</p>
-            <p className="[grid-area:center] col-start-1 row-start-1 invisible text-3xl md:text-4xl font-bold text-center">{backWord}</p>
             
-            <div className={cn(
-                "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
-                isFlipped && "[transform:rotateY(180deg)]"
-            )}>
-                <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                    <p className="text-3xl md:text-4xl font-bold text-center">{frontWord}</p>
+             <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
+               <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                  {/* Speaker for the foreign word */}
+                  <div className={cn("absolute inset-0 [backface-visibility:hidden]", !frontIsForeign && "opacity-0")}>
+                      <SpeakerButton ref={frontIsForeign ? speakerButtonRef : null} text={currentCard.term} languageHint={languageHint} />
+                  </div>
+                  <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !backIsForeign && "opacity-0")}>
+                      <SpeakerButton ref={backIsForeign ? speakerButtonRef : null} text={currentCard.term} languageHint={languageHint} />
+                  </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
+              <div className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-4xl font-bold text-center w-full overflow-x-auto whitespace-nowrap">{frontWord}</div>
+              <p className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-4xl font-bold text-center">{backWord}</p>
+              
+              <div className={cn(
+                  "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
+                  isFlipped && "[transform:rotateY(180deg)]"
+              )}>
+                  <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
+                      <div className="w-full overflow-x-auto whitespace-nowrap text-center no-scrollbar">
+                        <p className="text-2xl md:text-4xl font-bold text-center inline-block">{frontWord}</p>
+                      </div>
+                  </div>
+                  <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
+                      {isTypedMode && answerStatus !== 'unanswered' ? (
+                          <div className="flex flex-col items-center justify-center text-center">
+                             <AnswerFeedback userInput={userInput} correctAnswer={expectedAnswer} status={answerStatus} />
+                             <div className="mt-4">
+                                 <FeedbackIcon status={answerStatus} />
+                             </div>
+                          </div>
+                      ) : (
+                         <div className="flex flex-col items-center justify-center text-center">
+                              <div className="w-full overflow-x-auto whitespace-nowrap text-center no-scrollbar">
+                                <p className="text-2xl md:text-4xl font-bold inline-block">{backWord}</p>
+                              </div>
+                              {backIsForeign && formattedPhonetic && (
+                                  <p className="mt-2 text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
+                              )}
+                          </div>
+                      )}
+                  </div>
+              </div>
+            </div>
+
+            
+            <div className="absolute bottom-4 h-10 w-full px-4 flex justify-between items-center [perspective:1000px]">
+                <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                  {/* Front: Empty */}
+                  <div className="[backface-visibility:hidden] w-full h-full"></div>
+                  {/* Back: Content */}
+                  <div className="absolute inset-0 flex items-center justify-between [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                    <div className="flex items-center gap-1">
+                        {shouldShowHints && currentCard.notes && (
+                            <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); }}>
+                                    <Lightbulb className="h-5 w-5" />
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto max-w-xs sm:max-w-sm" side="top">
+                                <div className="flex items-start gap-2">
+                                    <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
+                                    <p className="text-sm">{currentCard.notes}</p>
+                                </div>
+                                </PopoverContent>
+                            </Popover>
+                        )}
+                        {currentCard.relatedWord && (
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground">
+                                        <Languages className="h-5 w-5" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-2" side="top">
+                                    <div className="text-sm">
+                                        <span className="font-semibold">{currentCard.relatedWord.language}:</span> {currentCard.relatedWord.word}
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        )}
+                    </div>
+                    
+                    {isTypedMode && answerStatus === 'incorrect' ? (
+                        <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
+                            Ich hab's gewusst
+                        </Button>
+                    ) : <div></div>}
+
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={handleEditVocab}>
+                      <Pencil className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
-                    {isTypedMode && answerStatus !== 'unanswered' ? (
-                        <div className="flex flex-col items-center justify-center text-center">
-                           <AnswerFeedback userInput={userInput} correctAnswer={expectedAnswer} status={answerStatus} />
-                           <div className="mt-4">
-                               <FeedbackIcon status={answerStatus} />
-                           </div>
+            </div>
+          </div>
+          
+          <div className="w-full max-w-2xl mx-auto pt-0">
+            <div className="h-12">
+                <div
+                    className={cn(
+                        'flex justify-center items-center transition-all duration-300',
+                        (isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
+                    )}
+                >
+                    {isTypedMode ? (
+                        <div className="flex gap-2 w-full">
+                            <Input
+                                ref={inputRef}
+                                placeholder="Antwort tippen..."
+                                value={userInput}
+                                onChange={(e) => setUserInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
+                                className="text-center text-lg md:text-2xl h-12 rounded-full"
+                                autoFocus
+                            />
+                            <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
                         </div>
                     ) : (
-                       <div className="flex flex-col items-center justify-center text-center">
-                            <p className="text-3xl md:text-4xl font-bold">{backWord}</p>
-                            {backIsForeign && currentCard.phonetic && (
-                                <p className="mt-2 text-lg text-muted-foreground font-mono">/{currentCard.phonetic}/</p>
-                            )}
-                        </div>
+                        <Button size="lg" className="w-full" onClick={handleFlipCard}>Umdrehen</Button>
+                    )}
+                </div>
+                <div
+                    className={cn(
+                        'flex justify-center items-center gap-2 transition-all duration-300',
+                        (!isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
+                    )}
+                >
+                    {isTypedMode ? (
+                       <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
+                        Weiter
+                       </Button>
+                    ) : (
+                      <>
+                          <Button
+                              variant="outline"
+                              size="default"
+                              className="w-[calc(50%-0.25rem)] h-12 text-base"
+                              onClick={() => handleClassicAnswer(false)}
+                          >
+                              <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+                          </Button>
+                          <Button
+                              variant="default"
+                              size="default"
+                              className="w-[calc(50%-0.25rem)] h-12 text-base"
+                              onClick={() => handleClassicAnswer(true)}
+                          >
+                              <Check className="mr-2 h-4 w-4" /> Wusste ich
+                          </Button>
+                      </>
                     )}
                 </div>
             </div>
+            <div className="w-full text-center mt-2 h-[36px]">
+                {history.length > 0 && !isExiting && (
+                  <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
+                      <ChevronLeft className="mr-1 h-4 w-4" />
+                      Zurück
+                  </Button>
+                )}
+            </div>
           </div>
-
-          
-          {shouldShowHints && currentCard.notes && (
-            <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">
-              <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                <div className="[backface-visibility:hidden] w-full h-full">
-                  {/* Empty on the front */}
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                  <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); }}>
-                        <Lightbulb className="h-5 w-5" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-auto max-w-xs sm:max-w-sm"
-                      side="top"
-                    >
-                      <div className="flex items-start gap-2">
-                        <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
-                        <p className="text-sm">{currentCard.notes}</p>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-            </div>
-          )}
-          {isTypedMode && answerStatus === 'incorrect' && isFlipped &&(
-             <div className="absolute bottom-4 text-center opacity-75 transition-opacity duration-300">
-                <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
-                    Ich hab's gewusst
-                </Button>
-            </div>
-          )}
         </div>
       </div>
-      
-      <div className="w-full max-w-2xl mx-auto pt-0">
-        <div className="h-12">
-            <div
-                className={cn(
-                    'flex justify-center items-center transition-all duration-300',
-                    (isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
-                )}
-            >
-                {isTypedMode ? (
-                    <div className="flex gap-2 w-full">
-                        <Input
-                            ref={inputRef}
-                            placeholder="Antwort tippen..."
-                            value={userInput}
-                            onChange={(e) => setUserInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                            className="text-center text-lg md:text-2xl h-12 rounded-full"
-                            autoFocus
-                        />
-                        <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
-                    </div>
-                ) : (
-                    <Button size="lg" className="w-full" onClick={handleFlipCard}>Umdrehen</Button>
-                )}
-            </div>
-            <div
-                className={cn(
-                    'flex justify-center items-center gap-2 transition-all duration-300',
-                    (!isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
-                )}
-            >
-                {isTypedMode ? (
-                   <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
-                    Weiter
-                   </Button>
-                ) : (
-                  <>
-                      <Button
-                          variant="outline"
-                          size="default"
-                          className="w-[calc(50%-0.25rem)] h-12 text-base"
-                          onClick={() => handleClassicAnswer(false)}
-                      >
-                          <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                      </Button>
-                      <Button
-                          variant="default"
-                          size="default"
-                          className="w-[calc(50%-0.25rem)] h-12 text-base"
-                          onClick={() => handleClassicAnswer(true)}
-                      >
-                          <Check className="mr-2 h-4 w-4" /> Wusste ich
-                      </Button>
-                  </>
-                )}
-            </div>
-        </div>
-        <div className="w-full text-center mt-2 h-[36px]">
-            {history.length > 0 && !isExiting && (
-              <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
-                  <ChevronLeft className="mr-1 h-4 w-4" />
-                  Zurück
-              </Button>
-            )}
-        </div>
-      </div>
-    </div>
+      {editingVocab && subjectId && (
+        <VocabDialog 
+            isOpen={isVocabDialogOpen}
+            onOpenChange={setIsVocabDialogOpen}
+            vocabItem={editingVocab}
+            subjectId={subjectId}
+            onSave={handleSaveVocab}
+        />
+      )}
+    </>
   );
 }

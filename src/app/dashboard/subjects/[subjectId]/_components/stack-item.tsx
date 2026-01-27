@@ -50,9 +50,10 @@ interface StackItemProps {
   onDelete: () => void;
   onRename: () => void;
   onAddVocab: (stack: Stack) => void;
+  onEditVocab: (vocab: VocabularyItem) => void;
 }
 
-export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onDelete, onRename, onAddVocab }: StackItemProps) {
+export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onDelete, onRename, onAddVocab, onEditVocab }: StackItemProps) {
   const { firestore, user } = useFirebase();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -152,11 +153,14 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
               <CollapsibleTrigger asChild>
                 <div className="cursor-pointer flex-1 flex items-center gap-2 min-w-0">
                     <h3 className="font-headline text-lg truncate">{stack.name}</h3>
+                    <Badge variant="secondary" className="hidden md:inline-flex">
+                        {vocabulary.length || 0}
+                    </Badge>
                 </div>
               </CollapsibleTrigger>
           </div>
           <div className="flex items-center gap-1 md:gap-2">
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="md:hidden">
                 {vocabulary.length || 0}
                 <span className="hidden sm:inline">&nbsp;Vokabeln</span>
             </Badge>
@@ -243,6 +247,9 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                         </PopoverContent>
                     </Popover>
                   )}
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditVocab(item)}>
+                    <Pen className="h-4 w-4" />
+                  </Button>
                 </Card>
               ))
             ) : (
