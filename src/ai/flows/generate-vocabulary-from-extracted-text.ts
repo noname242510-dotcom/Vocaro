@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Generates vocabulary pairs from a block of extracted text.

@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { SectionShell } from './section-shell';
+import { SectionShell } from './_components/section-shell';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
@@ -12,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export function VocabSettings() {
   const [queryDirectionOverview, setQueryDirectionOverview] = useState('term'); // 'term' or 'definition'
-  const [queryDirectionFlashcards, setQueryDirectionFlashcards] = useState(true); // Default: German first
+  const [queryDirectionFlashcards, setQueryDirectionFlashcards] = useState(true);
   const [showVocabHints, setShowVocabHints] = useState(true);
 
   useEffect(() => {
@@ -22,10 +23,12 @@ export function VocabSettings() {
         setQueryDirectionOverview(persistedQueryDirectionOverview);
     }
     
-    // false: term -> definition, true: definition -> term
+    // true: definition -> term (Deutsch -> Fremdwort)
     const persistedQueryDirectionFlashcards = localStorage.getItem('query-direction-flashcards');
     if (persistedQueryDirectionFlashcards !== null) {
       setQueryDirectionFlashcards(persistedQueryDirectionFlashcards === 'true');
+    } else {
+      setQueryDirectionFlashcards(true); // Default to German first
     }
 
     const persistedShowVocabHints = localStorage.getItem('show-vocab-hints');

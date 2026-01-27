@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -160,29 +161,10 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
               </CollapsibleTrigger>
           </div>
           <div className="flex items-center gap-1 md:gap-2">
-            <Badge variant="secondary" className="md:hidden">
-                {vocabulary.length || 0}
-                <span className="hidden sm:inline">&nbsp;Vokabeln</span>
-            </Badge>
-
-            {/* Desktop Buttons */}
-            <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onAddVocab(stack)}>
-                    <Plus className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => {
-                  setNewStackName(stack.name);
-                  setIsRenameDialogOpen(true)
-                }}>
-                    <Pen className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsDeleteDialogOpen(true)}>
-                    <Trash2 className="h-4 w-4" />
-                </Button>
-            </div>
-
-            {/* Mobile Dropdown */}
-            <div className="md:hidden">
+            <div className="flex items-center gap-1 md:hidden">
+              <Badge variant="secondary">
+                  {vocabulary.length || 0}
+              </Badge>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
@@ -207,6 +189,22 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            </div>
+
+            {/* Desktop Buttons */}
+            <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onAddVocab(stack)}>
+                    <Plus className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => {
+                  setNewStackName(stack.name);
+                  setIsRenameDialogOpen(true)
+                }}>
+                    <Pen className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsDeleteDialogOpen(true)}>
+                    <Trash2 className="h-4 w-4" />
+                </Button>
             </div>
 
              <CollapsibleTrigger asChild>

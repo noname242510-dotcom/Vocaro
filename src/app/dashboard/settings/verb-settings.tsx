@@ -1,22 +1,26 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { SectionShell } from './section-shell';
+import { SectionShell } from './_components/section-shell';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function VerbSettings() {
-  const [queryDirectionVerbs, setQueryDirectionVerbs] = useState(true); // Default: German first
+  const [queryDirectionVerbs, setQueryDirectionVerbs] = useState(true);
   const [showVerbHints, setShowVerbHints] = useState(true);
 
   useEffect(() => {
+    // true: definition -> term (Deutsch -> Fremdwort)
     const persistedQueryDirectionVerbs = localStorage.getItem('query-direction-verbs');
     if (persistedQueryDirectionVerbs !== null) {
       setQueryDirectionVerbs(persistedQueryDirectionVerbs === 'true');
+    } else {
+      setQueryDirectionVerbs(true); // Default to German first
     }
     
     const persistedShowVerbHints = localStorage.getItem('show-verb-hints');

@@ -230,7 +230,7 @@ export default function VerbPracticePage() {
     const [isExiting, setIsExiting] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
     
-    const [isGermanFirst, setIsGermanFirst] = useState(false);
+    const [isGermanFirst, setIsGermanFirst] = useState(true);
     const [shouldShowHints, setShouldShowHints] = useState(true);
 
     const [history, setHistory] = useState<VerbLearnState[]>([]);
@@ -390,9 +390,7 @@ export default function VerbPracticePage() {
         if (document.querySelector('[role="dialog"]')) return;
         if (event.key === 'Enter' && !isExiting) {
           if (isTypedMode) {
-              if (isFlipped) {
-                handleCheckAnswerRef.current();
-              }
+              handleCheckAnswerRef.current();
           } else {
               if (!isFlipped) {
                   handleFlipCard();
@@ -410,8 +408,12 @@ export default function VerbPracticePage() {
     }, [isFlipped, isTypedMode, isExiting]);
 
     useEffect(() => {
-        const germanFirstSetting = localStorage.getItem('query-direction-verbs') === 'true';
-        setIsGermanFirst(germanFirstSetting);
+        const persistedQueryDirectionVerbs = localStorage.getItem('query-direction-verbs');
+        if (persistedQueryDirectionVerbs !== null) {
+            setIsGermanFirst(persistedQueryDirectionVerbs === 'true');
+        } else {
+            setIsGermanFirst(true); // Default to German first
+        }
 
         const showHintsSetting = localStorage.getItem('show-verb-hints') !== 'false';
         setShouldShowHints(showHintsSetting);
@@ -686,8 +688,8 @@ export default function VerbPracticePage() {
 
 
     return (
-        <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)]">
-            <div className="w-full max-w-2xl px-4 sm:px-0 mx-auto">
+        <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)] -mx-4 sm:mx-0">
+            <div className="w-full max-w-4xl px-4 sm:px-0 mx-auto">
                 <div className="flex items-center justify-between mb-2">
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -718,7 +720,7 @@ export default function VerbPracticePage() {
                 </p>
             </div>
 
-            <div className="w-full max-w-2xl mx-auto flex-grow flex flex-col justify-center my-0">
+            <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col justify-center gap-2">
                 <div
                     key={currentCard.id}
                     className={cn(
@@ -780,15 +782,17 @@ export default function VerbPracticePage() {
                         </div>
                     </div>
                      <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
-                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-3xl md:text-4xl font-bold text-center">{currentCard.front}</p>
-                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-3xl md:text-4xl font-bold text-center">{currentCard.back}</p>
+                        <div className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-3xl font-bold text-center w-full overflow-x-auto whitespace-nowrap">{currentCard.front}</div>
+                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-3xl font-bold text-center">{currentCard.back}</p>
                         
                         <div className={cn(
                             "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
                             isFlipped && "[transform:rotateY(180deg)]"
                         )}>
                             <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                                <p className="text-3xl md:text-4xl font-bold text-center">{currentCard.front}</p>
+                                <div className="w-full overflow-x-auto whitespace-nowrap text-center no-scrollbar">
+                                    <p className="text-2xl md:text-3xl font-bold text-center inline-block">{currentCard.front}</p>
+                                </div>
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                                 {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -799,7 +803,9 @@ export default function VerbPracticePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-3xl md:text-4xl font-bold text-center">{currentCard.back}</p>
+                                    <div className="w-full overflow-x-auto whitespace-nowrap text-center no-scrollbar">
+                                        <p className="text-2xl md:text-3xl font-bold text-center inline-block">{currentCard.back}</p>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -813,72 +819,72 @@ export default function VerbPracticePage() {
                         </div>
                     )}
                 </div>
-            </div>
 
-            <div className="w-full max-w-2xl mx-auto pt-0">
-                <div className="h-12">
-                    <div
-                        className={cn(
-                            'flex justify-center items-center transition-all duration-300',
-                            (isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
-                        )}
-                    >
-                        {isTypedMode ? (
-                            <div className="flex gap-2 w-full">
-                            <Input
-                                ref={inputRef}
-                                placeholder="Antwort tippen..."
-                                value={userInput}
-                                onChange={(e) => setUserInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                                className="text-center text-lg md:text-2xl h-12 rounded-full"
-                                autoFocus
-                            />
-                            <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
-                            </div>
-                        ) : (
-                            <Button size="lg" className="w-full" onClick={handleFlipCard}>Umdrehen</Button>
-                        )}
+                <div className="w-full max-w-2xl mx-auto">
+                    <div className="h-12 mb-4">
+                        <div
+                            className={cn(
+                                'flex justify-center items-center transition-all duration-300',
+                                (isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
+                            )}
+                        >
+                            {isTypedMode ? (
+                                <div className="flex gap-2 w-full">
+                                <Input
+                                    ref={inputRef}
+                                    placeholder="Antwort tippen..."
+                                    value={userInput}
+                                    onChange={(e) => setUserInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
+                                    className="text-center text-lg md:text-2xl h-12 rounded-full"
+                                    autoFocus
+                                />
+                                <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
+                                </div>
+                            ) : (
+                                <Button size="lg" className="w-full" onClick={handleFlipCard}>Umdrehen</Button>
+                            )}
+                        </div>
+                        <div
+                            className={cn(
+                                'flex justify-center items-center gap-2 transition-all duration-300',
+                                (!isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
+                            )}
+                        >
+                            {isTypedMode ? (
+                                <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
+                                    Weiter
+                                </Button>
+                            ) : (
+                            <>
+                                    <Button
+                                        variant="outline"
+                                        size="default"
+                                        className="w-[calc(50%-0.25rem)] h-12 text-base"
+                                        onClick={() => handleClassicAnswer(false)}
+                                    >
+                                        <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+                                    </Button>
+                                    <Button
+                                        variant="default"
+                                        size="default"
+                                        className="w-[calc(50%-0.25rem)] h-12 text-base"
+                                        onClick={() => handleClassicAnswer(true)}
+                                    >
+                                        <Check className="mr-2 h-4 w-4" /> Wusste ich
+                                    </Button>
+                                </>
+                            )}
+                        </div>
                     </div>
-                    <div
-                        className={cn(
-                            'flex justify-center items-center gap-2 transition-all duration-300',
-                            (!isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
-                        )}
-                    >
-                        {isTypedMode ? (
-                            <Button size="lg" className="w-full" onClick={handleCheckAnswer}>
-                                Weiter
+                    <div className="w-full text-center h-[36px]">
+                        {history.length > 0 && !isExiting && (
+                            <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
+                                <ChevronLeft className="mr-1 h-4 w-4" />
+                                Zurück
                             </Button>
-                        ) : (
-                           <>
-                                <Button
-                                    variant="outline"
-                                    size="default"
-                                    className="w-[calc(50%-0.25rem)] h-12 text-base"
-                                    onClick={() => handleClassicAnswer(false)}
-                                >
-                                    <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                                </Button>
-                                <Button
-                                    variant="default"
-                                    size="default"
-                                    className="w-[calc(50%-0.25rem)] h-12 text-base"
-                                    onClick={() => handleClassicAnswer(true)}
-                                >
-                                    <Check className="mr-2 h-4 w-4" /> Wusste ich
-                                </Button>
-                            </>
                         )}
                     </div>
-                </div>
-                <div className="w-full text-center mt-2 h-[36px]">
-                    {history.length > 0 && !isExiting && (
-                        <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
-                            <ChevronLeft className="mr-1 h-4 w-4" />
-                            Zurück
-                        </Button>
-                    )}
                 </div>
             </div>
         </div>

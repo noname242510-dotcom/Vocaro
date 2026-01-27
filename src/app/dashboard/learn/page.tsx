@@ -197,7 +197,7 @@ export default function LearnPage() {
   const [isExiting, setIsExiting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
-  const [isTermFirst, setIsTermFirst] = useState(false); // Default to German first
+  const [isTermFirst, setIsTermFirst] = useState(false); // Default: German -> Foreign
   const [shouldShowHints, setShouldShowHints] = useState(true);
 
   const [history, setHistory] = useState<LearnState[]>([]);
@@ -380,7 +380,8 @@ export default function LearnPage() {
   useEffect(() => {
     // Load settings from local storage
     const queryDirectionSetting = localStorage.getItem('query-direction-flashcards');
-    setIsTermFirst(queryDirectionSetting === 'false'); // 'false' means term first, 'true' or null means definition first.
+    // Default to 'true' (German first) if not set.
+    setIsTermFirst(queryDirectionSetting === 'false'); 
     
     const showHintsSetting = localStorage.getItem('show-vocab-hints') !== 'false';
     setShouldShowHints(showHintsSetting);
@@ -663,7 +664,7 @@ export default function LearnPage() {
   return (
     <>
       <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)] -mx-4 sm:mx-0">
-        <div className="w-full max-w-2xl px-4 sm:px-0 mx-auto">
+        <div className="w-full max-w-4xl px-4 sm:px-0 mx-auto">
           <div className="flex items-center justify-between mb-2">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -695,7 +696,7 @@ export default function LearnPage() {
           </p>
         </div>
 
-        <div className="w-full max-w-2xl mx-auto flex-grow flex flex-col justify-between my-2">
+        <div className="w-full max-w-4xl mx-auto flex-grow flex flex-col justify-center gap-2">
           <div
             key={currentCard.id}
             className={cn(
@@ -727,8 +728,8 @@ export default function LearnPage() {
             </div>
             
             <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
-              <div className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-4xl font-bold text-center w-full overflow-x-auto whitespace-nowrap">{frontWord}</div>
-              <p className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-4xl font-bold text-center">{backWord}</p>
+              <div className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-3xl font-bold text-center w-full overflow-x-auto whitespace-nowrap">{frontWord}</div>
+              <p className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-3xl font-bold text-center">{backWord}</p>
               
               <div className={cn(
                   "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
@@ -736,8 +737,11 @@ export default function LearnPage() {
               )}>
                   <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
                       <div className="w-full overflow-x-auto whitespace-nowrap text-center no-scrollbar">
-                        <p className="text-2xl md:text-4xl font-bold text-center inline-block">{frontWord}</p>
+                        <p className="text-2xl md:text-3xl font-bold text-center inline-block">{frontWord}</p>
                       </div>
+                       {frontIsForeign && formattedPhonetic && (
+                          <p className="mt-2 text-base md:text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
+                      )}
                   </div>
                   <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                       {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -750,10 +754,10 @@ export default function LearnPage() {
                       ) : (
                          <div className="flex flex-col items-center justify-center text-center">
                               <div className="w-full overflow-x-auto whitespace-nowrap text-center no-scrollbar">
-                                <p className="text-2xl md:text-4xl font-bold inline-block">{backWord}</p>
+                                <p className="text-2xl md:text-3xl font-bold inline-block">{backWord}</p>
                               </div>
                               {backIsForeign && formattedPhonetic && (
-                                  <p className="mt-2 text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
+                                  <p className="mt-2 text-base md:text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
                               )}
                           </div>
                       )}
@@ -814,8 +818,8 @@ export default function LearnPage() {
             </div>
           </div>
           
-          <div className="w-full max-w-2xl mx-auto pt-0">
-            <div className="h-12">
+          <div className="w-full max-w-2xl mx-auto">
+            <div className="h-12 mb-4">
                 <div
                     className={cn(
                         'flex justify-center items-center transition-all duration-300',
@@ -871,7 +875,7 @@ export default function LearnPage() {
                     )}
                 </div>
             </div>
-            <div className="w-full text-center mt-2 h-[36px]">
+            <div className="w-full text-center h-[36px]">
                 {history.length > 0 && !isExiting && (
                   <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
                       <ChevronLeft className="mr-1 h-4 w-4" />
