@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -234,7 +233,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                   {item.relatedWord && (
                     <Popover>
                         <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hidden md:inline-flex">
                             <Languages className="h-4 w-4" />
                         </Button>
                         </PopoverTrigger>
