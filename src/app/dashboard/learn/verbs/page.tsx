@@ -64,20 +64,18 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
     if (status === 'incorrect') {
         const areWordsEqual = (userWordLower: string, correctWordLower: string) => {
             // Treat "(to)" and "to" as equal
-            const normalizedCorrect = correctWordLower.replace(/^\((.*)\)$/, '$1');
-            return userWordLower === normalizedCorrect;
+            const normalizedCorrect = correctWordLower.replace(/^\((.*)\)$/, '$1').toLowerCase();
+            return userWordLower.toLowerCase() === normalizedCorrect;
         };
 
         const lcs = (a: string[], b: string[]) => {
             const m = a.length;
             const n = b.length;
             const dp = Array(m + 1).fill(0).map(() => Array(n + 1).fill(0));
-            const aLower = a.map(w => w.toLowerCase());
-            const bLower = b.map(w => w.toLowerCase());
 
             for (let i = 1; i <= m; i++) {
                 for (let j = 1; j <= n; j++) {
-                     if (areWordsEqual(aLower[i - 1], bLower[j - 1])) {
+                     if (areWordsEqual(a[i - 1], b[j - 1])) {
                         dp[i][j] = dp[i - 1][j - 1] + 1;
                     } else {
                         dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
@@ -92,7 +90,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             const correctWordsCopy = [...b];
             
             while (i > 0 || j > 0) {
-                if (i > 0 && j > 0 && areWordsEqual(aLower[i - 1], bLower[j - 1])) {
+                 if (i > 0 && j > 0 && areWordsEqual(userWordsCopy[i-1], correctWordsCopy[j-1])) {
                     diff.unshift({ type: 'correct', value: userWordsCopy[i-1] });
                     i--;
                     j--;
@@ -103,16 +101,24 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                     diff.unshift({ type: 'extra', value: userWordsCopy[i-1] });
                     i--;
                 } else {
-                    break;
+                    // This case handles substitutions.
+                    if (i > 0 && j > 0) {
+                        diff.unshift({ type: 'substitution', value: userWordsCopy[i-1], original: correctWordsCopy[j-1] });
+                        i--;
+                        j--;
+                    } else {
+                        break;
+                    }
                 }
             }
-
-            // A second pass to detect substitutions
+            
             const finalDiff: { type: 'correct' | 'extra' | 'missing' | 'substitution', value: string, original?: string }[] = [];
             for(let k = 0; k < diff.length; k++) {
-                if (diff[k].type === 'extra' && k + 1 < diff.length && diff[k+1].type === 'missing') {
-                    finalDiff.push({ type: 'substitution', value: diff[k].value, original: diff[k+1].value });
-                    k++; // Skip the next one since we've combined it
+                if (diff[k].type === 'substitution') {
+                    // When we have a substitution, we show the user's incorrect word (extra)
+                    // and indicate the correct word was missing.
+                    finalDiff.push({ type: 'extra', value: diff[k].value });
+                    // finalDiff.push({ type: 'missing', value: diff[k].original! });
                 } else {
                     finalDiff.push(diff[k]);
                 }
@@ -145,7 +151,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className="text-3xl md:text-4xl font-bold mt-4">{correctAnswer}</p>
+                <p className="text-2xl md:text-3xl font-bold mt-4 break-words line-clamp-4">{correctAnswer}</p>
             </>
         );
     }
@@ -169,12 +175,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className="text-3xl md:text-4xl font-bold mt-4">{parts}</p>;
+        return <p className="text-2xl md:text-3xl font-bold mt-4 break-words line-clamp-4">{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className="text-3xl md:text-4xl font-bold mt-4">{correctAnswer}</p>;
+        return <p className="text-2xl md:text-3xl font-bold mt-4 break-words line-clamp-4">{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -784,15 +790,15 @@ export default function VerbPracticePage() {
                         </div>
                     </div>
                      <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
-                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-xl md:text-3xl font-bold text-center w-full break-words">{currentCard.front}</p>
-                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-xl md:text-3xl font-bold text-center break-words">{currentCard.back}</p>
+                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-lg md:text-2xl font-bold text-center w-full break-words line-clamp-4">{currentCard.front}</p>
+                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-lg md:text-2xl font-bold text-center break-words line-clamp-4">{currentCard.back}</p>
                         
                         <div className={cn(
                             "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
                             isFlipped && "[transform:rotateY(180deg)]"
                         )}>
                             <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                                <p className="text-xl md:text-3xl font-bold text-center break-words">{currentCard.front}</p>
+                                <p className="text-lg md:text-2xl font-bold text-center break-words line-clamp-4">{currentCard.front}</p>
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                                 {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -803,7 +809,7 @@ export default function VerbPracticePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-xl md:text-3xl font-bold text-center break-words">{currentCard.back}</p>
+                                    <p className="text-lg md:text-2xl font-bold text-center break-words line-clamp-4">{currentCard.back}</p>
                                 )}
                             </div>
                         </div>
@@ -888,3 +894,6 @@ export default function VerbPracticePage() {
         </div>
     );
 }
+
+
+    
