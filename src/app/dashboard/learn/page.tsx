@@ -753,7 +753,7 @@ export default function LearnPage() {
                     {/* Front Side */}
                     <div className="[backface-visibility:hidden] w-full">
                         <div className="flex flex-col items-center justify-center">
-                            <p className="text-lg md:text-2xl font-bold text-center break-words">{frontWord}</p>
+                            <p className="text-2xl md:text-3xl font-bold text-center break-words">{frontWord}</p>
                             {frontIsForeign && formattedPhonetic && (
                                 <p className="mt-2 text-base md:text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
                             )}
@@ -770,7 +770,7 @@ export default function LearnPage() {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center text-center">
-                                <p className="text-lg md:text-2xl font-bold text-center break-words">{backWord}</p>
+                                <p className="text-2xl md:text-3xl font-bold text-center break-words">{backWord}</p>
                                 {backIsForeign && formattedPhonetic && (
                                     <p className="mt-2 text-base md:text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
                                 )}

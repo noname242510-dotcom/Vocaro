@@ -790,15 +790,15 @@ export default function VerbPracticePage() {
                         </div>
                     </div>
                      <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
-                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-lg md:text-2xl font-bold text-center w-full break-words">{currentCard.front}</p>
-                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-lg md:text-2xl font-bold text-center break-words">{currentCard.back}</p>
+                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-3xl font-bold text-center w-full break-words">{currentCard.front}</p>
+                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-3xl font-bold text-center break-words">{currentCard.back}</p>
                         
                         <div className={cn(
                             "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
                             isFlipped && "[transform:rotateY(180deg)]"
                         )}>
                             <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                                <p className="text-lg md:text-2xl font-bold text-center break-words">{currentCard.front}</p>
+                                <p className="text-2xl md:text-3xl font-bold text-center break-words">{currentCard.front}</p>
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                                 {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -809,7 +809,7 @@ export default function VerbPracticePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-lg md:text-2xl font-bold text-center break-words">{currentCard.back}</p>
+                                    <p className="text-2xl md:text-3xl font-bold text-center break-words">{currentCard.back}</p>
                                 )}
                             </div>
                         </div>
