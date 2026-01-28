@@ -142,7 +142,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className="text-3xl md:text-4xl font-bold mt-4 break-words line-clamp-4">{correctAnswer}</p>
+                <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl")}>{correctAnswer}</p>
             </>
         );
     }
@@ -166,12 +166,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className="text-3xl md:text-4xl font-bold mt-4 break-words line-clamp-4">{parts}</p>;
+        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl")}>{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className="text-3xl md:text-4xl font-bold mt-4 break-words line-clamp-4">{correctAnswer}</p>;
+        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl")}>{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -753,7 +753,7 @@ export default function LearnPage() {
                     {/* Front Side */}
                     <div className="[backface-visibility:hidden] w-full">
                         <div className="flex flex-col items-center justify-center text-center">
-                            <p className="text-3xl md:text-4xl font-bold break-words line-clamp-4">{frontWord}</p>
+                            <p className={cn("font-bold break-words", frontWord.length > 80 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl")}>{frontWord}</p>
                             {frontIsForeign && formattedPhonetic && (
                                 <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
                             )}
@@ -770,7 +770,7 @@ export default function LearnPage() {
                             </div>
                         ) : (
                              <div className="flex flex-col items-center justify-center text-center break-words">
-                                <p className="text-3xl md:text-4xl font-bold break-words line-clamp-4">{backWord}</p>
+                                <p className={cn("font-bold break-words", backWord.length > 80 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl")}>{backWord}</p>
                                 {backIsForeign && formattedPhonetic && (
                                     <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
                                 )}
