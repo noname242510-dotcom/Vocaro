@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft, Smile, Frown, Meh, Languages } from 'lucide-react';
+import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft, Smile, Frown, Meh, Languages, Volume2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -63,8 +63,8 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             const m = a.length;
             const n = b.length;
             const dp = Array(m + 1).fill(0).map(() => Array(n + 1).fill(0));
-            const aLower = a.map(w => w.toLowerCase());
-            const bLower = b.map(w => w.toLowerCase());
+            const aLower = a.map(w => w.toLowerCase().replace(/['´`]/g, "'"));
+            const bLower = b.map(w => w.toLowerCase().replace(/['´`]/g, "'"));
 
             for (let i = 1; i <= m; i++) {
                 for (let j = 1; j <= n; j++) {
@@ -197,7 +197,7 @@ export default function LearnPage() {
   const [isExiting, setIsExiting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
-  const [isTermFirst, setIsTermFirst] = useState(true); // Default: German -> Foreign
+  const [isTermFirst, setIsTermFirst] = useState(true);
   const [shouldShowHints, setShouldShowHints] = useState(true);
 
   const [history, setHistory] = useState<LearnState[]>([]);
@@ -290,7 +290,7 @@ export default function LearnPage() {
         const withoutParens = expectedAnswerClean.replace(/[()]/g, '');
         const withoutOptionalPart = expectedAnswerClean.replace(optionalPartRegex, '').replace(/\s+/g, ' ').trim();
         
-        const possibleAnswers = [withParens, withoutParens, withoutOptionalPart].map(normalize);
+        const possibleAnswers = [withParens, withoutParens, withoutOptionalPart].map(v => normalize(v));
         
         if (possibleAnswers.includes(userInputClean)) {
             isCorrect = true;
@@ -739,38 +739,39 @@ export default function LearnPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
-              <div className="[grid-area:center] col-start-1 row-start-1 invisible text-xl md:text-3xl font-bold text-center w-full break-words">{frontWord}</div>
-              <p className="[grid-area:center] col-start-1 row-start-1 invisible text-xl md:text-3xl font-bold text-center break-words">{backWord}</p>
-              
-              <div className={cn(
-                  "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
-                  isFlipped && "[transform:rotateY(180deg)]"
-              )}>
-                  <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                      <p className="text-xl md:text-3xl font-bold text-center break-words">{frontWord}</p>
-                       {frontIsForeign && formattedPhonetic && (
-                          <p className="mt-2 text-base md:text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
-                      )}
-                  </div>
-                  <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
-                      {isTypedMode && answerStatus !== 'unanswered' ? (
-                          <div className="flex flex-col items-center justify-center text-center">
-                             <AnswerFeedback userInput={userInput} correctAnswer={expectedAnswer} status={answerStatus} />
-                             <div className="mt-4">
-                                 <FeedbackIcon status={answerStatus} />
-                             </div>
-                          </div>
-                      ) : (
-                         <div className="flex flex-col items-center justify-center text-center">
-                            <p className="text-xl md:text-3xl font-bold text-center break-words">{backWord}</p>
-                            {backIsForeign && formattedPhonetic && (
+             <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
+                <div className={cn(
+                    "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d] flex flex-col items-center justify-center",
+                    isFlipped && "[transform:rotateY(180deg)]"
+                )}>
+                    {/* Front Side */}
+                    <div className="[backface-visibility:hidden] w-full">
+                        <div className="flex flex-col items-center justify-center">
+                            <p className="text-xl md:text-3xl font-bold text-center break-words">{frontWord}</p>
+                            {frontIsForeign && formattedPhonetic && (
                                 <p className="mt-2 text-base md:text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
                             )}
-                          </div>
-                      )}
-                  </div>
-              </div>
+                        </div>
+                    </div>
+                    {/* Back Side */}
+                    <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] w-full flex flex-col items-center justify-center">
+                        {isTypedMode && answerStatus !== 'unanswered' ? (
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <AnswerFeedback userInput={userInput} correctAnswer={expectedAnswer} status={answerStatus} />
+                                <div className="mt-4">
+                                    <FeedbackIcon status={answerStatus} />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center text-center">
+                                <p className="text-xl md:text-3xl font-bold text-center break-words">{backWord}</p>
+                                {backIsForeign && formattedPhonetic && (
+                                    <p className="mt-2 text-base md:text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             
