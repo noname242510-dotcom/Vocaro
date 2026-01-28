@@ -142,7 +142,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className="text-2xl md:text-3xl font-bold mt-4 break-words">{correctAnswer}</p>
+                <p className="text-3xl md:text-4xl font-bold mt-4 break-words">{correctAnswer}</p>
             </>
         );
     }
@@ -166,12 +166,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className="text-2xl md:text-3xl font-bold mt-4 break-words">{parts}</p>;
+        return <p className="text-3xl md:text-4xl font-bold mt-4 break-words">{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className="text-2xl md:text-3xl font-bold mt-4 break-words">{correctAnswer}</p>;
+        return <p className="text-3xl md:text-4xl font-bold mt-4 break-words">{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -753,7 +753,7 @@ export default function LearnPage() {
                     {/* Front Side */}
                     <div className="[backface-visibility:hidden] w-full">
                         <div className="flex flex-col items-center justify-center">
-                            <p className="text-2xl md:text-3xl font-bold text-center break-words">{frontWord}</p>
+                            <p className="text-3xl md:text-4xl font-bold text-center break-words">{frontWord}</p>
                             {frontIsForeign && formattedPhonetic && (
                                 <p className="mt-2 text-base md:text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
                             )}
@@ -770,7 +770,7 @@ export default function LearnPage() {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center text-center">
-                                <p className="text-2xl md:text-3xl font-bold text-center break-words">{backWord}</p>
+                                <p className="text-3xl md:text-4xl font-bold text-center break-words">{backWord}</p>
                                 {backIsForeign && formattedPhonetic && (
                                     <p className="mt-2 text-base md:text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
                                 )}
@@ -781,12 +781,17 @@ export default function LearnPage() {
             </div>
 
             
-            <div className="absolute bottom-4 h-10 w-full px-4 flex justify-between items-center [perspective:1000px]">
+            <div className="absolute bottom-4 h-10 w-full px-4 [perspective:1000px]">
                 <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                  {/* Front: Empty */}
                   <div className="[backface-visibility:hidden] w-full h-full"></div>
-                  {/* Back: Content */}
                   <div className="absolute inset-0 flex items-center justify-between [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                    <div>
+                        {isTypedMode && answerStatus === 'incorrect' ? (
+                            <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
+                                Ich hab's gewusst
+                            </Button>
+                        ) : <div></div>}
+                    </div>
                     <div className="flex items-center gap-1">
                         {shouldShowHints && currentCard.notes && (
                             <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
@@ -818,13 +823,6 @@ export default function LearnPage() {
                             </Popover>
                         )}
                     </div>
-                    
-                    {isTypedMode && answerStatus === 'incorrect' ? (
-                        <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
-                            Ich hab's gewusst
-                        </Button>
-                    ) : <div></div>}
-
                   </div>
                 </div>
             </div>
