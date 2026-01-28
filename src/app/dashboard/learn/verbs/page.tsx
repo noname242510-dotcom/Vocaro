@@ -151,7 +151,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className="text-2xl md:text-3xl font-bold mt-4 break-words">{correctAnswer}</p>
+                <p className="text-xl md:text-2xl font-bold mt-4 break-words line-clamp-4">{correctAnswer}</p>
             </>
         );
     }
@@ -175,12 +175,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className="text-2xl md:text-3xl font-bold mt-4 break-words">{parts}</p>;
+        return <p className="text-xl md:text-2xl font-bold mt-4 break-words line-clamp-4">{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className="text-2xl md:text-3xl font-bold mt-4 break-words">{correctAnswer}</p>;
+        return <p className="text-xl md:text-2xl font-bold mt-4 break-words line-clamp-4">{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -790,15 +790,15 @@ export default function VerbPracticePage() {
                         </div>
                     </div>
                      <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
-                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-3xl font-bold text-center w-full break-words">{currentCard.front}</p>
-                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-2xl md:text-3xl font-bold text-center break-words">{currentCard.back}</p>
+                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-xl md:text-2xl font-bold text-center w-full break-words">{currentCard.front}</p>
+                        <p className="[grid-area:center] col-start-1 row-start-1 invisible text-xl md:text-2xl font-bold text-center break-words">{currentCard.back}</p>
                         
                         <div className={cn(
                             "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
                             isFlipped && "[transform:rotateY(180deg)]"
                         )}>
                             <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                                <p className="text-2xl md:text-3xl font-bold text-center break-words">{currentCard.front}</p>
+                                <p className="text-xl md:text-2xl font-bold text-center break-words line-clamp-4">{currentCard.front}</p>
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                                 {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -809,7 +809,7 @@ export default function VerbPracticePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-2xl md:text-3xl font-bold text-center break-words">{currentCard.back}</p>
+                                    <p className="text-xl md:text-2xl font-bold text-center break-words line-clamp-4">{currentCard.back}</p>
                                 )}
                             </div>
                         </div>
@@ -894,6 +894,9 @@ export default function VerbPracticePage() {
         </div>
     );
 }
+
+
+    
 
 
     
