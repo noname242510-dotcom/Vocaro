@@ -29,7 +29,7 @@ service cloud.firestore {
         return request.auth != null && request.auth.uid == userId;
       }
 
-      allow get: if false;
+      allow get: if isOwner(userId);
       allow list: if false;
       allow create: if isOwner(userId);
       allow update: if false;
@@ -261,3 +261,4 @@ service cloud.firestore {
     }
   }
 }
+    
