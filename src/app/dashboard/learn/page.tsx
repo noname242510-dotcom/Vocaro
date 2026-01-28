@@ -142,7 +142,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className="text-2xl md:text-3xl font-bold mt-4 break-words line-clamp-4">{correctAnswer}</p>
+                <p className="text-2xl md:text-3xl font-bold mt-4 break-words">{correctAnswer}</p>
             </>
         );
     }
@@ -166,12 +166,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className="text-2xl md:text-3xl font-bold mt-4 break-words line-clamp-4">{parts}</p>;
+        return <p className="text-2xl md:text-3xl font-bold mt-4 break-words">{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className="text-2xl md:text-3xl font-bold mt-4 break-words line-clamp-4">{correctAnswer}</p>;
+        return <p className="text-2xl md:text-3xl font-bold mt-4 break-words">{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -714,7 +714,7 @@ export default function LearnPage() {
           <div
             key={currentCard.id}
             className={cn(
-              "relative w-full min-h-[20rem] flex flex-col items-center justify-center p-4 md:p-6 rounded-2xl glass-effect border transition-opacity duration-300",
+              "relative w-full min-h-[20rem] flex flex-col items-center justify-center p-2 md:p-4 rounded-2xl glass-effect border transition-opacity duration-300",
               !isExiting ? 'opacity-100' : 'opacity-0',
             )}
           >
@@ -753,7 +753,7 @@ export default function LearnPage() {
                     {/* Front Side */}
                     <div className="[backface-visibility:hidden] w-full">
                         <div className="flex flex-col items-center justify-center">
-                            <p className="text-lg md:text-2xl font-bold text-center break-words line-clamp-4">{frontWord}</p>
+                            <p className="text-lg md:text-2xl font-bold text-center break-words">{frontWord}</p>
                             {frontIsForeign && formattedPhonetic && (
                                 <p className="mt-2 text-base md:text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
                             )}
@@ -770,7 +770,7 @@ export default function LearnPage() {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center text-center">
-                                <p className="text-lg md:text-2xl font-bold text-center break-words line-clamp-4">{backWord}</p>
+                                <p className="text-lg md:text-2xl font-bold text-center break-words">{backWord}</p>
                                 {backIsForeign && formattedPhonetic && (
                                     <p className="mt-2 text-base md:text-lg text-muted-foreground font-mono">{formattedPhonetic}</p>
                                 )}
