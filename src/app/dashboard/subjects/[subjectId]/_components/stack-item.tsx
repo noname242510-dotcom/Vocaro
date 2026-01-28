@@ -230,7 +230,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                     <span className="font-medium break-words hyphens-auto">{displayTermFirst ? item.term : item.definition}</span>
                     <span className="text-muted-foreground break-words hyphens-auto">{displayTermFirst ? item.definition : item.term}</span>
                   </label>
-                  {item.relatedWord && (
+                  {item.relatedWord ? (
                     <Popover>
                         <PopoverTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hidden md:inline-flex">
@@ -243,6 +243,8 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                         </div>
                         </PopoverContent>
                     </Popover>
+                  ) : (
+                    <div className="h-8 w-8 hidden md:inline-flex" /> // Placeholder for alignment
                   )}
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditVocab(item)}>
                     <Pen className="h-4 w-4" />
