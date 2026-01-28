@@ -87,7 +87,7 @@ export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave
       relatedWord:
         formData.relatedLanguage && formData.relatedWord
           ? { language: formData.relatedLanguage, word: formData.relatedWord }
-          : undefined,
+          : null,
     };
     await onSave(stackId, vocabItem.id, dataToSave);
     setIsSaving(false);
@@ -108,7 +108,7 @@ export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Vokabel bearbeiten</DialogTitle>
           <DialogDescription>Ändere die Details für diese Vokabel.</DialogDescription>

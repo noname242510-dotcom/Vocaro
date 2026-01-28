@@ -24,7 +24,7 @@ export type VocabularyItem = {
   relatedWord?: {
     language: string;
     word: string;
-  };
+  } | null;
   notes?: string;
   isSelected?: boolean;
 };
