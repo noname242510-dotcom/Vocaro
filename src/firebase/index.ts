@@ -2,7 +2,7 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
@@ -34,7 +34,7 @@ export async function initializeFirebase() {
 
 export async function getSdks(firebaseApp: FirebaseApp) {
   const auth = getAuth(firebaseApp);
-  await setPersistence(auth, browserLocalPersistence);
+  // Persistence is handled in FirebaseClientProvider to ensure it runs on the client.
   return {
     firebaseApp,
     auth: auth,

@@ -3,7 +3,8 @@
 import React, { useState, useEffect, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
-import { setPersistence, browserLocalPersistence } from 'firebase/auth'; // <--- NEU HINZUGEFÜGT
+import { setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { enableIndexedDbPersistence } from "firebase/firestore";
 import type { getSdks } from '@/firebase';
 
 type FirebaseServices = Awaited<ReturnType<typeof getSdks>>;
@@ -19,15 +20,23 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     const init = async () => {
       const services = await initializeFirebase();
       
-      // --- DIESEN BLOCK HINZUFÜGEN ---
-      // Das sorgt dafür, dass die Anmeldung in der PWA gespeichert bleibt
       try {
         await setPersistence(services.auth, browserLocalPersistence);
-        console.log("Firebase Persistence auf LOCAL gesetzt.");
       } catch (error) {
-        console.error("Fehler beim Setzen der Persistence:", error);
+        console.error("Fehler beim Setzen der Auth-Persistence:", error);
       }
-      // -------------------------------
+
+      try {
+        await enableIndexedDbPersistence(services.firestore)
+      } catch (err: any) {
+        if (err.code == 'failed-precondition') {
+          console.warn("Firestore-Persistence konnte nicht aktiviert werden, da mehrere Tabs geöffnet sind.");
+        } else if (err.code == 'unimplemented') {
+          console.warn("Firestore-Persistence wird in diesem Browser nicht unterstützt.");
+        } else {
+          console.error("Firestore-Persistence fehlgeschlagen", err);
+        }
+      }
 
       setFirebaseServices(services);
     };

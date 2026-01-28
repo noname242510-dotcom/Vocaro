@@ -17,6 +17,11 @@ export const metadata: Metadata = {
     icon: '/AppImages/ios/64.png', // oder dein SVG, falls es direkt in public liegt
     apple: '/AppImages/ios/180.png',
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: "Vocaro",
+  },
 };
 
 const ptSans = PT_Sans({
