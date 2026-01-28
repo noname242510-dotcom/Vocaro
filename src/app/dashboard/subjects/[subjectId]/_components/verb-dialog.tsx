@@ -178,6 +178,7 @@ const TenseList = ({ groupedTenses, forms, formType, pronounKey, onFormChange }:
 export function VerbDialog({ isOpen, onOpenChange, language, onSave, subjectId, existingVerb }: VerbDialogProps) {
   const [infinitive, setInfinitive] = useState('');
   const [generatedData, setGeneratedData] = useState<GenerateVerbFormsOutput | null>(null);
+  const [originalVerbData, setOriginalVerbData] = useState<GenerateVerbFormsOutput | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -186,13 +187,15 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, subjectId, 
   useEffect(() => {
     if (isOpen) {
       if (existingVerb) {
-        setInfinitive(existingVerb.infinitive);
-        setGeneratedData({ 
+        const initialData = { 
           infinitive: existingVerb.infinitive,
           translation: existingVerb.translation, 
           forms: existingVerb.forms,
           germanForms: existingVerb.germanForms
-        });
+        };
+        setInfinitive(existingVerb.infinitive);
+        setGeneratedData(initialData);
+        setOriginalVerbData(initialData);
       }
     }
   }, [isOpen, existingVerb]);
@@ -261,9 +264,17 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, subjectId, 
     }
   };
 
+  const handleReset = () => {
+    if (originalVerbData) {
+      setGeneratedData(originalVerbData);
+      toast({ title: 'Zurückgesetzt', description: 'Die Änderungen wurden verworfen.' });
+    }
+  };
+
   const closeAndReset = () => {
     setInfinitive('');
     setGeneratedData(null);
+    setOriginalVerbData(null);
     setError(null);
     setIsSaving(false);
   };
@@ -389,11 +400,23 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, subjectId, 
                     </ScrollArea>
                 </div>
                 
-                <div className="pt-4 mt-auto flex-shrink-0 flex justify-end">
-                   <Button onClick={handleSave} disabled={isSaving}>
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {existingVerb ? 'Änderungen speichern' : 'Verb speichern'}
-                  </Button>
+                <div className="pt-4 mt-auto flex-shrink-0 flex justify-between items-center">
+                   <div>
+                    {existingVerb && (
+                      <Button variant="ghost" onClick={handleReset} disabled={isSaving}>
+                        Zurücksetzen
+                      </Button>
+                    )}
+                   </div>
+                   <div className="flex items-center gap-2">
+                      <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isRunning || isSaving}>
+                        Abbrechen
+                      </Button>
+                      <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        {existingVerb ? 'Änderungen speichern' : 'Verb speichern'}
+                      </Button>
+                   </div>
                 </div>
               </>
             )}
