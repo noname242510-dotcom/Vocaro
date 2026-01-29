@@ -18,6 +18,7 @@ import type { VocabularyItem } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { getDocs, query, collection, where } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 interface VocabDialogProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ interface VocabDialogProps {
 
 export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave }: VocabDialogProps) {
   const { firestore, user } = useFirebase();
+  const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     term: '',
@@ -102,13 +104,14 @@ export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave
   const handleReset = () => {
     if (originalData) {
       setFormData(originalData);
+      toast({ title: 'Zurückgesetzt', description: 'Die Änderungen wurden verworfen.' });
     }
   };
 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Vokabel bearbeiten</DialogTitle>
           <DialogDescription>Ändere die Details für diese Vokabel.</DialogDescription>

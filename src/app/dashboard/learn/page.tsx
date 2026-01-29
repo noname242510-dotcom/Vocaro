@@ -142,7 +142,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl")}>{correctAnswer}</p>
+                <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl line-clamp-4" : "text-2xl md:text-3xl")}>{correctAnswer}</p>
             </>
         );
     }
@@ -166,12 +166,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl")}>{parts}</p>;
+        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl line-clamp-4" : "text-2xl md:text-3xl")}>{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl")}>{correctAnswer}</p>;
+        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl line-clamp-4" : "text-2xl md:text-3xl")}>{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -710,7 +710,7 @@ export default function LearnPage() {
           </p>
         </div>
 
-        <div className="w-full mx-auto flex-grow flex flex-col justify-center gap-2 sm:gap-4 px-4 sm:px-0">
+        <div className="w-full mx-auto flex-grow flex flex-col justify-end sm:justify-center gap-2 sm:gap-4 px-4 sm:px-0">
           <div
             key={currentCard.id}
             className={cn(
@@ -753,7 +753,7 @@ export default function LearnPage() {
                     {/* Front Side */}
                     <div className="[backface-visibility:hidden] w-full">
                         <div className="flex flex-col items-center justify-center text-center">
-                            <p className={cn("font-bold break-words", frontWord.length > 80 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl")}>{frontWord}</p>
+                            <p className={cn("font-bold break-words", frontWord.length > 80 ? "text-xl md:text-2xl line-clamp-4" : "text-2xl md:text-3xl")}>{frontWord}</p>
                             {frontIsForeign && formattedPhonetic && (
                                 <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
                             )}
@@ -770,7 +770,7 @@ export default function LearnPage() {
                             </div>
                         ) : (
                              <div className="flex flex-col items-center justify-center text-center break-words">
-                                <p className={cn("font-bold break-words", backWord.length > 80 ? "text-2xl md:text-3xl" : "text-3xl md:text-4xl")}>{backWord}</p>
+                                <p className={cn("font-bold break-words", backWord.length > 80 ? "text-xl md:text-2xl line-clamp-4" : "text-2xl md:text-3xl")}>{backWord}</p>
                                 {backIsForeign && formattedPhonetic && (
                                     <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
                                 )}
@@ -844,7 +844,7 @@ export default function LearnPage() {
                                 value={userInput}
                                 onChange={(e) => setUserInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                                className="text-center text-2xl md:text-3xl h-12 rounded-full"
+                                className="text-center text-xl sm:text-2xl h-12 rounded-full"
                                 autoFocus
                             />
                             <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
@@ -915,3 +915,4 @@ export default function LearnPage() {
 
 
     
+

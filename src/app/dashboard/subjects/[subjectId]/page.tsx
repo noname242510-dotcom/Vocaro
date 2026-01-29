@@ -974,8 +974,8 @@ export default function SubjectDetailPage() {
 
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
-         <div className="p-2 flex items-center justify-between gap-2">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
+         <div className="p-2 flex items-center justify-between gap-2 glass-effect rounded-full">
             {activeTab === 'vocabulary' && (
               <>
                 <AlertDialog open={isDeleteVocabDialogOpen} onOpenChange={setIsDeleteVocabDialogOpen}>

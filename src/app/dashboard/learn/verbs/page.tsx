@@ -151,7 +151,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 50 ? "text-lg md:text-xl" : "text-xl md:text-2xl")}>{correctAnswer}</p>
+                <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 50 ? "text-lg md:text-xl line-clamp-4" : "text-xl md:text-2xl")}>{correctAnswer}</p>
             </>
         );
     }
@@ -175,12 +175,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 50 ? "text-lg md:text-xl" : "text-xl md:text-2xl")}>{parts}</p>;
+        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 50 ? "text-lg md:text-xl line-clamp-4" : "text-xl md:text-2xl")}>{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 50 ? "text-lg md:text-xl" : "text-xl md:text-2xl")}>{correctAnswer}</p>;
+        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 50 ? "text-lg md:text-xl line-clamp-4" : "text-xl md:text-2xl")}>{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -724,7 +724,7 @@ export default function VerbPracticePage() {
                 </p>
             </div>
 
-            <div className="w-full mx-auto flex-grow flex flex-col justify-center gap-2 sm:gap-4 px-4 sm:px-0">
+            <div className="w-full mx-auto flex-grow flex flex-col justify-end sm:justify-center gap-2 sm:gap-4 px-4 sm:px-0">
                 <div
                     key={currentCard.id}
                     className={cn(
@@ -795,7 +795,7 @@ export default function VerbPracticePage() {
                             isFlipped && "[transform:rotateY(180deg)]"
                         )}>
                             <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                                <p className={cn("font-bold text-center break-words", currentCard.front.length > 50 ? "text-lg md:text-xl" : "text-xl md:text-2xl")}>{currentCard.front}</p>
+                                <p className={cn("font-bold text-center break-words", currentCard.front.length > 50 ? "text-lg md:text-xl line-clamp-4" : "text-xl md:text-2xl")}>{currentCard.front}</p>
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                                 {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -806,7 +806,7 @@ export default function VerbPracticePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className={cn("font-bold text-center break-words", currentCard.back.length > 50 ? "text-lg md:text-xl" : "text-xl md:text-2xl")}>{currentCard.back}</p>
+                                    <p className={cn("font-bold text-center break-words", currentCard.back.length > 50 ? "text-lg md:text-xl line-clamp-4" : "text-xl md:text-2xl")}>{currentCard.back}</p>
                                 )}
                             </div>
                         </div>
@@ -837,7 +837,7 @@ export default function VerbPracticePage() {
                                     value={userInput}
                                     onChange={(e) => setUserInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                                    className="text-center text-lg md:text-2xl h-12 rounded-full"
+                                    className="text-center text-base sm:text-xl h-12 rounded-full"
                                     autoFocus
                                 />
                                 <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
@@ -898,3 +898,4 @@ export default function VerbPracticePage() {
 
 
     
+
