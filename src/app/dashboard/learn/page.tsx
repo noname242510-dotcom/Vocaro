@@ -710,7 +710,10 @@ export default function LearnPage() {
           </p>
         </div>
 
-        <div className="w-full mx-auto flex-grow flex flex-col justify-end sm:justify-center gap-2 sm:gap-4 px-4 sm:px-0">
+        <div className={cn(
+          "w-full mx-auto flex-grow flex flex-col sm:justify-center gap-2 sm:gap-4 px-4 sm:px-0",
+          isTypedMode ? "justify-end" : "justify-center"
+        )}>
           <div
             key={currentCard.id}
             className={cn(
@@ -753,7 +756,7 @@ export default function LearnPage() {
                     {/* Front Side */}
                     <div className="[backface-visibility:hidden] w-full">
                         <div className="flex flex-col items-center justify-center text-center">
-                            <p className={cn("font-bold break-words", frontWord.length > 80 ? "text-xl md:text-2xl line-clamp-4" : "text-2xl md:text-3xl")}>{frontWord}</p>
+                            <p className="font-bold text-3xl md:text-4xl break-words">{frontWord}</p>
                             {frontIsForeign && formattedPhonetic && (
                                 <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
                             )}
@@ -770,7 +773,7 @@ export default function LearnPage() {
                             </div>
                         ) : (
                              <div className="flex flex-col items-center justify-center text-center break-words">
-                                <p className={cn("font-bold break-words", backWord.length > 80 ? "text-xl md:text-2xl line-clamp-4" : "text-2xl md:text-3xl")}>{backWord}</p>
+                                <p className="font-bold text-3xl md:text-4xl break-words">{backWord}</p>
                                 {backIsForeign && formattedPhonetic && (
                                     <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
                                 )}
@@ -790,7 +793,7 @@ export default function LearnPage() {
                                 <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
                                     Ich hab's gewusst
                                 </Button>
-                            ) : null}
+                            ) : <div></div>}
                              {currentCard.relatedWord && (
                                 <Popover>
                                     <PopoverTrigger asChild>
@@ -844,7 +847,7 @@ export default function LearnPage() {
                                 value={userInput}
                                 onChange={(e) => setUserInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                                className="text-center text-xl sm:text-2xl h-12 rounded-full"
+                                className="text-center text-lg md:text-xl h-12 rounded-full"
                                 autoFocus
                             />
                             <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
@@ -915,4 +918,5 @@ export default function LearnPage() {
 
 
     
+
 

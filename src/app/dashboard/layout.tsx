@@ -70,7 +70,7 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-4 z-30 flex justify-between items-center h-20 px-4 md:px-6 m-2 md:m-4 rounded-full glass-effect shadow-md">
+      <header className="fixed top-4 z-30 flex justify-between items-center h-20 px-4 md:px-6 m-2 md:m-4 rounded-full glass-effect shadow-md">
         <div className="flex-1">
           {mounted && (
             <Button variant="ghost" size="icon" onClick={toggleTheme}>
@@ -185,7 +185,7 @@ export default function DashboardLayout({
         />
       )}
 
-      <main className="p-4 md:p-6">{children}</main>
+      <main className="p-4 md:p-6 pt-28">{children}</main>
     </div>
   );
 }

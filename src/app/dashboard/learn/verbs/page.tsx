@@ -724,7 +724,10 @@ export default function VerbPracticePage() {
                 </p>
             </div>
 
-            <div className="w-full mx-auto flex-grow flex flex-col justify-end sm:justify-center gap-2 sm:gap-4 px-4 sm:px-0">
+            <div className={cn(
+                "w-full mx-auto flex-grow flex flex-col sm:justify-center gap-2 sm:gap-4 px-4 sm:px-0",
+                isTypedMode ? "justify-end" : "justify-center"
+            )}>
                 <div
                     key={currentCard.id}
                     className={cn(
@@ -795,7 +798,7 @@ export default function VerbPracticePage() {
                             isFlipped && "[transform:rotateY(180deg)]"
                         )}>
                             <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                                <p className={cn("font-bold text-center break-words", currentCard.front.length > 50 ? "text-lg md:text-xl line-clamp-4" : "text-xl md:text-2xl")}>{currentCard.front}</p>
+                                <p className="font-bold text-3xl md:text-4xl text-center break-words">{currentCard.front}</p>
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                                 {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -806,7 +809,7 @@ export default function VerbPracticePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className={cn("font-bold text-center break-words", currentCard.back.length > 50 ? "text-lg md:text-xl line-clamp-4" : "text-xl md:text-2xl")}>{currentCard.back}</p>
+                                    <p className="font-bold text-3xl md:text-4xl text-center break-words">{currentCard.back}</p>
                                 )}
                             </div>
                         </div>
@@ -837,7 +840,7 @@ export default function VerbPracticePage() {
                                     value={userInput}
                                     onChange={(e) => setUserInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                                    className="text-center text-base sm:text-xl h-12 rounded-full"
+                                    className="text-center text-lg md:text-xl h-12 rounded-full"
                                     autoFocus
                                 />
                                 <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
@@ -898,4 +901,5 @@ export default function VerbPracticePage() {
 
 
     
+
 
