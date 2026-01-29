@@ -1,7 +1,6 @@
-
 'use client';
 
-import { Home, Settings, LogOut, Menu, Sun, Moon, ChevronDown } from 'lucide-react';
+import { Home, Settings, LogOut, Menu, Sun, Moon, ChevronDown, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -56,8 +55,8 @@ export default function DashboardLayout({
   };
 
   const navItems = [
-    // { href: '/dashboard', icon: Home, label: 'Fächer' },
     { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
+    { href: '/dashboard/overview', icon: LayoutDashboard, label: 'Dashboard' },
   ];
 
   const getInitials = (name: string | null | undefined) => {
@@ -66,6 +65,8 @@ export default function DashboardLayout({
     }
     return 'U';
   };
+
+  const isSubjectsActive = pathname.startsWith('/dashboard/subjects') || pathname === '/dashboard';
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -100,7 +101,7 @@ export default function DashboardLayout({
                     <div
                       className={cn(
                         'flex items-center justify-between w-full rounded-full text-lg h-10 px-4',
-                        pathname.startsWith('/dashboard/subjects') || pathname === '/dashboard' ? 'bg-secondary' : 'bg-transparent'
+                        isSubjectsActive ? 'bg-secondary' : 'bg-transparent'
                       )}
                     >
                       <button

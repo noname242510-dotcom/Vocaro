@@ -27,6 +27,7 @@ export type VocabularyItem = {
   } | null;
   notes?: string;
   isSelected?: boolean;
+  source?: 'ai' | 'manual';
 };
 
 export type VerbTense = {

@@ -91,6 +91,33 @@
         "definition": {
           "type": "string",
           "description": "The definition of the vocabulary word or phrase."
+        },
+        "phonetic": {
+          "type": "string",
+          "description": "The phonetic transcription of the term."
+        },
+        "relatedWord": {
+          "type": "object",
+          "properties": {
+            "language": {
+              "type": "string"
+            },
+            "word": {
+              "type": "string"
+            }
+          }
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional contextual notes, examples, or hints for the term."
+        },
+        "source": {
+          "type": "string",
+          "description": "The source of the vocabulary item, either 'ai' or 'manual'.",
+          "enum": [
+            "ai",
+            "manual"
+          ]
         }
       },
       "required": [

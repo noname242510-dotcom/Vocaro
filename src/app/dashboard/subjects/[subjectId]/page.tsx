@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, ChangeEvent, useEffect, useRef, useContext } from 'react';
@@ -345,6 +344,7 @@ export default function SubjectDetailPage() {
                 relatedWord: vocabItem.relatedWord || null,
                 notes: vocabItem.notes || '',
                 createdAt: serverTimestamp(),
+                source: 'ai',
             });
         }
         return { count: generatedVocab.length };
@@ -393,6 +393,7 @@ export default function SubjectDetailPage() {
             phonetic: manualPhonetic,
             notes: manualNotes,
             createdAt: serverTimestamp(),
+            source: 'manual',
         });
         
         toast({ title: 'Erfolg', description: 'Vokabel hinzugefügt.' });
