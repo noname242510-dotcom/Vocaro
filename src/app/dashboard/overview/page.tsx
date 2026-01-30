@@ -55,10 +55,8 @@ export default function DashboardOverviewPage() {
   }, [subjects, firestore, user]);
 
   const { totalMastered, aiUsage } = useMemo(() => {
-    // Placeholder logic for now
     const aiUsage = allVocab.filter(v => v.source === 'ai').length;
-    // For now, mastery is placeholder.
-    const totalMastered = Math.floor(allVocab.length * 0.6); 
+    const totalMastered = allVocab.filter(v => v.isMastered).length;
     return { totalMastered, aiUsage };
   }, [allVocab]);
   
@@ -90,3 +88,5 @@ export default function DashboardOverviewPage() {
     </div>
   );
 }
+
+    

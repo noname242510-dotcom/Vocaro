@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Confetti } from '@/components/confetti';
 import { useFirebase } from '@/firebase';
-import { collection, getDocs, query, where, documentId, collectionGroup, getDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, documentId, collectionGroup, getDoc, doc, updateDoc, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import type { VocabularyItem, Subject } from '@/lib/types';
 import {
   AlertDialog,
@@ -142,7 +142,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl line-clamp-4" : "text-2xl md:text-3xl")}>{correctAnswer}</p>
+                <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl" : "text-2xl md:text-3xl")}>{correctAnswer}</p>
             </>
         );
     }
@@ -166,12 +166,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl line-clamp-4" : "text-2xl md:text-3xl")}>{parts}</p>;
+        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl" : "text-2xl md:text-3xl")}>{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl line-clamp-4" : "text-2xl md:text-3xl")}>{correctAnswer}</p>;
+        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl" : "text-2xl md:text-3xl")}>{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -313,6 +313,10 @@ export default function LearnPage() {
       if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
         setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
       }
+      if (!currentCard.isMastered && firestore && user && subjectId && currentCard.stackId) {
+        const vocabDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', currentCard.stackId, 'vocabulary', currentCard.id);
+        updateDoc(vocabDocRef, { isMastered: true }).catch(console.error); // Non-blocking update
+      }
       triggerHapticFeedback('light');
     } else {
       setAnswerStatus('incorrect');
@@ -335,6 +339,10 @@ export default function LearnPage() {
     if (knewIt) {
         if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
             setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+        }
+        if (!currentCard.isMastered && firestore && user && subjectId && currentCard.stackId) {
+            const vocabDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', currentCard.stackId, 'vocabulary', currentCard.id);
+            updateDoc(vocabDocRef, { isMastered: true }).catch(console.error); // Non-blocking update
         }
         triggerHapticFeedback('light');
     } else {
@@ -440,7 +448,7 @@ export default function LearnPage() {
         
         const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', storedSubjectId, 'stacks');
         const stacksSnapshot = await getDocs(stacksCollectionRef);
-        const queryPromisesPerStack: Promise<any>[] = [];
+        const queryPromisesPerStack: Promise<{snapshot: QuerySnapshot<DocumentData>, stackId: string}>[] = [];
 
         for (const stackDoc of stacksSnapshot.docs) {
           const vocabCollectionRef = collection(stackDoc.ref, 'vocabulary');
@@ -449,16 +457,16 @@ export default function LearnPage() {
             const chunk = vocabIds.slice(i, i + CHUNK_SIZE);
             if (chunk.length > 0) {
               const vocabQuery = query(vocabCollectionRef, where(documentId(), 'in', chunk));
-              queryPromisesPerStack.push(getDocs(vocabQuery));
+              queryPromisesPerStack.push(getDocs(vocabQuery).then(snapshot => ({ snapshot, stackId: stackDoc.id })));
             }
           }
         }
 
         const allSnapshots = await Promise.all(queryPromisesPerStack);
-        allSnapshots.forEach(snapshot => {
+        allSnapshots.forEach(({ snapshot, stackId }) => {
           snapshot.forEach((doc: any) => {
             if (vocabIds.includes(doc.id)) {
-               allVocab.push({ ...doc.data(), id: doc.id } as VocabularyItem);
+               allVocab.push({ ...doc.data(), id: doc.id, stackId: stackId } as VocabularyItem);
             }
           });
         });
@@ -920,3 +928,6 @@ export default function LearnPage() {
     
 
 
+
+
+    

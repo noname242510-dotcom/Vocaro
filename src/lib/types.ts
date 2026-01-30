@@ -18,6 +18,7 @@ export type Stack = {
 
 export type VocabularyItem = {
   id: string;
+  stackId: string;
   term: string;
   definition: string;
   phonetic?: string;
@@ -26,6 +27,7 @@ export type VocabularyItem = {
     word: string;
   } | null;
   notes?: string;
+  isMastered?: boolean;
   isSelected?: boolean;
   source?: 'ai' | 'manual';
 };
@@ -72,3 +74,5 @@ export type Authenticator = {
     counter: number;
     transports?: AuthenticatorTransport[];
 }
+
+    
