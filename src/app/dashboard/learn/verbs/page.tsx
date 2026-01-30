@@ -27,7 +27,7 @@ import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useTextToSpeech } from '@/hooks/use-text-to-speech';
 import { useFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 
 
 // Function to shuffle an array
@@ -151,7 +151,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 50 ? "text-lg md:text-xl line-clamp-4" : "text-xl md:text-2xl")}>{correctAnswer}</p>
+                <p className={cn("font-bold mt-4 break-words", "text-lg md:text-xl line-clamp-4")}>{correctAnswer}</p>
             </>
         );
     }
@@ -175,12 +175,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 50 ? "text-lg md:text-xl line-clamp-4" : "text-xl md:text-2xl")}>{parts}</p>;
+        return <p className={cn("font-bold mt-4 break-words", "text-lg md:text-xl line-clamp-4")}>{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 50 ? "text-lg md:text-xl line-clamp-4" : "text-xl md:text-2xl")}>{correctAnswer}</p>;
+        return <p className={cn("font-bold mt-4 break-words", "text-lg md:text-xl line-clamp-4")}>{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -224,6 +224,7 @@ export default function VerbPracticePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [subjectId, setSubjectId] = useState<string | null>(null);
+    const [sessionId, setSessionId] = useState<string | null>(null);
 
     const [subject, setSubject] = useState<Subject | null>(null);
     const [totalItemCount, setTotalItemCount] = useState(0);
@@ -249,7 +250,32 @@ export default function VerbPracticePage() {
 
     const { speak, isPlaying } = useTextToSpeech();
 
-    const finishSession = () => {
+    const finishSession = async () => {
+        if (firestore && user && sessionId && answeredIds.size > 0) {
+            const batch = writeBatch(firestore);
+            const sessionVerbsRef = collection(firestore, 'users', user.uid, 'learningSessions', sessionId, 'verbAnswers');
+            
+            answeredIds.forEach((status, practiceItemId) => {
+                const isCorrect = status === 'correct' || status === 'accepted' || status === 'omitted-correct';
+                const verbId = practiceItemId.split('-')[0];
+                if (verbId) {
+                    const newDocRef = doc(sessionVerbsRef); // Auto-generate ID
+                    batch.set(newDocRef, {
+                        learningSessionId: sessionId,
+                        practiceItemId: practiceItemId,
+                        verbId: verbId,
+                        correct: isCorrect,
+                    });
+                }
+            });
+
+            // Also update the session end time
+            const sessionDocRef = doc(firestore, 'users', user.uid, 'learningSessions', sessionId);
+            batch.update(sessionDocRef, { endTime: serverTimestamp() });
+
+            await batch.commit();
+        }
+
         const incorrectCount = incorrectlyAnsweredIds.size;
         const correctCount = totalItemCount - incorrectCount;
         const finalScore = totalItemCount > 0 ? Math.round((correctCount / totalItemCount) * 100) : 0;
@@ -425,6 +451,18 @@ export default function VerbPracticePage() {
         
         const typedModeSetting = localStorage.getItem('learn-mode-typed') === 'true';
         setIsTypedMode(typedModeSetting);
+
+        if (!firestore || !user) return;
+
+        const createSession = async () => {
+            const sessionRef = await addDoc(collection(firestore, 'users', user.uid, 'learningSessions'), {
+              userId: user.uid,
+              startTime: serverTimestamp(),
+              endTime: null
+            });
+            setSessionId(sessionRef.id);
+        };
+        createSession();
 
         const sessionData = sessionStorage.getItem('verb-practice-session');
         const subjectIdData = sessionStorage.getItem('verb-practice-subject-id');
@@ -798,7 +836,7 @@ export default function VerbPracticePage() {
                             isFlipped && "[transform:rotateY(180deg)]"
                         )}>
                             <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                                <p className="font-bold text-3xl md:text-4xl text-center break-words">{currentCard.front}</p>
+                                <p className="font-bold text-xl md:text-2xl text-center break-words">{currentCard.front}</p>
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                                 {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -809,7 +847,7 @@ export default function VerbPracticePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="font-bold text-3xl md:text-4xl text-center break-words">{currentCard.back}</p>
+                                    <p className="font-bold text-xl md:text-2xl text-center break-words">{currentCard.back}</p>
                                 )}
                             </div>
                         </div>
@@ -901,5 +939,6 @@ export default function VerbPracticePage() {
 
 
     
+
 
 

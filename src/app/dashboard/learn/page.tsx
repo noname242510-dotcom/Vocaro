@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Confetti } from '@/components/confetti';
 import { useFirebase } from '@/firebase';
-import { collection, getDocs, query, where, documentId, collectionGroup, getDoc, doc, updateDoc, QuerySnapshot, DocumentData } from 'firebase/firestore';
+import { collection, getDocs, query, where, documentId, collectionGroup, getDoc, doc, updateDoc, QuerySnapshot, DocumentData, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import type { VocabularyItem, Subject } from '@/lib/types';
 import {
   AlertDialog,
@@ -142,7 +142,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl" : "text-2xl md:text-3xl")}>{correctAnswer}</p>
+                <p className={cn("font-bold mt-4 break-words", "text-lg md:text-xl line-clamp-4")}>{correctAnswer}</p>
             </>
         );
     }
@@ -166,12 +166,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl" : "text-2xl md:text-3xl")}>{parts}</p>;
+        return <p className={cn("font-bold mt-4 break-words", "text-lg md:text-xl line-clamp-4")}>{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className={cn("font-bold mt-4 break-words", correctAnswer.length > 80 ? "text-xl md:text-2xl" : "text-2xl md:text-3xl")}>{correctAnswer}</p>;
+        return <p className={cn("font-bold mt-4 break-words", "text-lg md:text-xl line-clamp-4")}>{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -197,6 +197,7 @@ export default function LearnPage() {
   const [answeredIds, setAnsweredIds] = useState<Map<string, AnswerStatus>>(new Map());
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   const [subject, setSubject] = useState<Subject | null>(null);
 
@@ -218,7 +219,28 @@ export default function LearnPage() {
 
   const { speak, isPlaying } = useTextToSpeech();
 
-  const finishSession = () => {
+  const finishSession = async () => {
+    if (firestore && user && sessionId && answeredIds.size > 0) {
+        const batch = writeBatch(firestore);
+        const sessionVocabRef = collection(firestore, 'users', user.uid, 'learningSessions', sessionId, 'vocabulary');
+        
+        answeredIds.forEach((status, vocabId) => {
+            const isCorrect = status === 'correct' || status === 'accepted' || status === 'omitted-correct';
+            const newDocRef = doc(sessionVocabRef); // Auto-generate ID
+            batch.set(newDocRef, {
+                learningSessionId: sessionId,
+                vocabularyId: vocabId,
+                correct: isCorrect,
+            });
+        });
+
+        // Also update the session end time
+        const sessionDocRef = doc(firestore, 'users', user.uid, 'learningSessions', sessionId);
+        batch.update(sessionDocRef, { endTime: serverTimestamp() });
+
+        await batch.commit();
+    }
+
     const incorrectCount = incorrectlyAnsweredIds.size;
     const correctCount = totalVocabCount - incorrectCount;
     const finalScore = totalVocabCount > 0 ? Math.round((correctCount / totalVocabCount) * 100) : 0;
@@ -406,6 +428,16 @@ export default function LearnPage() {
     setIsTypedMode(typedModeSetting);
 
     if (!firestore || !user) return;
+
+    const createSession = async () => {
+        const sessionRef = await addDoc(collection(firestore, 'users', user.uid, 'learningSessions'), {
+          userId: user.uid,
+          startTime: serverTimestamp(),
+          endTime: null
+        });
+        setSessionId(sessionRef.id);
+    };
+    createSession();
 
     const fetchVocab = async () => {
       const vocabIdsJson = sessionStorage.getItem('learn-session-vocab');
@@ -764,7 +796,7 @@ export default function LearnPage() {
                     {/* Front Side */}
                     <div className="[backface-visibility:hidden] w-full">
                         <div className="flex flex-col items-center justify-center text-center">
-                            <p className="font-bold text-3xl md:text-4xl break-words">{frontWord}</p>
+                            <p className="font-bold text-xl md:text-2xl break-words">{frontWord}</p>
                             {frontIsForeign && formattedPhonetic && (
                                 <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
                             )}
@@ -781,7 +813,7 @@ export default function LearnPage() {
                             </div>
                         ) : (
                              <div className="flex flex-col items-center justify-center text-center break-words">
-                                <p className="font-bold text-3xl md:text-4xl break-words">{backWord}</p>
+                                <p className={cn("font-bold break-words", "text-lg md:text-xl line-clamp-4")}>{backWord}</p>
                                 {backIsForeign && formattedPhonetic && (
                                     <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
                                 )}

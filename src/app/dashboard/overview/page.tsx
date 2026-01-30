@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import type { Subject, Stack, VocabularyItem, Verb } from '@/lib/types';
-import { collection, getDocs, query } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { GlobalMetrics } from './_components/global-metrics';
 import { DeckGrid } from './_components/deck-grid';
@@ -22,6 +22,7 @@ export default function DashboardOverviewPage() {
   const [allStacks, setAllStacks] = useState<Stack[]>([]);
   const [allVocab, setAllVocab] = useState<VocabularyItem[]>([]);
   const [allVerbs, setAllVerbs] = useState<Verb[]>([]);
+  const [readyForTest, setReadyForTest] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -66,7 +67,47 @@ export default function DashboardOverviewPage() {
       setIsLoading(false);
     };
 
+    const calculateReadyForTest = async () => {
+      const sessionsRef = collection(firestore, 'users', user.uid, 'learningSessions');
+      const q = query(sessionsRef, orderBy('startTime', 'desc'), limit(2));
+      const sessionsSnapshot = await getDocs(q);
+
+      if (sessionsSnapshot.docs.length < 2) {
+          setReadyForTest(0);
+          return;
+      }
+
+      const [session1, session2] = sessionsSnapshot.docs;
+      const session1Id = session1.id;
+      const session2Id = session2.id;
+      
+      const getCorrectIds = async (sessionId: string): Promise<Set<string>> => {
+          const correctIds = new Set<string>();
+
+          const vocabAnswersRef = collection(firestore, 'users', user.uid, 'learningSessions', sessionId, 'vocabulary');
+          const vocabAnswersSnap = await getDocs(query(vocabAnswersRef, where('correct', '==', true)));
+          vocabAnswersSnap.forEach(doc => correctIds.add(doc.data().vocabularyId));
+
+          const verbAnswersRef = collection(firestore, 'users', user.uid, 'learningSessions', sessionId, 'verbAnswers');
+          const verbAnswersSnap = await getDocs(query(verbAnswersRef, where('correct', '==', true)));
+          verbAnswersSnap.forEach(doc => correctIds.add(doc.data().practiceItemId));
+
+          return correctIds;
+      };
+
+      const [correctInSession1, correctInSession2] = await Promise.all([
+          getCorrectIds(session1Id),
+          getCorrectIds(session2Id)
+      ]);
+      
+      const intersection = new Set([...correctInSession1].filter(id => correctInSession2.has(id)));
+      
+      setReadyForTest(intersection.size);
+  };
+
+
     fetchDetails();
+    calculateReadyForTest();
   }, [subjects, firestore, user]);
 
   const { totalMastered, aiUsage } = useMemo(() => {
@@ -76,11 +117,6 @@ export default function DashboardOverviewPage() {
     const totalMastered = allVocab.filter(v => v.isMastered).length;
     return { totalMastered, aiUsage };
   }, [allVocab, allVerbs]);
-  
-  const readyForTest = useMemo(() => {
-    // Placeholder
-    return Math.floor(allStacks.length / 3);
-  }, [allStacks]);
 
   if (areSubjectsLoading || isLoading) {
     return (

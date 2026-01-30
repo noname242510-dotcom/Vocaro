@@ -259,6 +259,25 @@ service cloud.firestore {
       allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
+
+    /**
+     * @description Manages verb answers in learning sessions. Only the owner can manage them.
+     * @path /users/{userId}/learningSessions/{learningSessionId}/verbAnswers/{verbAnswerId}
+     */
+    match /users/{userId}/learningSessions/{learningSessionId}/verbAnswers/{verbAnswerId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
   }
 }
     

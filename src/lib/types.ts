@@ -1,5 +1,6 @@
 
 
+
 export type Subject = {
   id: string;
   name: string;
@@ -75,5 +76,20 @@ export type Authenticator = {
     counter: number;
     transports?: AuthenticatorTransport[];
 }
+
+export type LearningSessionVocabulary = {
+  id: string;
+  learningSessionId: string;
+  vocabularyId: string;
+  correct: boolean;
+};
+
+export type LearningSessionVerbAnswer = {
+  id: string;
+  learningSessionId: string;
+  practiceItemId: string;
+  verbId: string;
+  correct: boolean;
+};
 
     
