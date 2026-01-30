@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
-import type { Subject, Stack, VocabularyItem } from '@/lib/types';
+import type { Subject, Stack, VocabularyItem, Verb } from '@/lib/types';
 import { collection, getDocs, query } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { GlobalMetrics } from './_components/global-metrics';
@@ -21,6 +21,7 @@ export default function DashboardOverviewPage() {
 
   const [allStacks, setAllStacks] = useState<Stack[]>([]);
   const [allVocab, setAllVocab] = useState<VocabularyItem[]>([]);
+  const [allVerbs, setAllVerbs] = useState<Verb[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -32,12 +33,24 @@ export default function DashboardOverviewPage() {
 
     const fetchDetails = async () => {
       setIsLoading(true);
+      
       const stacksPromises = subjects.map(subject => 
         getDocs(collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks'))
       );
-      const stacksSnapshots = await Promise.all(stacksPromises);
+      const verbsPromises = subjects.map(subject =>
+        getDocs(collection(firestore, 'users', user.uid, 'subjects', subject.id, 'verbs'))
+      );
+
+      const [stacksSnapshots, verbsSnapshots] = await Promise.all([
+          Promise.all(stacksPromises),
+          Promise.all(verbsPromises)
+      ]);
+
       const stacksData = stacksSnapshots.flatMap(snap => snap.docs.map(doc => ({ ...doc.data(), id: doc.id, subjectId: doc.ref.parent.parent!.id } as Stack)));
       setAllStacks(stacksData);
+      
+      const verbsData = verbsSnapshots.flatMap(snap => snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Verb)));
+      setAllVerbs(verbsData);
       
       if (stacksData.length > 0) {
         const vocabPromises = stacksData.map(stack => 
@@ -46,6 +59,8 @@ export default function DashboardOverviewPage() {
         const vocabSnapshots = await Promise.all(vocabPromises);
         const vocabData = vocabSnapshots.flatMap(snap => snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as VocabularyItem)));
         setAllVocab(vocabData);
+      } else {
+        setAllVocab([]);
       }
       
       setIsLoading(false);
@@ -55,10 +70,12 @@ export default function DashboardOverviewPage() {
   }, [subjects, firestore, user]);
 
   const { totalMastered, aiUsage } = useMemo(() => {
-    const aiUsage = allVocab.filter(v => v.source === 'ai').length;
+    const vocabAiUsage = allVocab.filter(v => v.source === 'ai').length;
+    const verbAiUsage = allVerbs.filter(v => v.source === 'ai').length;
+    const aiUsage = vocabAiUsage + verbAiUsage;
     const totalMastered = allVocab.filter(v => v.isMastered).length;
     return { totalMastered, aiUsage };
-  }, [allVocab]);
+  }, [allVocab, allVerbs]);
   
   const readyForTest = useMemo(() => {
     // Placeholder

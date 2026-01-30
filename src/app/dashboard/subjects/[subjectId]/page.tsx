@@ -623,7 +623,8 @@ export default function SubjectDetailPage() {
         ...verbData,
         subjectId: subjectId,
         language: getLanguageFromSubject(subject?.name),
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        source: 'ai'
       });
     }
     forceVerbsUpdate();
@@ -1130,3 +1131,4 @@ export default function SubjectDetailPage() {
     </div>
   );
 }
+

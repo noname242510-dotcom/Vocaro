@@ -50,6 +50,7 @@ export type Verb = {
   };
   isSelected?: boolean;
   selectedTenses?: Set<string>;
+  source?: 'ai' | 'manual';
 };
 
 export type QuizSettings = {
