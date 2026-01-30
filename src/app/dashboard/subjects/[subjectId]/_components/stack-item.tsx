@@ -170,7 +170,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-40">
                   <DropdownMenuItem onClick={() => onAddVocab(stack)}>
                     <Plus className="mr-2 h-4 w-4" />
                     <span>Hinzufügen</span>
@@ -230,22 +230,22 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                     <span className="font-medium break-words hyphens-auto">{displayTermFirst ? item.term : item.definition}</span>
                     <span className="text-muted-foreground break-words hyphens-auto">{displayTermFirst ? item.definition : item.term}</span>
                   </label>
-                  {item.relatedWord ? (
-                    <Popover>
-                        <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hidden md:inline-flex">
-                            <Languages className="h-4 w-4" />
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-2">
-                        <div className="text-sm">
-                            <span className="font-semibold">{item.relatedWord.language}:</span> {item.relatedWord.word}
-                        </div>
-                        </PopoverContent>
-                    </Popover>
-                  ) : (
-                    <div className="h-8 w-8 hidden md:inline-flex" /> // Placeholder for alignment
-                  )}
+                  <div className="h-8 w-8 hidden md:inline-flex items-center justify-center">
+                    {item.relatedWord && (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                                    <Languages className="h-4 w-4" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2">
+                                <div className="text-sm">
+                                    <span className="font-semibold">{item.relatedWord.language}:</span> {item.relatedWord.word}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    )}
+                  </div>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditVocab(item)}>
                     <Pen className="h-4 w-4" />
                   </Button>

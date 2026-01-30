@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Pen, Trash2, Loader2, ChevronDown, Info } from 'lucide-react';
+import { MoreHorizontal, Pen, Trash2, Loader2, ChevronDown, Info } from 'lucide-react';
 import type { Verb, VerbTense } from '@/lib/types';
 import {
   AlertDialog,
@@ -15,8 +15,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
@@ -170,32 +175,38 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange, onTenseSel
                 </label>
                 </div>
                 <div className="flex items-center gap-1">
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+
+                {/* Mobile Dropdown */}
+                <div className="md:hidden">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem onClick={() => onEdit(verb)}>
+                                <Pen className="mr-2 h-4 w-4" />
+                                <span>Umbenennen</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Löschen</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+                
+                {/* Desktop Buttons */}
+                <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onEdit(verb)}>
                         <Pen className="h-4 w-4" />
                     </Button>
-                    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                        <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                            Diese Aktion kann nicht rückgängig gemacht werden. Das Verb "{verb.infinitive}" wird dauerhaft gelöscht.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
-                            {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Löschen"}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsDeleteDialogOpen(true)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
                 </div>
+
                 <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                         <ChevronDown className={cn('h-5 w-5 transition-transform duration-300', isOpen && 'rotate-180')} />
@@ -247,6 +258,22 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange, onTenseSel
                   ))}
                 </div>
             </CollapsibleContent>
+             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                    Diese Aktion kann nicht rückgängig gemacht werden. Das Verb "{verb.infinitive}" wird dauerhaft gelöscht.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Löschen"}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card>
     </Collapsible>
   );
