@@ -1,6 +1,7 @@
 
 
 
+
 export type Subject = {
   id: string;
   name: string;
@@ -49,6 +50,7 @@ export type Verb = {
   germanForms?: {
     [tense: string]: VerbTense;
   };
+  isMastered?: boolean;
   isSelected?: boolean;
   selectedTenses?: Set<string>;
   source?: 'ai' | 'manual';

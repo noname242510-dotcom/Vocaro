@@ -35,35 +35,35 @@ export default function DashboardOverviewPage() {
     const fetchDetails = async () => {
       setIsLoading(true);
       
-      const stacksPromises = subjects.map(subject => 
-        getDocs(collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks'))
-      );
-      const verbsPromises = subjects.map(subject =>
-        getDocs(collection(firestore, 'users', user.uid, 'subjects', subject.id, 'verbs'))
-      );
+      const subjectDetailsPromises = subjects.map(async (subject) => {
+        const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks');
+        const verbsCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'verbs');
+        
+        const [stacksSnapshot, verbsSnapshot] = await Promise.all([
+          getDocs(stacksCollectionRef),
+          getDocs(verbsCollectionRef)
+        ]);
 
-      const [stacksSnapshots, verbsSnapshots] = await Promise.all([
-          Promise.all(stacksPromises),
-          Promise.all(verbsPromises)
-      ]);
+        const subjectStacks = stacksSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, subjectId: subject.id } as Stack));
+        const subjectVerbs = verbsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, subjectId: subject.id } as Verb));
 
-      const stacksData = stacksSnapshots.flatMap(snap => snap.docs.map(doc => ({ ...doc.data(), id: doc.id, subjectId: doc.ref.parent.parent!.id } as Stack)));
-      setAllStacks(stacksData);
-      
-      const verbsData = verbsSnapshots.flatMap(snap => snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Verb)));
-      setAllVerbs(verbsData);
-      
-      if (stacksData.length > 0) {
-        const vocabPromises = stacksData.map(stack => 
-          getDocs(collection(firestore, 'users', user.uid, 'subjects', stack.subjectId, 'stacks', stack.id, 'vocabulary'))
+        const vocabPromises = subjectStacks.map(stack => 
+          getDocs(collection(stacksCollectionRef, stack.id, 'vocabulary'))
+            .then(snapshot => snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, stackId: stack.id } as VocabularyItem)))
         );
-        const vocabSnapshots = await Promise.all(vocabPromises);
-        const vocabData = vocabSnapshots.flatMap(snap => snap.docs.map(doc => ({ ...doc.data(), id: doc.id } as VocabularyItem)));
-        setAllVocab(vocabData);
-      } else {
-        setAllVocab([]);
-      }
+
+        const subjectVocabArrays = await Promise.all(vocabPromises);
+        const subjectVocab = subjectVocabArrays.flat();
+        
+        return { subjectStacks, subjectVerbs, subjectVocab };
+      });
+
+      const allDetails = await Promise.all(subjectDetailsPromises);
       
+      setAllStacks(allDetails.flatMap(d => d.subjectStacks));
+      setAllVerbs(allDetails.flatMap(d => d.subjectVerbs));
+      setAllVocab(allDetails.flatMap(d => d.subjectVocab));
+
       setIsLoading(false);
     };
 
@@ -136,6 +136,8 @@ export default function DashboardOverviewPage() {
       <DeckGrid 
         subjects={subjects || []}
         stacks={allStacks}
+        vocab={allVocab}
+        verbs={allVerbs}
       />
       <WeakPointRadar />
     </div>
