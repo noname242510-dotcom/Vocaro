@@ -7,12 +7,11 @@ import { ArrowRight } from 'lucide-react';
 
 interface DeckCardProps {
   stack: Stack;
+  masteryPercentage: number;
+  hasVerbs: boolean;
 }
 
-export function DeckCard({ stack }: DeckCardProps) {
-  // Placeholder data
-  const confidence = Math.random() * 100;
-  const hasVerbs = Math.random() > 0.5;
+export function DeckCard({ stack, masteryPercentage, hasVerbs }: DeckCardProps) {
 
   return (
     <Card className="group relative">
@@ -22,8 +21,8 @@ export function DeckCard({ stack }: DeckCardProps) {
       <CardContent>
         <div className="space-y-2">
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">Confidence</p>
-            <Progress value={confidence} className="h-1" />
+            <p className="text-sm font-medium text-muted-foreground mb-1">Mastery</p>
+            <Progress value={masteryPercentage} className="h-1" />
           </div>
           {hasVerbs && (
              <Badge variant="outline">[V] Verbs</Badge>

@@ -63,9 +63,21 @@ export function DeckGrid({ subjects, stacks, vocab, verbs }: DeckGridProps) {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {stacksForSubject.map(stack => (
-                  <DeckCard key={stack.id} stack={stack} />
-                ))}
+                {stacksForSubject.map(stack => {
+                  const vocabForStack = vocab.filter(v => v.stackId === stack.id);
+                  const masteredInStack = vocabForStack.filter(v => v.isMastered).length;
+                  const masteryPercentage = vocabForStack.length > 0 ? (masteredInStack / vocabForStack.length) * 100 : 0;
+                  const hasVerbs = verbs.some(v => v.subjectId === subject.id);
+
+                  return (
+                    <DeckCard 
+                      key={stack.id} 
+                      stack={stack} 
+                      masteryPercentage={masteryPercentage}
+                      hasVerbs={hasVerbs}
+                    />
+                  );
+                })}
               </div>
             </TabsContent>
         )
