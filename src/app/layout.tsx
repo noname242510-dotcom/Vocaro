@@ -12,7 +12,6 @@ import { GlobalVerbResultListener } from "@/components/global-verb-result-listen
 export const metadata: Metadata = {
   title: "Vocaro",
   description: "Foto hochladen. Vokabeln lernen.",
-  manifest: '/manifest.json',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: 'white' },
     { media: '(prefers-color-scheme: dark)', color: 'black' },
@@ -25,11 +24,6 @@ export const metadata: Metadata = {
   icons: {
     icon: '/AppImages/ios/64.png',
     apple: '/AppImages/ios/180.png',
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: "Vocaro",
   },
 };
 
