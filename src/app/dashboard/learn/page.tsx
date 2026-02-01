@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft, Smile, Frown, Meh, Languages, Volume2 } from 'lucide-react';
+import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft, Smile, Frown, Meh, Languages } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -27,8 +27,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useTextToSpeech } from '@/hooks/use-text-to-speech';
 import { VocabDialog } from '../subjects/[subjectId]/_components/vocab-dialog';
+import { SpeakerButton } from '@/components/speaker-button';
 
 
 // Function to shuffle an array
@@ -183,6 +183,7 @@ export default function LearnPage() {
   const { firestore, user } = useFirebase();
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const speakerRef = useRef<{ play: () => void }>(null);
   const { triggerHapticFeedback } = useHapticFeedback();
   
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
@@ -216,8 +217,6 @@ export default function LearnPage() {
   
   const [editingVocab, setEditingVocab] = useState<VocabularyItem | null>(null);
   const [isVocabDialogOpen, setIsVocabDialogOpen] = useState(false);
-
-  const { speak, isPlaying } = useTextToSpeech();
 
   const finishSession = async () => {
     if (firestore && user && sessionId && answeredIds.size > 0) {
@@ -538,14 +537,11 @@ export default function LearnPage() {
   useEffect(() => {
     if (!isFlipped && currentCard) {
       const isEnabled = localStorage.getItem('tts-enabled') !== 'false';
-      const textToSpeak = isTermFirst ? currentCard.term : currentCard.definition;
-      const langHint = isTermFirst ? languageHint : 'German';
-      
       if (isEnabled && isTermFirst) {
-          speak(currentCard.term, languageHint);
+        speakerRef.current?.play();
       }
     }
-  }, [isFlipped, currentIndex, currentCard, speak, isTermFirst, languageHint]);
+  }, [isFlipped, currentIndex, currentCard, isTermFirst]);
 
   const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted' || status === 'omitted-correct').length;
   const progress = totalVocabCount > 0 ? (correctAnswersCount / totalVocabCount) * 100 : 0;
@@ -776,14 +772,10 @@ export default function LearnPage() {
                <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                   {/* Speaker for the foreign word */}
                   <div className={cn("absolute inset-0 [backface-visibility:hidden]", !frontIsForeign && "opacity-0")}>
-                      <button className="w-full h-full" onClick={() => speak(currentCard.term, languageHint)} disabled={isPlaying}>
-                        <Volume2 className={cn("h-5 w-5 mx-auto", isPlaying && "animate-pulse")} />
-                      </button>
+                      <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} />
                   </div>
                   <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !backIsForeign && "opacity-0")}>
-                      <button className="w-full h-full" onClick={() => speak(currentCard.term, languageHint)} disabled={isPlaying}>
-                        <Volume2 className={cn("h-5 w-5 mx-auto", isPlaying && "animate-pulse")} />
-                      </button>
+                      <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} />
                   </div>
               </div>
             </div>
@@ -963,3 +955,4 @@ export default function LearnPage() {
 
 
     
+

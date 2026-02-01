@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Check, Loader2, RotateCcw, X, Lightbulb, Pencil, ChevronLeft, Smile, Frown, Meh, Volume2 } from 'lucide-react';
+import { ArrowLeft, Check, Loader2, RotateCcw, X, Lightbulb, Pencil, ChevronLeft, Smile, Frown, Meh } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Verb, VerbTense, Subject } from '@/lib/types';
 import {
@@ -25,9 +25,9 @@ import { Confetti } from '@/components/confetti';
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useTextToSpeech } from '@/hooks/use-text-to-speech';
 import { useFirebase } from '@/firebase';
 import { doc, getDoc, collection, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { SpeakerButton } from '@/components/speaker-button';
 
 
 // Function to shuffle an array
@@ -217,6 +217,7 @@ export default function VerbPracticePage() {
     const { firestore, user } = useFirebase();
     const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
+    const speakerRef = useRef<{ play: () => void }>(null);
     const { triggerHapticFeedback } = useHapticFeedback();
     
     const [practiceItems, setPracticeItems] = useState<PracticeItem[]>([]);
@@ -247,8 +248,6 @@ export default function VerbPracticePage() {
     const [userInput, setUserInput] = useState('');
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
-
-    const { speak, isPlaying } = useTextToSpeech();
 
     const finishSession = async () => {
         if (firestore && user && sessionId && answeredIds.size > 0) {
@@ -571,13 +570,11 @@ export default function VerbPracticePage() {
     useEffect(() => {
         if (currentCard && !isFlipped) {
             const isEnabled = localStorage.getItem('tts-enabled') !== 'false';
-            const textToSpeak = isGermanFirst ? currentCard.back : currentCard.front;
-            
-            if (isEnabled) {
-                speak(textToSpeak, languageHint);
+            if (isEnabled && !isGermanFirst) {
+                speakerRef.current?.play();
             }
         }
-    }, [isFlipped, currentIndex, currentCard, speak, isGermanFirst, languageHint]);
+    }, [isFlipped, currentIndex, currentCard, isGermanFirst]);
 
 
     const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted' || status === 'omitted-correct').length;
@@ -788,14 +785,10 @@ export default function VerbPracticePage() {
                      <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
                         <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                             <div className={cn("absolute inset-0 [backface-visibility:hidden]", frontIsGerman && "opacity-0")}>
-                               <button className="w-full h-full" onClick={() => speak(textToSpeak, languageHint)} disabled={isPlaying}>
-                                  <Volume2 className={cn("h-5 w-5 mx-auto", isPlaying && "animate-pulse")} />
-                                </button>
+                                <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} />
                             </div>
                             <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !frontIsGerman && "opacity-0")}>
-                                <button className="w-full h-full" onClick={() => speak(textToSpeak, languageHint)} disabled={isPlaying}>
-                                  <Volume2 className={cn("h-5 w-5 mx-auto", isPlaying && "animate-pulse")} />
-                                </button>
+                                <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} />
                             </div>
                         </div>
                     </div>
@@ -939,6 +932,7 @@ export default function VerbPracticePage() {
 
 
     
+
 
 
 
