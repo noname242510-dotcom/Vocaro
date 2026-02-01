@@ -151,7 +151,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className={cn("font-bold mt-4 break-words", "text-lg md:text-xl line-clamp-4")}>{correctAnswer}</p>
+                <p className={cn("font-bold mt-4 break-words", "text-2xl md:text-3xl line-clamp-4")}>{correctAnswer}</p>
             </>
         );
     }
@@ -175,12 +175,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className={cn("font-bold mt-4 break-words", "text-lg md:text-xl line-clamp-4")}>{parts}</p>;
+        return <p className={cn("font-bold mt-4 break-words", "text-2xl md:text-3xl line-clamp-4")}>{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className={cn("font-bold mt-4 break-words", "text-lg md:text-xl line-clamp-4")}>{correctAnswer}</p>;
+        return <p className={cn("font-bold mt-4 break-words", "text-2xl md:text-3xl line-clamp-4")}>{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -829,7 +829,7 @@ export default function VerbPracticePage() {
                             isFlipped && "[transform:rotateY(180deg)]"
                         )}>
                             <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                                <p className="font-bold text-xl md:text-2xl text-center break-words">{currentCard.front}</p>
+                                <p className="font-bold text-3xl md:text-4xl text-center break-words">{currentCard.front}</p>
                             </div>
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
                                 {isTypedMode && answerStatus !== 'unanswered' ? (
@@ -840,7 +840,7 @@ export default function VerbPracticePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="font-bold text-xl md:text-2xl text-center break-words">{currentCard.back}</p>
+                                    <p className="font-bold text-3xl md:text-4xl text-center break-words">{currentCard.back}</p>
                                 )}
                             </div>
                         </div>
@@ -932,6 +932,7 @@ export default function VerbPracticePage() {
 
 
     
+
 
 
 
