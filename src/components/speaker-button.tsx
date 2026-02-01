@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { useState, useEffect, useCallback, forwardRef, useImperativeHandle, useRef } from 'react';
 import { Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,26 +14,29 @@ interface SpeakerButtonProps {
 export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps>(
   ({ text, languageHint, className }, ref) => {
     const [isPlaying, setIsPlaying] = useState(false);
-    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
     const [animationDuration, setAnimationDuration] = useState(2000);
+    const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
-    // Load and store voices when they become available
     useEffect(() => {
-        const loadVoices = () => {
+        const loadAndStoreVoices = () => {
             const availableVoices = window.speechSynthesis.getVoices();
             if (availableVoices.length > 0) {
-                setVoices(availableVoices);
+                voicesRef.current = availableVoices;
+                // Once voices are loaded, we don't need the listener anymore for this instance.
+                window.speechSynthesis.onvoiceschanged = null;
             }
         };
+        
+        // Set up the event listener in case voices are not immediately available.
+        window.speechSynthesis.onvoiceschanged = loadAndStoreVoices;
+        
+        // Attempt to load voices immediately.
+        loadAndStoreVoices();
 
-        // Initial load + event listener for changes
-        loadVoices();
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-
-        // Cleanup: remove listener and cancel any speech on unmount
         return () => {
+            // Cleanup: remove listener and cancel any speech on unmount.
             window.speechSynthesis.onvoiceschanged = null;
-            if (window.speechSynthesis.speaking) {
+            if (window.speechSynthesis?.speaking) {
                 window.speechSynthesis.cancel();
             }
         };
@@ -59,7 +62,6 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
         return;
       }
       
-      // Cancel any ongoing speech before starting a new one
       if (window.speechSynthesis.speaking) {
         window.speechSynthesis.cancel();
       }
@@ -70,36 +72,33 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
       utterance.rate = 0.85;
       utterance.pitch = 1;
 
-      // Robust voice selection
-      if (voices.length > 0) {
+      // Use the stored voices from the ref. Fallback to getting them directly as a safeguard.
+      const allVoices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
+      
+      if (allVoices.length > 0) {
         const preferredVoiceURI = localStorage.getItem('tts-voice-uri');
         let selectedVoice: SpeechSynthesisVoice | undefined;
 
-        // 1. Try to find the user's preferred voice
         if (preferredVoiceURI) {
-          selectedVoice = voices.find(v => v.voiceURI === preferredVoiceURI);
+          selectedVoice = allVoices.find(v => v.voiceURI === preferredVoiceURI);
         }
 
-        // 2. If no preference, find a voice for the target language
         if (!selectedVoice) {
             const targetLangBase = targetLang.split('-')[0];
-            // Prefer high-quality, non-Google Translate voices for the specific locale
-            const potentialVoices = voices.filter(
+            const potentialVoices = allVoices.filter(
                 v => v.lang === targetLang && !v.name.includes('Google') && v.localService
             );
             
             if (potentialVoices.length > 0) {
                 selectedVoice = potentialVoices[0];
             } else {
-                 // 3. Fallback to any voice matching the base language
-                selectedVoice = voices.find(v => v.lang.startsWith(targetLangBase));
+                selectedVoice = allVoices.find(v => v.lang.startsWith(targetLangBase));
             }
         }
 
         if (selectedVoice) {
           utterance.voice = selectedVoice;
         }
-        // If no voice is found, we let the browser choose a default for the specified lang.
       }
       
       const estimatedDuration = Math.max(1000, text.length * 75);
@@ -117,12 +116,12 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
         if (event.error !== 'canceled') {
           console.error("SpeechSynthesis Error:", event.error);
         }
-        setIsPlaying(false); // Ensure animation stops on any error
+        setIsPlaying(false);
       };
 
       window.speechSynthesis.speak(utterance);
 
-    }, [text, languageHint, voices]);
+    }, [text, languageHint]);
 
     useImperativeHandle(ref, () => ({
       play: handlePlay,
