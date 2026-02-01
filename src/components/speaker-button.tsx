@@ -64,7 +64,9 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
         setIsPlaying(false);
       };
       utterance.onerror = (event) => {
-        console.error("SpeechSynthesis Error:", event.error);
+        if (event.error !== 'canceled') {
+            console.error("SpeechSynthesis Error:", event.error);
+        }
         setIsPlaying(false);
       };
       
