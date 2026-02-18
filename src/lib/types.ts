@@ -2,6 +2,7 @@
 
 
 
+
 export type Subject = {
   id: string;
   name: string;
@@ -29,6 +30,7 @@ export type VocabularyItem = {
     word: string;
   } | null;
   notes?: string;
+  aiNote?: string;
   isMastered?: boolean;
   isSelected?: boolean;
   source?: 'ai' | 'manual';
@@ -50,6 +52,7 @@ export type Verb = {
   germanForms?: {
     [tense: string]: VerbTense;
   };
+  aiNote?: string;
   isMastered?: boolean;
   isSelected?: boolean;
   selectedTenses?: Set<string>;

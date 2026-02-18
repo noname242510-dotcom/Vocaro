@@ -111,6 +111,10 @@
           "type": "string",
           "description": "Optional contextual notes, examples, or hints for the term."
         },
+        "aiNote": {
+          "type": "string",
+          "description": "An AI-generated tip or mnemonic for remembering the term."
+        },
         "source": {
           "type": "string",
           "description": "The source of the vocabulary item, either 'ai' or 'manual'.",
@@ -161,12 +165,20 @@
           "type": "object",
           "description": "An object containing all tenses and their conjugated forms."
         },
+        "aiNote": {
+          "type": "string",
+          "description": "An AI-generated tip or mnemonic for remembering the verb."
+        },
         "source": {
           "type": "string",
           "enum": [
             "ai",
             "manual"
           ]
+        },
+        "isMastered": {
+            "type": "boolean",
+            "description": "True if the user has mastered the verb, e.g., by answering its infinitive correctly."
         }
       },
       "required": [

@@ -1,20 +1,22 @@
-import { BrainCircuit, Bot, ShieldCheck } from 'lucide-react';
+import { BrainCircuit, Bot, ShieldCheck, FileText, FunctionSquare } from 'lucide-react';
 
 interface GlobalMetricsProps {
   totalMastered: number;
-  aiUsage: number;
+  vocabAiCount: number;
+  verbFormsAiCount: number;
   readyForTest: number;
 }
 
-export function GlobalMetrics({ totalMastered, aiUsage, readyForTest }: GlobalMetricsProps) {
+export function GlobalMetrics({ totalMastered, vocabAiCount, verbFormsAiCount, readyForTest }: GlobalMetricsProps) {
   const metrics = [
-    { label: 'Total Mastered', value: totalMastered, icon: BrainCircuit },
-    { label: 'AI Usage', value: `${aiUsage} words`, icon: Bot },
-    { label: 'Ready for Test', value: readyForTest, icon: ShieldCheck },
+    { label: 'Insgesamt gemeistert', value: totalMastered, icon: BrainCircuit },
+    { label: 'Bereit für den Test', value: readyForTest, icon: ShieldCheck },
+    { label: 'Vokabeln (KI)', value: vocabAiCount, icon: FileText },
+    { label: 'Verbformen (KI)', value: verbFormsAiCount, icon: FunctionSquare },
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-4 text-center">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-center">
       {metrics.map(metric => (
         <div key={metric.label} className="flex flex-col items-center justify-center p-4 bg-card rounded-2xl">
           <metric.icon className="h-6 w-6 text-muted-foreground mb-2" />

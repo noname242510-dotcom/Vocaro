@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -26,7 +25,7 @@ import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useFirebase } from '@/firebase';
-import { doc, getDoc, collection, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, serverTimestamp, writeBatch, updateDoc } from 'firebase/firestore';
 import { SpeakerButton } from '@/components/speaker-button';
 
 
@@ -41,7 +40,8 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 interface PracticeItem {
-    id: string;
+    id: string; // Composite ID: verbId-tense-pronoun
+    verbId: string;
     verbInfinitive: string;
     isConjugation: boolean; // Flag to identify if it's a conjugation or infinitive translation
     front: string;
@@ -365,6 +365,10 @@ export default function VerbPracticePage() {
           if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
             setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
           }
+           if (!currentCard.isConjugation && firestore && user && subjectId) {
+                const verbDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'verbs', currentCard.verbId);
+                updateDoc(verbDocRef, { isMastered: true }).catch(console.error); // Non-blocking update
+            }
           triggerHapticFeedback('light');
         } else {
           setAnswerStatus('incorrect');
@@ -389,6 +393,10 @@ export default function VerbPracticePage() {
         if (knewIt) {
             if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
                 setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+            }
+            if (!currentCard.isConjugation && firestore && user && subjectId) {
+                const verbDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'verbs', currentCard.verbId);
+                updateDoc(verbDocRef, { isMastered: true }).catch(console.error);
             }
             triggerHapticFeedback('light');
         } else {
@@ -495,6 +503,7 @@ export default function VerbPracticePage() {
                     if (verb.selectedTenses.length === 0) {
                         items.push({
                             id: `${verb.id}-infinitive`,
+                            verbId: verb.id,
                             verbInfinitive: verb.infinitive,
                             isConjugation: false,
                             front: verb.infinitive,
@@ -514,6 +523,7 @@ export default function VerbPracticePage() {
                                     if (germanForm) {
                                         items.push({
                                             id: `${verb.id}-${tense}-${pronoun}`,
+                                            verbId: verb.id,
                                             verbInfinitive: verb.infinitive,
                                             isConjugation: true,
                                             front: `${pronoun.startsWith('(') ? '' : pronoun + ' '}${foreignForm}`,
@@ -932,6 +942,7 @@ export default function VerbPracticePage() {
 
 
     
+
 
 
 

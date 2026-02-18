@@ -1,10 +1,9 @@
 'use client';
 
-import type { Stack, Subject, Verb } from '@/lib/types';
+import type { Stack, Subject, VocabularyItem } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -12,33 +11,27 @@ import { useToast } from '@/hooks/use-toast';
 interface DeckCardProps {
   stack: Stack;
   subject: Subject;
-  verbs: Verb[];
+  vocab: VocabularyItem[];
   masteryPercentage: number;
 }
 
-export function DeckCard({ stack, subject, verbs, masteryPercentage }: DeckCardProps) {
+export function DeckCard({ stack, subject, vocab, masteryPercentage }: DeckCardProps) {
   const router = useRouter();
   const { toast } = useToast();
 
-  const hasVerbs = verbs.length > 0;
-
   const handleQuickTest = () => {
-    const nonMasteredVerbs = verbs.filter(v => !v.isMastered);
+    const nonMasteredVocab = vocab.filter(v => !v.isMastered);
 
-    if (nonMasteredVerbs.length > 0) {
-      const practiceData = nonMasteredVerbs.map(v => ({
-        ...v,
-        selectedTenses: [], // Empty array for infinitive practice
-      }));
-      sessionStorage.setItem('verb-practice-session', JSON.stringify(practiceData));
-      sessionStorage.setItem('verb-practice-subject-id', subject.id);
+    if (nonMasteredVocab.length > 0) {
+      sessionStorage.setItem('learn-session-vocab', JSON.stringify(nonMasteredVocab.map(v => v.id)));
+      sessionStorage.setItem('learn-session-subject', subject.id);
       sessionStorage.setItem('learn-session-emoji', subject.emoji);
       sessionStorage.setItem('learn-session-subject-name', subject.name);
-      router.push('/dashboard/learn/verbs');
+      router.push('/dashboard/learn');
     } else {
       toast({
         title: "Alles gemeistert!",
-        description: `Alle Verben in "${subject.name}" wurden bereits gemeistert.`
+        description: `Alle Vokabeln in "${stack.name}" wurden bereits gemeistert.`
       });
     }
   };
@@ -51,19 +44,16 @@ export function DeckCard({ stack, subject, verbs, masteryPercentage }: DeckCardP
       <CardContent>
         <div className="space-y-2">
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">Mastery</p>
+            <p className="text-sm font-medium text-muted-foreground mb-1">Gemeistert</p>
             <Progress value={masteryPercentage} className="h-1" />
           </div>
-          {hasVerbs && (
-             <Badge variant="outline">[V] Verbs</Badge>
-          )}
         </div>
         <Button 
           size="sm" 
-          className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute bottom-4 right-4 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={handleQuickTest}
         >
-          Quick Test <ArrowRight className="ml-2 h-4 w-4"/>
+          Schnelltest <ArrowRight className="ml-2 h-4 w-4"/>
         </Button>
       </CardContent>
     </Card>
