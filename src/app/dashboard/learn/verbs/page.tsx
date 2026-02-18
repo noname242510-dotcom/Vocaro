@@ -249,6 +249,12 @@ export default function VerbPracticePage() {
     const [userInput, setUserInput] = useState('');
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const finishSession = async () => {
         if (firestore && user && sessionId && answeredIds.size > 0) {
@@ -448,18 +454,6 @@ export default function VerbPracticePage() {
 
     const frontIsGerman = isGermanFirst;
     const currentCard = practiceItems[currentIndex];
-
-    useEffect(() => {
-        // Only autoplay if the front is the foreign word
-        if (currentCard && !isFlipped && !frontIsGerman) {
-            const isEnabled = localStorage.getItem('tts-enabled') !== 'false';
-            if (isEnabled) {
-                setTimeout(() => {
-                    speakerRef.current?.play();
-                }, 150);
-            }
-        }
-    }, [isFlipped, currentIndex, currentCard, frontIsGerman]);
 
     useEffect(() => {
         const persistedQueryDirectionVerbs = localStorage.getItem('query-direction-verbs');
@@ -739,6 +733,10 @@ export default function VerbPracticePage() {
     // If the front is German, the back is foreign, and vice-versa.
     const textToSpeak = frontIsGerman ? currentCard.back : currentCard.front;
 
+    const ttsEnabled = isMounted && localStorage.getItem('tts-enabled') !== 'false';
+    const autoplayFront = ttsEnabled && !isFlipped && !frontIsGerman; // Foreign word is on front
+    const autoplayBack = ttsEnabled && isFlipped && frontIsGerman; // Foreign word is on back
+
     return (
         <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-9rem)] -mx-4 sm:mx-auto sm:w-full sm:max-w-4xl">
             <div className="w-full px-4 sm:px-0 mx-auto">
@@ -798,10 +796,10 @@ export default function VerbPracticePage() {
                      <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
                         <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                             <div className={cn("absolute inset-0 [backface-visibility:hidden]", frontIsGerman && "opacity-0")}>
-                                <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} />
+                                <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} autoplay={autoplayFront} />
                             </div>
                             <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !frontIsGerman && "opacity-0")}>
-                                <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} />
+                                <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} autoplay={autoplayBack} />
                             </div>
                         </div>
                     </div>
@@ -945,6 +943,7 @@ export default function VerbPracticePage() {
 
 
     
+
 
 
 

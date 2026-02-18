@@ -217,6 +217,12 @@ export default function LearnPage() {
   
   const [editingVocab, setEditingVocab] = useState<VocabularyItem | null>(null);
   const [isVocabDialogOpen, setIsVocabDialogOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+
+  useEffect(() => {
+      setIsMounted(true);
+  }, []);
 
   const finishSession = async () => {
     if (firestore && user && sessionId && answeredIds.size > 0) {
@@ -413,19 +419,6 @@ export default function LearnPage() {
   
   const frontIsForeign = isTermFirst;
   const currentCard = vocabulary[currentIndex];
-
-  useEffect(() => {
-    // Only autoplay if not flipped, card exists, and the front of the card is the foreign term
-    if (!isFlipped && currentCard && frontIsForeign) {
-      const isEnabled = localStorage.getItem('tts-enabled') !== 'false';
-      if (isEnabled) {
-        // Add a small delay to ensure the component is ready and voices are loaded
-        setTimeout(() => {
-            speakerRef.current?.play();
-        }, 150);
-      }
-    }
-  }, [isFlipped, currentIndex, currentCard, frontIsForeign]);
 
   useEffect(() => {
     // Load settings from local storage
@@ -715,6 +708,10 @@ export default function LearnPage() {
   
   const formattedPhonetic = currentCard.phonetic ? currentCard.phonetic.replace(/^\/|\/$/g, '') : '';
 
+  const ttsEnabled = isMounted && localStorage.getItem('tts-enabled') !== 'false';
+  const autoplayFront = ttsEnabled && !isFlipped && frontIsForeign;
+  const autoplayBack = ttsEnabled && isFlipped && backIsForeign;
+
 
   return (
     <>
@@ -777,10 +774,10 @@ export default function LearnPage() {
                <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                   {/* Speaker for the foreign word */}
                   <div className={cn("absolute inset-0 [backface-visibility:hidden]", !frontIsForeign && "opacity-0")}>
-                      <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} />
+                      <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} autoplay={autoplayFront} />
                   </div>
                   <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !backIsForeign && "opacity-0")}>
-                      <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} />
+                      <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} autoplay={autoplayBack} />
                   </div>
               </div>
             </div>
@@ -964,6 +961,7 @@ export default function LearnPage() {
 
 
     
+
 
 
 

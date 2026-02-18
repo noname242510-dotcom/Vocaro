@@ -9,30 +9,32 @@ interface SpeakerButtonProps {
   text: string;
   languageHint?: string;
   className?: string;
+  autoplay?: boolean;
 }
 
 export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps>(
-  ({ text, languageHint, className }, ref) => {
+  ({ text, languageHint, className, autoplay }, ref) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+    const hasAutoplayedRef = useRef(false);
 
-    // 1. Load voices and store them in a ref. This is more stable than state for this use case.
     useEffect(() => {
       const loadVoices = () => {
         voicesRef.current = window.speechSynthesis.getVoices();
       };
-      // Load them immediately
       loadVoices();
-      // And update when they change
       window.speechSynthesis.onvoiceschanged = loadVoices;
       return () => {
         window.speechSynthesis.onvoiceschanged = null;
-        // Also cancel any speech on unmount
         if (window.speechSynthesis) {
-            window.speechSynthesis.cancel();
+          window.speechSynthesis.cancel();
         }
       };
     }, []);
+    
+    useEffect(() => {
+        hasAutoplayedRef.current = false;
+    }, [text]);
 
     const getLanguageCode = (hint?: string): string => {
       if (!hint) return 'en-US';
@@ -54,13 +56,17 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
     
     const play = useCallback(() => {
       if (typeof window === 'undefined' || !window.speechSynthesis || !text) return;
+      
+      if (voicesRef.current.length === 0) {
+        setTimeout(play, 100);
+        return;
+      }
 
       window.speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = getLanguageCode(languageHint);
 
-      // 2. Use the stable voices from the ref.
       const voices = voicesRef.current;
       const persistedVoiceURI = localStorage.getItem('tts-voice-uri');
       
@@ -69,7 +75,6 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
         selectedVoice = voices.find(v => v.voiceURI === persistedVoiceURI) || null;
       }
       
-      // 3. Robust fallback logic if the persisted voice isn't found or not set.
       if (!selectedVoice && voices.length > 0) {
         const langCode = getLanguageCode(languageHint);
         const targetLang = langCode.split('-')[0].toLowerCase();
@@ -106,6 +111,13 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
     useImperativeHandle(ref, () => ({
       play,
     }));
+
+    useEffect(() => {
+        if (autoplay && text && !hasAutoplayedRef.current) {
+            play();
+            hasAutoplayedRef.current = true;
+        }
+    }, [autoplay, text, play]);
 
     return (
       <div className={cn("relative h-10 w-10", className)}>
