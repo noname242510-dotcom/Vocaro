@@ -142,7 +142,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
                 <div className="text-xl font-mono text-center mb-1 flex flex-wrap justify-center items-center leading-relaxed">
                     {displayParts}
                 </div>
-                <p className={cn("font-bold mt-4 break-words", "text-2xl md:text-3xl line-clamp-4")}>{correctAnswer}</p>
+                <p className={cn("font-bold mt-4 break-words", "text-3xl md:text-4xl line-clamp-4")}>{correctAnswer}</p>
             </>
         );
     }
@@ -166,12 +166,12 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             parts.push(correctAnswer.substring(lastIndex));
         }
 
-        return <p className={cn("font-bold mt-4 break-words", "text-2xl md:text-3xl line-clamp-4")}>{parts}</p>;
+        return <p className={cn("font-bold mt-4 break-words", "text-3xl md:text-4xl line-clamp-4")}>{parts}</p>;
     }
     
     // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
-        return <p className={cn("font-bold mt-4 break-words", "text-2xl md:text-3xl line-clamp-4")}>{correctAnswer}</p>;
+        return <p className={cn("font-bold mt-4 break-words", "text-3xl md:text-4xl line-clamp-4")}>{correctAnswer}</p>;
     }
 
     // Default: nothing
@@ -805,7 +805,7 @@ export default function LearnPage() {
                             </div>
                         ) : (
                              <div className="flex flex-col items-center justify-center text-center break-words">
-                                <p className={cn("font-bold break-words", "text-2xl md:text-3xl line-clamp-4")}>{backWord}</p>
+                                <p className={cn("font-bold break-words", "text-3xl md:text-4xl line-clamp-4")}>{backWord}</p>
                                 {backIsForeign && formattedPhonetic && (
                                     <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
                                 )}
@@ -815,52 +815,56 @@ export default function LearnPage() {
                 </div>
             </div>
 
-            
-            <div className="absolute bottom-4 h-10 w-full px-4 [perspective:1000px]">
-                <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                  <div className="[backface-visibility:hidden] w-full h-full"></div>
-                    <div className="absolute inset-0 flex items-center justify-between [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                        <div className="flex items-center gap-1">
-                            {isTypedMode && answerStatus === 'incorrect' ? (
-                                <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
-                                    Ich hab's gewusst
-                                </Button>
-                            ) : <div></div>}
-                             {currentCard.relatedWord && (
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground">
-                                            <Languages className="h-5 w-5" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-2" side="top">
-                                        <div className="text-sm">
-                                            <span className="font-semibold">{currentCard.relatedWord.language}:</span> {currentCard.relatedWord.word}
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                             {shouldShowHints && currentCard.notes && (
-                                <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); }}>
-                                        <Lightbulb className="h-5 w-5" />
+            {currentCard.relatedWord && (
+                <div className="absolute bottom-4 left-4 h-10 w-10 [perspective:1000px]">
+                    <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                        <div className="[backface-visibility:hidden] w-full h-full"></div>
+                        <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground">
+                                        <Languages className="h-5 w-5" />
                                     </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto max-w-xs sm:max-w-sm" side="top">
-                                    <div className="flex items-start gap-2">
-                                        <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
-                                        <p className="text-sm">{currentCard.notes}</p>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-2" side="top">
+                                    <div className="text-sm">
+                                        <span className="font-semibold">{currentCard.relatedWord.language}:</span> {currentCard.relatedWord.word}
                                     </div>
-                                    </PopoverContent>
-                                </Popover>
-                            )}
+                                </PopoverContent>
+                            </Popover>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
+            {shouldShowHints && currentCard.notes && (
+                <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">
+                    <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                        <div className="[backface-visibility:hidden] w-full h-full"></div>
+                        <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
+                            <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); }}>
+                                    <Lightbulb className="h-5 w-5" />
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto max-w-xs sm:max-w-sm" side="top">
+                                <div className="flex items-start gap-2">
+                                    <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
+                                    <p className="text-sm">{currentCard.notes}</p>
+                                </div>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
+                <div className="absolute bottom-4 w-full text-center opacity-75 transition-opacity duration-300">
+                    <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
+                        Ich hab's gewusst
+                    </Button>
+                </div>
+            )}
           </div>
           
           <div className="w-full max-w-2xl mx-auto sm:mt-2">
@@ -955,5 +959,6 @@ export default function LearnPage() {
 
 
     
+
 
 
