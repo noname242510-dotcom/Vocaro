@@ -580,11 +580,11 @@ export default function VerbPracticePage() {
     useEffect(() => {
         if (currentCard && !isFlipped) {
             const isEnabled = localStorage.getItem('tts-enabled') !== 'false';
-            if (isEnabled && !isGermanFirst) {
+            if (isEnabled) {
                 speakerRef.current?.play();
             }
         }
-    }, [isFlipped, currentIndex, currentCard, isGermanFirst]);
+    }, [isFlipped, currentIndex, currentCard]);
 
 
     const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted' || status === 'omitted-correct').length;
@@ -942,6 +942,7 @@ export default function VerbPracticePage() {
 
 
     
+
 
 
 

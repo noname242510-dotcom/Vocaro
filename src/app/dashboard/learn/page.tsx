@@ -537,11 +537,11 @@ export default function LearnPage() {
   useEffect(() => {
     if (!isFlipped && currentCard) {
       const isEnabled = localStorage.getItem('tts-enabled') !== 'false';
-      if (isEnabled && isTermFirst) {
+      if (isEnabled) {
         speakerRef.current?.play();
       }
     }
-  }, [isFlipped, currentIndex, currentCard, isTermFirst]);
+  }, [isFlipped, currentIndex, currentCard]);
 
   const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted' || status === 'omitted-correct').length;
   const progress = totalVocabCount > 0 ? (correctAnswersCount / totalVocabCount) * 100 : 0;
@@ -959,6 +959,7 @@ export default function LearnPage() {
 
 
     
+
 
 
 
