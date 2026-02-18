@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { User, Palette, Puzzle, WholeWord, Languages, Shield, Mic } from 'lucide-react';
+import { User, Palette, Puzzle, WholeWord, Languages, Shield, Volume2 } from 'lucide-react';
 
 interface SettingsMenuProps {
   onSelect: (section: string) => void;
@@ -14,7 +14,7 @@ const menuItems = [
   { id: 'appearance', label: 'Darstellung', icon: Palette },
   { id: 'vocabulary', label: 'Vokabelabfrage', icon: Puzzle },
   { id: 'verbs', label: 'Verbabfrage', icon: WholeWord },
-  { id: 'tts', label: 'Sprachausgabe', icon: Mic },
+  { id: 'tts', label: 'Sprachausgabe', icon: Volume2 },
   { id: 'language', label: 'Sprache & System', icon: Languages },
   { id: 'account', label: 'Konto & Datenschutz', icon: Shield },
 ];

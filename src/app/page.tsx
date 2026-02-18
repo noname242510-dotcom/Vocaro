@@ -4,15 +4,14 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Fingerprint, Sun, Moon } from 'lucide-react';
-import { startAuthentication } from '@simplewebauthn/browser';
+import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -65,51 +64,6 @@ export default function LoginPage() {
         title: 'Anmeldung fehlgeschlagen',
         description: description,
       });
-    }
-  };
-
-  const handlePasskeyLogin = async () => {
-    try {
-        const usernameQuery = username ? `?username=${encodeURIComponent(username)}` : '';
-        const responseOptions = await fetch(`/api/passkey/generate-authentication-options${usernameQuery}`);
-        
-        if (!responseOptions.ok) {
-            const errorBody = await responseOptions.json().catch(() => ({error: 'Anmeldeoptionen konnten nicht vom Server geladen werden.'}));
-            throw new Error(errorBody.error);
-        }
-        const options = await responseOptions.json();
-
-        const authenticationResponse = await startAuthentication(options);
-        
-        const responseVerification = await fetch('/api/passkey/verify-authentication', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              ...authenticationResponse,
-              challengeId: options.challengeId, // Send back the challengeId received from the server
-            }),
-        });
-
-        if (!responseVerification.ok) {
-          const errorBody = await responseVerification.json().catch(() => ({ error: 'Anmelde-Verifizierung fehlgeschlagen.' }));
-          throw new Error(errorBody.error);
-        }
-
-        const { verified, customToken } = await responseVerification.json();
-        
-        if (verified && customToken) {
-            const auth = getAuth();
-            await signInWithCustomToken(auth, customToken);
-            router.push('/dashboard');
-        } else {
-            throw new Error('Anmelde-Verifizierung fehlgeschlagen.');
-        }
-    } catch (error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Passkey-Anmeldung fehlgeschlagen',
-            description: error.message || 'Ein unbekannter Fehler ist aufgetreten.'
-        });
     }
   };
 
@@ -187,18 +141,6 @@ export default function LoginPage() {
                 </Button>
               </div>
             </form>
-            <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Oder</span>
-                </div>
-            </div>
-             <Button variant="outline" className="w-full" onClick={handlePasskeyLogin}>
-                <Fingerprint className="mr-2 h-4 w-4" />
-                Mit Passkey anmelden
-            </Button>
             <div className="mt-4 text-center text-sm">
               Du hast noch kein Konto?{" "}
               <Link href="/signup" className="underline">

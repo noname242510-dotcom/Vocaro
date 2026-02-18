@@ -235,7 +235,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                                    <Languages className="h-4 w-4" />
+                                    <Languages className="h-6 w-6" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-2">

@@ -12,20 +12,10 @@ interface SpeakerButtonProps {
   autoplay?: boolean;
 }
 
-/**
- * Bereinigt den Text vor der Sprachausgabe:
- * - Entfernt Klammern, behält aber den Inhalt: (to) eat -> to eat
- * - Ersetzt gängige Abkürzungen durch volle Wörter für alle unterstützten Sprachen
- */
 const prepareTextForSpeech = (input: string, lang: string): string => {
-  let cleaned = input;
-
-  // 1. Klammern entfernen (Inhalt bleibt bestehen)
-  cleaned = cleaned.replace(/[()]/g, '');
-
+  let cleaned = input.replace(/[()]/g, '');
   const langPrefix = lang.split('-')[0].toLowerCase();
 
-  // 2. Umfangreiche Abkürzungs-Ersetzungen
   const replacements: Record<string, Record<string, string>> = {
     en: {
       'sb': 'somebody',
@@ -87,8 +77,7 @@ const prepareTextForSpeech = (input: string, lang: string): string => {
   const langMap = replacements[langPrefix];
   if (langMap) {
     for (const [abbr, full] of Object.entries(langMap)) {
-      const regex = new RegExp(`\\b${abbr}\\b`, 'gi');
-      cleaned = cleaned.replace(regex, full);
+      cleaned = cleaned.replace(new RegExp(`\\b${abbr}\\b`, 'gi'), full);
     }
   }
 
@@ -98,25 +87,29 @@ const prepareTextForSpeech = (input: string, lang: string): string => {
 export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps>(
   ({ text, languageHint, className, autoplay }, ref) => {
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isTTSEnabled, setisTTSEnabled] = useState(false);
+    const [isAutoPlaybackEnabled, setIsAutoPlaybackEnabled] = useState(false);
     const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
-    
-    // Wir nutzen eine Ref für den Text, um zu wissen, wann wir resetten müssen
     const lastTextRef = useRef<string>("");
 
     useEffect(() => {
+      const ttsEnabled = localStorage.getItem('tts-enabled') === 'true';
+      const autoPlaybackEnabled = localStorage.getItem('tts-auto-playback') === 'true';
+      setisTTSEnabled(ttsEnabled);
+      setIsAutoPlaybackEnabled(autoPlaybackEnabled);
+
+      if (!ttsEnabled) return;
+
       const loadVoices = () => {
-        const availableVoices = window.speechSynthesis.getVoices();
-        if (availableVoices.length > 0) {
-          voicesRef.current = availableVoices;
-        }
+        voicesRef.current = window.speechSynthesis.getVoices();
       };
       
       loadVoices();
       window.speechSynthesis.onvoiceschanged = loadVoices;
 
       return () => {
-        window.speechSynthesis.onvoiceschanged = null;
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
+        if (window.speechSynthesis) {
+          window.speechSynthesis.onvoiceschanged = null;
           window.speechSynthesis.cancel();
         }
       };
@@ -141,7 +134,7 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
     };
     
     const play = useCallback(() => {
-      if (typeof window === 'undefined' || !window.speechSynthesis || !text) return;
+      if (!isTTSEnabled || typeof window === 'undefined' || !window.speechSynthesis || !text) return;
       
       if (voicesRef.current.length === 0) {
         setTimeout(play, 150);
@@ -152,12 +145,11 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
       
       const langCode = getLanguageCode(languageHint);
       const processedText = prepareTextForSpeech(text, langCode);
-      
       const utterance = new SpeechSynthesisUtterance(processedText);
       utterance.lang = langCode;
 
       const voices = voicesRef.current;
-      const persistedVoiceURI = typeof window !== 'undefined' ? localStorage.getItem('tts-voice-uri') : null;
+      const persistedVoiceURI = localStorage.getItem('tts-voice-uri');
       
       let selectedVoice: SpeechSynthesisVoice | null = null;
       
@@ -184,7 +176,6 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
       
       utterance.rate = 0.85; 
       utterance.pitch = 1.0;
-
       utterance.onstart = () => setIsPlaying(true);
       utterance.onend = () => setIsPlaying(false);
       utterance.onerror = (event) => {
@@ -195,33 +186,31 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
       };
       
       window.speechSynthesis.speak(utterance);
-    }, [text, languageHint]);
+    }, [text, languageHint, isTTSEnabled]);
 
-    useImperativeHandle(ref, () => ({
-      play,
-    }));
+    useImperativeHandle(ref, () => ({ play }));
 
-    // Effekt für Autoplay
     useEffect(() => {
-        // Wir spielen ab, wenn autoplay aktiv ist UND entweder:
-        // 1. Der Text sich geändert hat ODER 
-        // 2. Die Komponente neu gemountet wurde (was beim Wiederholen oft passiert)
-        if (autoplay && text) {
+        if (isAutoPlaybackEnabled && autoplay && text && text !== lastTextRef.current) {
             const timer = setTimeout(() => {
                 play();
                 lastTextRef.current = text;
-            }, 200); // Deine perfekten 0.2 Sekunden
+            }, 200);
             
             return () => clearTimeout(timer);
         }
-    }, [autoplay, text, play]);
+    }, [isAutoPlaybackEnabled, autoplay, text, play]);
+
+    if (!isTTSEnabled) {
+      return null; 
+    }
 
     return (
       <div className={cn("relative h-10 w-10", className)}>
          <Button
           variant="ghost"
           size="icon"
-          className={cn("w-full h-full text-2xl")} // Blau-Effekt entfernt
+          className={cn("w-full h-full text-2xl")}
           onClick={(e) => {
             e.stopPropagation();
             play();
