@@ -412,6 +412,7 @@ export default function LearnPage() {
   }, [isFlipped, isTypedMode, isExiting]);
   
   const frontIsForeign = isTermFirst;
+  const currentCard = vocabulary[currentIndex];
 
   useEffect(() => {
     // Only autoplay if not flipped, card exists, and the front of the card is the foreign term
@@ -546,7 +547,6 @@ export default function LearnPage() {
     }
   }, [currentIndex, isExiting, isTypedMode]);
   
-  const currentCard = vocabulary[currentIndex];
   const languageHint = subject?.name || 'English';
 
   const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted' || status === 'omitted-correct').length;
@@ -964,6 +964,7 @@ export default function LearnPage() {
 
 
     
+
 
 
 

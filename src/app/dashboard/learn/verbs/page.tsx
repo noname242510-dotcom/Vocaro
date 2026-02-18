@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -446,6 +447,7 @@ export default function VerbPracticePage() {
     }, [isFlipped, isTypedMode, isExiting]);
 
     const frontIsGerman = isGermanFirst;
+    const currentCard = practiceItems[currentIndex];
 
     useEffect(() => {
         // Only autoplay if the front is the foreign word
@@ -588,7 +590,6 @@ export default function VerbPracticePage() {
         }
     }, [currentIndex, isExiting, isTypedMode]);
     
-    const currentCard = practiceItems[currentIndex];
     const languageHint = subject?.name || 'English';
 
 
@@ -944,6 +945,7 @@ export default function VerbPracticePage() {
 
 
     
+
 
 
 
