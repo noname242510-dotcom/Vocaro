@@ -445,6 +445,20 @@ export default function VerbPracticePage() {
       };
     }, [isFlipped, isTypedMode, isExiting]);
 
+    const frontIsGerman = isGermanFirst;
+
+    useEffect(() => {
+        // Only autoplay if the front is the foreign word
+        if (currentCard && !isFlipped && !frontIsGerman) {
+            const isEnabled = localStorage.getItem('tts-enabled') !== 'false';
+            if (isEnabled) {
+                setTimeout(() => {
+                    speakerRef.current?.play();
+                }, 150);
+            }
+        }
+    }, [isFlipped, currentIndex, currentCard, frontIsGerman]);
+
     useEffect(() => {
         const persistedQueryDirectionVerbs = localStorage.getItem('query-direction-verbs');
         if (persistedQueryDirectionVerbs !== null) {
@@ -576,15 +590,6 @@ export default function VerbPracticePage() {
     
     const currentCard = practiceItems[currentIndex];
     const languageHint = subject?.name || 'English';
-
-    useEffect(() => {
-        if (currentCard && !isFlipped) {
-            const isEnabled = localStorage.getItem('tts-enabled') !== 'false';
-            if (isEnabled) {
-                speakerRef.current?.play();
-            }
-        }
-    }, [isFlipped, currentIndex, currentCard]);
 
 
     const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted' || status === 'omitted-correct').length;
@@ -722,9 +727,6 @@ export default function VerbPracticePage() {
     };
     
     // Check if the original 'front' of the item was German
-    const frontIsGerman = isGermanFirst;
-
-    // The flag for the foreign language is the subject's emoji.
     const foreignWordFlag = subject?.emoji || '🌐';
     const germanFlag = '🇩🇪';
 
@@ -942,6 +944,7 @@ export default function VerbPracticePage() {
 
 
     
+
 
 
 

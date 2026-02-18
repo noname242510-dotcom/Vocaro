@@ -14,23 +14,23 @@ interface SpeakerButtonProps {
 export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps>(
   ({ text, languageHint, className }, ref) => {
     const [isPlaying, setIsPlaying] = useState(false);
-    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-    const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+    const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
-    // 1. Stimmen laden und auf Browser-Event warten
+    // 1. Load voices and store them in a ref. This is more stable than state for this use case.
     useEffect(() => {
       const loadVoices = () => {
-        const availableVoices = window.speechSynthesis.getVoices();
-        if (availableVoices.length > 0) {
-          setVoices(availableVoices);
-        }
+        voicesRef.current = window.speechSynthesis.getVoices();
       };
-
+      // Load them immediately
+      loadVoices();
+      // And update when they change
       window.speechSynthesis.onvoiceschanged = loadVoices;
-      loadVoices(); // Erster Versuch beim Mounten
-
       return () => {
         window.speechSynthesis.onvoiceschanged = null;
+        // Also cancel any speech on unmount
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
       };
     }, []);
 
@@ -49,67 +49,76 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
       for (const key in map) {
         if (lowerHint.includes(key)) return map[key];
       }
-      return 'en-US';
+      return 'en-US'; // Fallback
     };
-
-    const getBestVoice = (lang: string): SpeechSynthesisVoice | null => {
-      if (voices.length === 0) return null;
-      
-      const targetLang = lang.split('-')[0].toLowerCase();
-      const langVoices = voices.filter(v => v.lang.toLowerCase().startsWith(targetLang));
-
-      if (langVoices.length === 0) return null;
-
-      // Priorität: Google/Microsoft/Apple (Natural) > Erste verfügbare Sprache
-      return (
-        langVoices.find(v => v.name.includes('Google') || v.name.includes('Natural')) ||
-        langVoices.find(v => v.name.includes('Microsoft') || v.name.includes('Apple')) ||
-        langVoices[0]
-      );
-    };
-
+    
     const play = useCallback(() => {
       if (typeof window === 'undefined' || !window.speechSynthesis || !text) return;
 
       window.speechSynthesis.cancel();
-
-      const langCode = getLanguageCode(languageHint);
+      
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = langCode;
+      utterance.lang = getLanguageCode(languageHint);
 
-      const selectedVoice = getBestVoice(langCode);
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-      } else {
-        // Wenn wirklich gar nichts gefunden wurde, erzwingen wir zumindest den Lang-Code
-        console.warn("Fallback: Nutze nur Lang-Code für", langCode);
+      // 2. Use the stable voices from the ref.
+      const voices = voicesRef.current;
+      const persistedVoiceURI = localStorage.getItem('tts-voice-uri');
+      
+      let selectedVoice: SpeechSynthesisVoice | null = null;
+      if (persistedVoiceURI) {
+        selectedVoice = voices.find(v => v.voiceURI === persistedVoiceURI) || null;
+      }
+      
+      // 3. Robust fallback logic if the persisted voice isn't found or not set.
+      if (!selectedVoice && voices.length > 0) {
+        const langCode = getLanguageCode(languageHint);
+        const targetLang = langCode.split('-')[0].toLowerCase();
+        const langVoices = voices.filter(v => v.lang.toLowerCase().startsWith(targetLang));
+        
+        selectedVoice = 
+            langVoices.find(v => v.name.includes('Google')) ||
+            langVoices.find(v => v.name.includes('Natural')) ||
+            langVoices.find(v => v.name.includes('Microsoft')) ||
+            langVoices.find(v => v.name.includes('Apple')) ||
+            langVoices[0] ||
+            null;
       }
 
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+      
       utterance.rate = 0.85; 
       utterance.pitch = 1.0;
 
       utterance.onstart = () => setIsPlaying(true);
       utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = () => setIsPlaying(false);
-
-      utteranceRef.current = utterance;
+      utterance.onerror = (event) => {
+        if (event.error !== 'canceled') {
+          console.error("SpeechSynthesis Error:", event.error);
+        }
+        setIsPlaying(false);
+      };
+      
       window.speechSynthesis.speak(utterance);
-    }, [text, languageHint, voices]); // "voices" muss hier als Dependency rein!
+    }, [text, languageHint]);
 
-    useImperativeHandle(ref, () => ({ play }));
+    useImperativeHandle(ref, () => ({
+      play,
+    }));
 
     return (
       <div className={cn("relative h-10 w-10", className)}>
-        <Button
+         <Button
           variant="ghost"
           size="icon"
-          className={cn("w-full h-full", isPlaying && "text-blue-500")}
+          className={cn("w-full h-full text-2xl", isPlaying && "text-blue-500 animate-pulse")}
           onClick={(e) => {
             e.stopPropagation();
             play();
           }}
         >
-          <Volume2 className={cn("h-5 w-5", isPlaying && "animate-pulse")} />
+          <Volume2 className={cn("h-6 w-6")} />
         </Button>
       </div>
     );

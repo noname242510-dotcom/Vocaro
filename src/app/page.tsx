@@ -209,7 +209,7 @@ export default function LoginPage() {
         </Card>
       </main>
       <footer className="w-full text-center text-xs text-muted-foreground p-6">
-        <p>© 2025 Vocaro. Entwickelt mit ♥ und KI-Unterstützung für moderne Sprachlernende.</p>
+        <p>© 2026 Vocaro. Entwickelt mit ♥ und KI-Unterstützung für moderne Sprachlernende.</p>
         <p>Bald auch als App verfügbar.</p>
       </footer>
     </div>

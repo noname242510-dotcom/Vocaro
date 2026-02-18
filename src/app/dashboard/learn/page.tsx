@@ -410,6 +410,21 @@ export default function LearnPage() {
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, [isFlipped, isTypedMode, isExiting]);
+  
+  const frontIsForeign = isTermFirst;
+
+  useEffect(() => {
+    // Only autoplay if not flipped, card exists, and the front of the card is the foreign term
+    if (!isFlipped && currentCard && frontIsForeign) {
+      const isEnabled = localStorage.getItem('tts-enabled') !== 'false';
+      if (isEnabled) {
+        // Add a small delay to ensure the component is ready and voices are loaded
+        setTimeout(() => {
+            speakerRef.current?.play();
+        }, 150);
+      }
+    }
+  }, [isFlipped, currentIndex, currentCard, frontIsForeign]);
 
   useEffect(() => {
     // Load settings from local storage
@@ -533,15 +548,6 @@ export default function LearnPage() {
   
   const currentCard = vocabulary[currentIndex];
   const languageHint = subject?.name || 'English';
-
-  useEffect(() => {
-    if (!isFlipped && currentCard) {
-      const isEnabled = localStorage.getItem('tts-enabled') !== 'false';
-      if (isEnabled) {
-        speakerRef.current?.play();
-      }
-    }
-  }, [isFlipped, currentIndex, currentCard]);
 
   const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted' || status === 'omitted-correct').length;
   const progress = totalVocabCount > 0 ? (correctAnswersCount / totalVocabCount) * 100 : 0;
@@ -699,7 +705,6 @@ export default function LearnPage() {
   const foreignFlag = subject?.emoji || '🌐';
   const germanFlag = '🇩🇪';
 
-  const frontIsForeign = isTermFirst;
   const backIsForeign = !isTermFirst;
 
   const frontWord = frontIsForeign ? currentCard.term : currentCard.definition;
@@ -959,6 +964,7 @@ export default function LearnPage() {
 
 
     
+
 
 
 
