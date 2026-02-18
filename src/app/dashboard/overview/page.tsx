@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import type { Subject, Stack, VocabularyItem, Verb, LearningSessionVocabulary, LearningSessionVerbAnswer } from '@/lib/types';
-import { collection, getDocs, query, orderBy, limit, where, collectionGroup } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { GlobalMetrics } from './_components/global-metrics';
 import { DeckGrid } from './_components/deck-grid';
@@ -20,6 +20,7 @@ export type WeakPoint = {
   language: string;
   // For saving AI notes
   stackId?: string;
+  aiNote?: string;
 };
 
 export default function DashboardOverviewPage() {
@@ -116,32 +117,39 @@ export default function DashboardOverviewPage() {
 
       // Weak Points
       const answerStats: Map<string, { correct: number; incorrect: number }> = new Map();
-      const vocabAnswersQuery = collectionGroup(firestore, 'vocabulary');
-      const verbAnswersQuery = collectionGroup(firestore, 'verbAnswers');
-      const [vocabAnswersSnap, verbAnswersSnap] = await Promise.all([
-        getDocs(query(vocabAnswersQuery, where('userId', '==', user.uid))),
-        getDocs(query(verbAnswersQuery, where('userId', '==', user.uid)))
-      ]);
-
-      vocabAnswersSnap.forEach(doc => {
-        const data = doc.data() as LearningSessionVocabulary;
-        const stats = answerStats.get(data.vocabularyId) || { correct: 0, incorrect: 0 };
-        data.correct ? stats.correct++ : stats.incorrect++;
-        answerStats.set(data.vocabularyId, stats);
+      const sessionAnswerPromises = sessionsSnapshot.docs.map(async (sessionDoc) => {
+        const vocabAnswersRef = collection(sessionDoc.ref, 'vocabulary');
+        const verbAnswersRef = collection(sessionDoc.ref, 'verbAnswers');
+        const [vocabAnswersSnap, verbAnswersSnap] = await Promise.all([
+          getDocs(vocabAnswersRef),
+          getDocs(verbAnswersRef),
+        ]);
+        return { vocabAnswersSnap, verbAnswersSnap };
       });
 
-      verbAnswersSnap.forEach(doc => {
-        const data = doc.data() as LearningSessionVerbAnswer;
-        const stats = answerStats.get(data.verbId) || { correct: 0, incorrect: 0 };
-        data.correct ? stats.correct++ : stats.incorrect++;
-        answerStats.set(data.verbId, stats);
+      const allSessionAnswers = await Promise.all(sessionAnswerPromises);
+
+      allSessionAnswers.forEach(({ vocabAnswersSnap, verbAnswersSnap }) => {
+        vocabAnswersSnap.forEach((doc) => {
+          const data = doc.data() as LearningSessionVocabulary;
+          const stats = answerStats.get(data.vocabularyId) || { correct: 0, incorrect: 0 };
+          data.correct ? stats.correct++ : stats.incorrect++;
+          answerStats.set(data.vocabularyId, stats);
+        });
+
+        verbAnswersSnap.forEach((doc) => {
+          const data = doc.data() as LearningSessionVerbAnswer;
+          const stats = answerStats.get(data.verbId) || { correct: 0, incorrect: 0 };
+          data.correct ? stats.correct++ : stats.incorrect++;
+          answerStats.set(data.verbId, stats);
+        });
       });
       
-      const calculatedWeakPoints: Omit<WeakPoint, 'term' | 'definition' | 'subjectName' | 'language' | 'stackId'>[] = [];
+      const calculatedWeakPoints: Omit<WeakPoint, 'term' | 'definition' | 'subjectName' | 'language' | 'stackId' | 'aiNote'>[] = [];
       answerStats.forEach((stats, id) => {
         if (stats.incorrect > 0) {
           const total = stats.correct + stats.incorrect;
-          calculatedWeakPoints.push({ id, errorRate: (stats.incorrect / total) * 100 });
+          calculatedWeakPoints.push({ id, errorRate: (stats.incorrect / total) * 100, type: 'Vokabel', subjectId: '' });
         }
       });
       
@@ -163,6 +171,8 @@ export default function DashboardOverviewPage() {
           language: verbItem?.language || '',
           type: vocabItem ? 'Vokabel' : 'Verb',
           stackId: vocabItem?.stackId,
+          subjectId: subject.id,
+          aiNote: item.aiNote
         };
       }).filter((p): p is WeakPoint => p !== null);
 
@@ -211,4 +221,3 @@ export default function DashboardOverviewPage() {
     </div>
   );
 }
-    
