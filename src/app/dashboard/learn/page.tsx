@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Confetti } from '@/components/confetti';
-import { useFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
 import { collection, getDocs, query, where, documentId, collectionGroup, getDoc, doc, updateDoc, QuerySnapshot, DocumentData, addDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import type { VocabularyItem, Subject } from '@/lib/types';
 import {

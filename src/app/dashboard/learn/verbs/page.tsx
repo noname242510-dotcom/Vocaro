@@ -23,7 +23,7 @@ import { Confetti } from '@/components/confetti';
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
 import { doc, getDoc, collection, addDoc, serverTimestamp, writeBatch, updateDoc } from 'firebase/firestore';
 import { SpeakerButton } from '@/components/speaker-button';
 import { LoadingSpinner } from '@/components/loading-spinner';

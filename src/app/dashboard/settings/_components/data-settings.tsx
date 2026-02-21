@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SectionShell } from './section-shell';
-import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
+import { useCollection } from '@/firebase/firestore/use-collection';
 import { getDocs, collection, collectionGroup, query, writeBatch, doc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Download, Upload, Info } from 'lucide-react';
@@ -37,7 +38,7 @@ export function DataSettings() {
     const [isImporting, setIsImporting] = useState(false);
     const [importFile, setImportFile] = useState<File | null>(null);
 
-    const subjectsCollection = useMemoFirebase(() => {
+    const subjectsCollection = useMemo(() => {
         if (!user || !firestore) return null;
         return collection(firestore, 'users', user.uid, 'subjects');
     }, [firestore, user]);

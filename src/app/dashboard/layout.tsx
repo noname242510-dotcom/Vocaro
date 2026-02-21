@@ -8,7 +8,8 @@ import { collection } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
-import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirebase, useMemoFirebase } from '@/firebase/provider';
+import { useCollection } from '@/firebase/firestore/use-collection';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { Subject } from '@/lib/types';
 import { cn } from '@/lib/utils';

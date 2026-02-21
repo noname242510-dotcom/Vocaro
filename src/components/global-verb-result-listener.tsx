@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useContext, useState, useEffect } from 'react';
 import { TaskContext } from '@/contexts/task-context';
 import { VerbDialog } from '@/app/dashboard/subjects/[subjectId]/_components/verb-dialog';
 import type { GenerateVerbFormsOutput } from '@/lib/types';
-import { useFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
 import { addDoc, collection, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Verb } from '@/lib/types';
@@ -93,7 +92,7 @@ export function GlobalVerbResultListener() {
     clearTaskResult();
   };
 
-  if (!isOpen && !verbData) {
+  if (!isOpen || !verbData) {
     return null;
   }
   
