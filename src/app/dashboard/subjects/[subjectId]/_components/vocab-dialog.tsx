@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { VocabularyItem } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { getDocs, query, collection, where } from 'firebase/firestore';
-import { useFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 
 interface VocabDialogProps {

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { collection, doc, writeBatch, getDocs, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
-import { useFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
 import type { Stack, VocabularyItem } from '@/lib/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';

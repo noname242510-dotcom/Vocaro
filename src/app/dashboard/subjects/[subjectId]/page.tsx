@@ -52,7 +52,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { suggestVocabularyFromImageContext } from '@/ai/flows/suggest-vocabulary-from-image-context';
 import { generateVocabularyFromExtractedText } from '@/ai/flows/generate-vocabulary-from-extracted-text';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirebase, useMemoFirebase } from '@/firebase/provider';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { useCollection } from '@/firebase/firestore/use-collection';
 import { doc, collection, addDoc, writeBatch, serverTimestamp, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 import { StackItem } from './_components/stack-item';
 import { VerbCard } from './_components/verb-card';

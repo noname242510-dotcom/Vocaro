@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
 import type { Subject, Stack, VocabularyItem, Verb, LearningSessionVocabulary, LearningSessionVerbAnswer } from '@/lib/types';
 import { DeckCard } from './deck-card';
 import { Card } from '@/components/ui/card';
