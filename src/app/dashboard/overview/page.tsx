@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
-import { useFirebase } from '@/firebase';
 import type { Subject, Stack, VocabularyItem, Verb, LearningSessionVocabulary, LearningSessionVerbAnswer } from '@/lib/types';
 import { collection, getDocs, query, orderBy, where, Timestamp } from 'firebase/firestore';
 import { DeckGrid } from './_components/deck-grid';
 import { GlobalMetrics } from './_components/global-metrics';
 import { LoadingSpinner } from '@/components/loading-spinner';
+import { useFirebase } from '@/firebase/provider';
+
 
 type EnrichedAnswer = (LearningSessionVocabulary | LearningSessionVerbAnswer) & { timestamp: any, type: 'Vokabel' | 'Verb' };
 
@@ -38,7 +39,7 @@ export default function DashboardOverviewPage() {
         return;
       }
       
-      // 2. Fetch all stacks and verbs in parallel for all subjects
+      // 2. Fetch all stacks and verbs for all subjects
       const allStacksAndVerbsPromises = fetchedSubjects.map(subject => {
         const stacksRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks');
         const verbsRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'verbs');
@@ -65,7 +66,6 @@ export default function DashboardOverviewPage() {
             tempStacks.push(stack);
             
             const vocabRef = collection(stackDoc.ref, 'vocabulary');
-            // This creates a promise for each stack's vocabulary fetch
             const vocabPromise = getDocs(vocabRef).then(vocabSnap => 
                 vocabSnap.docs.map(vocabDoc => ({ ...vocabDoc.data(), id: vocabDoc.id, stackId: stack.id } as VocabularyItem))
             );
@@ -73,15 +73,7 @@ export default function DashboardOverviewPage() {
         });
       });
       
-      // 3. Await all vocabulary fetches at once
-      const allVocabArrays = await Promise.all(allVocabPromises);
-      const tempVocab = allVocabArrays.flat();
-
-      setAllStacks(tempStacks);
-      setAllVerbs(tempVerbs);
-      setAllVocab(tempVocab);
-
-      // 4. Fetch Learning Session Data in parallel
+      // 3. Setup Learning Session Data Fetch
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const sessionsQuery = query(
@@ -89,8 +81,21 @@ export default function DashboardOverviewPage() {
           where('startTime', '>=', Timestamp.fromDate(thirtyDaysAgo)),
           orderBy('startTime', 'desc')
       );
-      const sessionsSnapshot = await getDocs(sessionsQuery);
+      const sessionsPromise = getDocs(sessionsQuery);
+
+      // 4. Run vocab and session queries in parallel
+      const [allVocabArrays, sessionsSnapshot] = await Promise.all([
+        Promise.all(allVocabPromises),
+        sessionsPromise,
+      ]);
+
+      const tempVocab = allVocabArrays.flat();
       
+      setAllStacks(tempStacks);
+      setAllVerbs(tempVerbs);
+      setAllVocab(tempVocab);
+
+      // 5. Process learning session results
       const verbIds = new Set(tempVerbs.map(v => v.id));
       const vocabIds = new Set(tempVocab.map(v => v.id));
 
@@ -173,7 +178,7 @@ export default function DashboardOverviewPage() {
   return (
     <div className="space-y-8">
       <div className="text-center my-4 md:my-8">
-        <h1 className="text-3xl lg:text-4xl font-bold font-headline">Dashboard</h1>
+        <h1 className="text-3xl lg:text-4xl font-bold font-headline">Statistiken</h1>
         <p className="text-sm text-muted-foreground mt-1">Daten der letzten 30 Tage</p>
       </div>
       <GlobalMetrics {...metrics} />

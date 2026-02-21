@@ -8,16 +8,17 @@ import { collection } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
-import { useFirebase, useMemoFirebase } from '@/firebase/provider';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { GlobalVerbResultListener } from '@/components/global-verb-result-listener';
+import { TaskProgressToast } from '@/components/task-progress-toast';
+import { useFirebase } from '@/firebase/provider';
 import { useCollection } from '@/firebase/firestore/use-collection';
+import { useMemoFirebase } from '@/firebase/provider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { Subject } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { GlobalVerbResultListener } from '@/components/global-verb-result-listener';
 import { TaskProvider } from '@/contexts/task-context';
-import { TaskProgressToast } from '@/components/task-progress-toast';
-import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export default function DashboardLayout({
   children,
@@ -60,7 +61,7 @@ export default function DashboardLayout({
   };
 
   const navItems = [
-    { href: '/dashboard/overview', icon: LayoutDashboard, label: 'Übersicht' },
+    { href: '/dashboard/overview', icon: LayoutDashboard, label: 'Statistiken' },
     { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
   ];
 
