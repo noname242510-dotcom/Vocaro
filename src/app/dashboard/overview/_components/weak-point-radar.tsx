@@ -2,83 +2,108 @@
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Target, Zap, Loader2, Save, AlertTriangle } from 'lucide-react';
-import type { WeakPoint } from '../page';
-import { useState, useEffect, useContext } from 'react';
+import { Target, Zap, Loader2, Save, AlertTriangle, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { generateLearningTip } from '@/ai/flows/generate-learning-tip';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import { TaskContext } from '@/contexts/task-context';
 
+export type WeakPoint = {
+  id: string; // practiceItemId or vocabId
+  verbId?: string;
+  term: string;
+  definition: string;
+  errorRate: number;
+  subjectName: string;
+  type: 'Vokabel' | 'Verb';
+  subjectId: string;
+  language: string;
+  stackId?: string;
+  aiNote?: string;
+};
 
-function AILearningTipDialog({ isOpen, onOpenChange, item }: { isOpen: boolean, onOpenChange: (open: boolean) => void, item: WeakPoint | null }) {
-    const { firestore, user } = useFirebase();
+function AILearningTipDialog({
+  isOpen,
+  onOpenChange,
+  item,
+  onSaveTrigger,
+  cachedTipsForItem,
+  onTipsGenerated
+}: {
+  isOpen: boolean,
+  onOpenChange: (open: boolean) => void,
+  item: WeakPoint | null,
+  onSaveTrigger: (itemId: string, newNote: string, itemType: 'Vokabel' | 'Verb', stackId?: string, verbId?: string) => void,
+  cachedTipsForItem: string[] | undefined,
+  onTipsGenerated: (tips: string[]) => void
+}) {
     const { toast } = useToast();
-    const { runTask, isRunning } = useContext(TaskContext);
     
-    const [tip, setTip] = useState<string | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
+    const [tips, setTips] = useState<string[]>([]);
+    const [selectedTip, setSelectedTip] = useState<string | null>(null);
+    const [isSaving, setIsSaving] = useState(false); // No longer used for direct save
+    const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [currentIndex, setCurrentIndex] = useState(0);
 
     useEffect(() => {
         if (isOpen && item) {
+            // 1. Saved note takes highest priority
             if (item.aiNote) {
-                setTip(item.aiNote);
+                setTips([item.aiNote]);
+                setSelectedTip(item.aiNote);
+                setCurrentIndex(0);
                 return;
             }
 
-            runTask(
-                () => generateLearningTip({
-                    item: item.term,
-                    definition: item.definition,
-                    language: item.language || 'unbekannt',
-                    type: item.type
-                }),
-                {
-                    name: 'KI-Tipp generieren...',
-                    onSuccess: (result) => setTip(result.tip),
-                    onError: (e) => {
-                        console.error(e);
-                        setError('Der KI-Tipp konnte nicht generiert werden. Versuche es später erneut.');
-                    }
-                }
-            );
+            // 2. Check for cached, unsaved tips
+            if (cachedTipsForItem) {
+                setTips(cachedTipsForItem);
+                setSelectedTip(cachedTipsForItem[0]);
+                setCurrentIndex(0);
+                return;
+            }
+
+            // 3. Generate new tips
+            setIsGenerating(true);
+            setError(null);
+            generateLearningTip({
+                item: item.term,
+                definition: item.definition,
+                language: item.language || 'unbekannt',
+                type: item.type
+            }).then(result => {
+                setTips(result.tips);
+                setSelectedTip(result.tips[0]);
+                setCurrentIndex(0);
+                onTipsGenerated(result.tips);
+            }).catch(e => {
+                console.error(e);
+                setError('Der KI-Tipp konnte nicht generiert werden. Versuche es später erneut.');
+            }).finally(() => {
+                setIsGenerating(false);
+            });
         } else {
             // Reset on close
-            setTip(null);
+            setTips([]);
+            setSelectedTip(null);
             setError(null);
+            setCurrentIndex(0);
         }
-    }, [isOpen, item, runTask]);
+    }, [isOpen, item, cachedTipsForItem, onTipsGenerated]);
 
     const handleSave = async () => {
-        if (!item || !tip || !user || !firestore) return;
-        
-        setIsSaving(true);
-        let docRef;
-        if (item.type === 'Vokabel') {
-            if (!item.stackId) {
-                toast({ variant: 'destructive', title: 'Fehler', description: 'Stapel-ID für Vokabel fehlt.'});
-                setIsSaving(false);
-                return;
-            }
-            docRef = doc(firestore, 'users', user.uid, 'subjects', item.subjectId, 'stacks', item.stackId, 'vocabulary', item.id);
-        } else { // Verb
-            docRef = doc(firestore, 'users', user.uid, 'subjects', item.subjectId, 'verbs', item.id);
-        }
-
-        try {
-            await updateDoc(docRef, { aiNote: tip });
-            toast({ title: 'Gespeichert!', description: 'Der KI-Tipp wurde gespeichert.'});
-            onOpenChange(false);
-        } catch (e) {
-            console.error(e);
-            toast({ variant: 'destructive', title: 'Fehler', description: 'Der Tipp konnte nicht gespeichert werden.'});
-        } finally {
-            setIsSaving(false);
-        }
+        if (!item || !selectedTip) return;
+        // The save logic is now handled by the parent, we just trigger it.
+        onSaveTrigger(item.id, selectedTip, item.type, item.stackId, item.verbId);
+        onOpenChange(false); // Close dialog after triggering save.
     };
+    
+    const navigateTips = (direction: 'next' | 'prev') => {
+        const newIndex = direction === 'next' ? (currentIndex + 1) % tips.length : (currentIndex - 1 + tips.length) % tips.length;
+        setCurrentIndex(newIndex);
+        setSelectedTip(tips[newIndex]);
+    }
 
 
     return (
@@ -87,14 +112,14 @@ function AILearningTipDialog({ isOpen, onOpenChange, item }: { isOpen: boolean, 
                 <DialogHeader>
                     <DialogTitle>KI-Lerntipp für: <span className="font-bold">{item?.term}</span></DialogTitle>
                     <DialogDescription>
-                        Eine Eselsbrücke oder ein Hinweis, um es sich besser zu merken.
+                        {item?.aiNote ? 'Dein gespeicherter Tipp:' : 'Wähle den besten Tipp aus und speichere ihn.'}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
-                    {isRunning && !tip && !error && (
+                <div className="py-4 min-h-[100px] flex items-center justify-center">
+                    {isGenerating && (
                         <div className="flex items-center justify-center gap-2 text-muted-foreground">
                             <Loader2 className="h-5 w-5 animate-spin" />
-                            <span>KI generiert einen Tipp...</span>
+                            <span>KI generiert Tipps...</span>
                         </div>
                     )}
                     {error && (
@@ -103,14 +128,33 @@ function AILearningTipDialog({ isOpen, onOpenChange, item }: { isOpen: boolean, 
                             <span>{error}</span>
                         </div>
                     )}
-                    {tip && <p className="whitespace-pre-wrap">{tip}</p>}
+                    {!isGenerating && !error && tips.length > 0 && (
+                       <div className="w-full">
+                           <p className="whitespace-pre-wrap text-center">{tips[currentIndex]}</p>
+                       </div>
+                    )}
                 </div>
-                <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Schließen</Button>
-                    <Button onClick={handleSave} disabled={isSaving || !tip}>
-                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Tipp speichern
-                    </Button>
+                 <div className="flex justify-between items-center gap-2">
+                    {tips.length > 1 && !item?.aiNote ? (
+                         <div className="flex items-center gap-2">
+                            <Button variant="outline" size="icon" onClick={() => navigateTips('prev')}>
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <span className="text-sm text-muted-foreground">{currentIndex + 1} / {tips.length}</span>
+                             <Button variant="outline" size="icon" onClick={() => navigateTips('next')}>
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ) : <div />}
+                    
+                    {item?.aiNote ? (
+                         <Button variant="outline" onClick={() => onOpenChange(false)}>Schließen</Button>
+                    ): (
+                        <Button onClick={handleSave} disabled={isSaving || isGenerating || !selectedTip}>
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Tipp speichern
+                        </Button>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
@@ -118,9 +162,10 @@ function AILearningTipDialog({ isOpen, onOpenChange, item }: { isOpen: boolean, 
 }
 
 
-export function WeakPointRadar({ weakPoints }: { weakPoints: WeakPoint[] }) {
+export function WeakPointRadar({ weakPoints, onUpdate }: { weakPoints: WeakPoint[], onUpdate: (itemId: string, newNote: string, itemType: 'Vokabel' | 'Verb', stackId?: string, verbId?: string) => void }) {
     const [selectedItem, setSelectedItem] = useState<WeakPoint | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [cachedTips, setCachedTips] = useState<Record<string, string[]>>({});
 
     const handleAiTippClick = (item: WeakPoint) => {
         setSelectedItem(item);
@@ -132,10 +177,10 @@ export function WeakPointRadar({ weakPoints }: { weakPoints: WeakPoint[] }) {
         <Card>
         <CardHeader>
             <div className="flex items-center gap-2">
-            <Target className="h-6 w-6 text-destructive" />
-            <CardTitle>Fehler-Fokus</CardTitle>
+            <Target className="h-6 w-6 text-muted-foreground" />
+            <CardTitle>Fehler-Radar</CardTitle>
             </div>
-            <CardDescription>Deine Top 5 Fehler über alle Fächer hinweg.</CardDescription>
+            <CardDescription>Deine Top 5 Fehler in diesem Fach.</CardDescription>
         </CardHeader>
         <CardContent>
             {weakPoints.length > 0 ? (
@@ -148,7 +193,7 @@ export function WeakPointRadar({ weakPoints }: { weakPoints: WeakPoint[] }) {
                         </div>
                         <Button size="sm" variant="ghost" onClick={() => handleAiTippClick(point)}>
                             <Zap className="mr-2 h-4 w-4" />
-                            KI-Tipp
+                            {point.aiNote ? 'Tipp ansehen' : 'KI-Tipp'}
                         </Button>
                         </li>
                     ))}
@@ -162,6 +207,13 @@ export function WeakPointRadar({ weakPoints }: { weakPoints: WeakPoint[] }) {
             isOpen={isDialogOpen}
             onOpenChange={setIsDialogOpen}
             item={selectedItem}
+            onSaveTrigger={onUpdate}
+            cachedTipsForItem={selectedItem ? cachedTips[selectedItem.id] : undefined}
+            onTipsGenerated={(tips) => {
+                if (selectedItem) {
+                    setCachedTips(prev => ({ ...prev, [selectedItem.id]: tips }));
+                }
+            }}
         />
     </>
   );

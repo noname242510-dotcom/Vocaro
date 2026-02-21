@@ -1,9 +1,8 @@
 'use client';
 
 import React, { createContext, useState, ReactNode, useCallback } from 'react';
-import type { GenerateVerbFormsOutput } from '@/ai/flows/generate-verb-forms';
 
-type TaskResult = GenerateVerbFormsOutput | { [key: string]: any } | null;
+type TaskResult = { [key: string]: any } | null;
 
 interface TaskState {
   isRunning: boolean;

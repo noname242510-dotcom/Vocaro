@@ -1,19 +1,20 @@
 'use client';
-import type { Subject, Stack, VocabularyItem, Verb } from '@/lib/types';
+import type { Subject, Stack, VocabularyItem, Verb, LearningSessionVocabulary, LearningSessionVerbAnswer } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DeckCard } from './deck-card';
-import { Card } from '@/components/ui/card';
-import { Book, WholeWord } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { SubjectDetailsTab } from './subject-details-tab';
+
+type EnrichedAnswer = (LearningSessionVocabulary | LearningSessionVerbAnswer) & { timestamp: any, type: 'Vokabel' | 'Verb' };
 
 interface DeckGridProps {
   subjects: Subject[];
-  stacks: Stack[];
-  vocab: VocabularyItem[];
-  verbs: Verb[];
+  allStacks: Stack[];
+  allVocab: VocabularyItem[];
+  allVerbs: Verb[];
+  allEnrichedAnswers: EnrichedAnswer[];
 }
 
-export function DeckGrid({ subjects, stacks, vocab, verbs }: DeckGridProps) {
+export function DeckGrid({ subjects, allStacks, allVocab, allVerbs, allEnrichedAnswers }: DeckGridProps) {
   if (subjects.length === 0) {
     return (
       <div className="text-center py-10">
@@ -24,67 +25,42 @@ export function DeckGrid({ subjects, stacks, vocab, verbs }: DeckGridProps) {
 
   return (
     <div>
-        <Separator className="mb-4" />
-        <Tabs defaultValue={subjects.length > 0 ? subjects[0].id : undefined}>
-        <TabsList className="mb-4 h-auto py-2">
+      <Separator className="mb-4" />
+      <Tabs defaultValue={subjects.length > 0 ? subjects[0].id : undefined}>
+        <div className="flex justify-center">
+          <TabsList className="mb-4 h-auto p-1 w-full max-w-3xl text-center rounded-full bg-muted">
             {subjects.map(subject => (
-            <TabsTrigger key={subject.id} value={subject.id} className="text-base px-4">
+              <TabsTrigger key={subject.id} value={subject.id} className="text-xl px-8 py-3 flex-1 rounded-full data-[state=active]:bg-background">
                 {subject.emoji} {subject.name}
-            </TabsTrigger>
+              </TabsTrigger>
             ))}
-        </TabsList>
-        
+          </TabsList>
+        </div>
+      
         {subjects.map(subject => {
-            const stacksForSubject = stacks.filter(stack => stack.subjectId === subject.id);
-            const stackIdsForSubject = new Set(stacksForSubject.map(s => s.id));
-            const vocabForSubject = vocab.filter(v => stackIdsForSubject.has(v.stackId));
-            const masteredVocabCount = vocabForSubject.filter(v => v.isMastered).length;
-
-            const verbsForSubject = verbs.filter(v => v.subjectId === subject.id);
-            const masteredVerbsCount = verbsForSubject.filter(v => v.isMastered).length;
+            const subjectStacks = allStacks.filter(s => s.subjectId === subject.id);
+            const subjectVocab = allVocab.filter(v => subjectStacks.some(s => s.id === v.stackId));
+            const subjectVerbs = allVerbs.filter(v => v.subjectId === subject.id);
+            const verbIdsForSubject = new Set(subjectVerbs.map(v => v.id));
+            const vocabIdsForSubject = new Set(subjectVocab.map(v => v.id));
+            const subjectAnswers = allEnrichedAnswers.filter(answer => 
+                (answer.type === 'Vokabel' && vocabIdsForSubject.has((answer as LearningSessionVocabulary).vocabularyId)) ||
+                (answer.type === 'Verb' && verbIdsForSubject.has((answer as LearningSessionVerbAnswer).verbId))
+            );
 
             return (
-                <TabsContent key={subject.id} value={subject.id}>
-                <div className="grid gap-4 sm:grid-cols-2 mb-4">
-                    <Card className="p-4 flex items-center gap-4">
-                        <Book className="h-8 w-8 text-muted-foreground" />
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Vokabeln</p>
-                            <p className="text-2xl font-semibold">{vocabForSubject.length}</p>
-                            <p className="text-xs text-muted-foreground">{masteredVocabCount} gemeistert</p>
-                        </div>
-                    </Card>
-                    <Card className="p-4 flex items-center gap-4">
-                        <WholeWord className="h-8 w-8 text-muted-foreground" />
-                        <div>
-                            <p className="text-sm font-medium text-muted-foreground">Verben</p>
-                            <p className="text-2xl font-semibold">{verbsForSubject.length}</p>
-                            <p className="text-xs text-muted-foreground">{masteredVerbsCount} gemeistert</p>
-                        </div>
-                    </Card>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {stacksForSubject.map(stack => {
-                    const vocabForStack = vocab.filter(v => v.stackId === stack.id);
-                    const masteredInStack = vocabForStack.filter(v => v.isMastered).length;
-                    const masteryPercentage = vocabForStack.length > 0 ? (masteredInStack / vocabForStack.length) * 100 : 0;
-                    
-                    return (
-                        <DeckCard 
-                        key={stack.id} 
-                        stack={stack}
-                        subject={subject}
-                        vocab={vocabForStack}
-                        masteryPercentage={masteryPercentage}
-                        />
-                    );
-                    })}
-                </div>
-                </TabsContent>
-            )
+              <TabsContent key={subject.id} value={subject.id} className="space-y-6">
+                <SubjectDetailsTab 
+                    subject={subject}
+                    stacks={subjectStacks}
+                    vocab={subjectVocab}
+                    verbs={subjectVerbs}
+                    enrichedAnswers={subjectAnswers}
+                />
+              </TabsContent>
+            );
         })}
-        </Tabs>
+      </Tabs>
     </div>
   );
 }

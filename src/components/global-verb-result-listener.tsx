@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useContext, useState, useEffect } from 'react';
 import { TaskContext } from '@/contexts/task-context';
 import { VerbDialog } from '@/app/dashboard/subjects/[subjectId]/_components/verb-dialog';
-import type { GenerateVerbFormsOutput } from '@/ai/flows/generate-verb-forms';
+import type { GenerateVerbFormsOutput } from '@/lib/types';
 import { useFirebase } from '@/firebase';
 import { addDoc, collection, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -114,6 +115,7 @@ export function GlobalVerbResultListener() {
       language={activeLanguage}
       onSave={handleSave}
       existingVerb={tempExistingVerb}
+      subjectId={activeSubjectId!}
     />
   );
 }

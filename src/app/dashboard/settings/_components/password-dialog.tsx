@@ -9,18 +9,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogFooter as AlertFooter,
+  AlertDialogHeader as AlertHeader,
+  AlertDialogTitle as AlertTitle,
+  AlertDialogDescription as AlertDescription,
+} from '@/components/ui/alert-dialog';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PasswordDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (password: string) => void;
+  onConfirm: (password?: string) => void;
   isUpdating: boolean;
   title: string;
   description: string;
+  showPasswordField?: boolean;
+  actionButtonText?: string;
+  actionButtonVariant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
 }
 
 export function PasswordDialog({
@@ -30,13 +43,14 @@ export function PasswordDialog({
   isUpdating,
   title,
   description,
+  showPasswordField = true,
+  actionButtonText = 'Bestätigen',
+  actionButtonVariant = 'default',
 }: PasswordDialogProps) {
   const [password, setPassword] = useState('');
 
   const handleConfirm = () => {
-    if (password) {
-      onConfirm(password);
-    }
+    onConfirm(password);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -45,6 +59,30 @@ export function PasswordDialog({
     }
     onOpenChange(open);
   };
+
+  if (!showPasswordField) {
+    return (
+       <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
+        <AlertDialogContent>
+          <AlertHeader>
+            <AlertTitle>{title}</AlertTitle>
+            <AlertDescription>{description}</AlertDescription>
+          </AlertHeader>
+          <AlertFooter>
+            <AlertDialogCancel disabled={isUpdating}>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => onConfirm()} 
+              disabled={isUpdating}
+              className={cn(buttonVariants({ variant: actionButtonVariant }))}
+            >
+              {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {actionButtonText}
+            </AlertDialogAction>
+          </AlertFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -72,9 +110,13 @@ export function PasswordDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUpdating}>
             Abbrechen
           </Button>
-          <Button onClick={handleConfirm} disabled={isUpdating || !password}>
+          <Button 
+            onClick={handleConfirm} 
+            disabled={isUpdating || !password}
+            variant={actionButtonVariant}
+          >
             {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Bestätigen
+            {actionButtonText}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -37,11 +37,11 @@ export function DeckCard({ stack, subject, vocab, masteryPercentage }: DeckCardP
   };
 
   return (
-    <Card className="group relative">
-      <CardHeader>
+    <Card className="group relative flex flex-col">
+      <CardHeader className="flex-grow">
         <CardTitle className="truncate">{stack.name}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="mt-auto">
         <div className="space-y-2">
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-1">Gemeistert</p>

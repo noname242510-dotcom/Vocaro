@@ -1,222 +1,176 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import type { Subject, Stack, VocabularyItem, Verb, LearningSessionVocabulary, LearningSessionVerbAnswer } from '@/lib/types';
-import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
-import { GlobalMetrics } from './_components/global-metrics';
+import { collection, getDocs, query, orderBy, where, Timestamp } from 'firebase/firestore';
 import { DeckGrid } from './_components/deck-grid';
-import { WeakPointRadar } from './_components/weak-point-radar';
+import { GlobalMetrics } from './_components/global-metrics';
+import { LoadingSpinner } from '@/components/loading-spinner';
 
-export type WeakPoint = {
-  id: string;
-  term: string;
-  definition: string;
-  errorRate: number;
-  subjectName: string;
-  type: 'Vokabel' | 'Verb';
-  subjectId: string;
-  language: string;
-  // For saving AI notes
-  stackId?: string;
-  aiNote?: string;
-};
+type EnrichedAnswer = (LearningSessionVocabulary | LearningSessionVerbAnswer) & { timestamp: any, type: 'Vokabel' | 'Verb' };
 
 export default function DashboardOverviewPage() {
   const { firestore, user } = useFirebase();
+  const [isLoading, setIsLoading] = useState(true);
+  const [showSpinner, setShowSpinner] = useState(false);
 
-  const subjectsCollection = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'subjects');
-  }, [firestore, user]);
-
-  const { data: subjects, isLoading: areSubjectsLoading } = useCollection<Subject>(subjectsCollection);
-
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [allStacks, setAllStacks] = useState<Stack[]>([]);
   const [allVocab, setAllVocab] = useState<VocabularyItem[]>([]);
   const [allVerbs, setAllVerbs] = useState<Verb[]>([]);
-  const [readyForTest, setReadyForTest] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [weakPoints, setWeakPoints] = useState<WeakPoint[]>([]);
-
+  const [allEnrichedAnswers, setAllEnrichedAnswers] = useState<EnrichedAnswer[]>([]);
+  
   useEffect(() => {
-    if (!subjects || !firestore || !user) {
-        if (!areSubjectsLoading) setIsLoading(false);
-        return;
-    }
-    if (subjects.length === 0) {
-      setIsLoading(false);
-      return;
-    }
+    if (!user || !firestore) return;
 
-    const fetchDetailsAndMetrics = async () => {
+    const fetchAllData = async () => {
       setIsLoading(true);
-      
-      const subjectDetailsPromises = subjects.map(async (subject) => {
+
+      // 1. Fetch Subjects
+      const subjectsQuery = query(collection(firestore, 'users', user.uid, 'subjects'), orderBy('name'));
+      const subjectsSnapshot = await getDocs(subjectsQuery);
+      const fetchedSubjects = subjectsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Subject));
+      setSubjects(fetchedSubjects);
+
+      const allDataPromises = fetchedSubjects.map(async (subject) => {
+        // 2. Fetch Stacks, Verbs, Vocab for each subject
         const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks');
         const verbsCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'verbs');
         
         const [stacksSnapshot, verbsSnapshot] = await Promise.all([
-          getDocs(stacksCollectionRef),
-          getDocs(verbsCollectionRef)
+            getDocs(stacksCollectionRef),
+            getDocs(verbsCollectionRef)
         ]);
 
         const subjectStacks = stacksSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, subjectId: subject.id } as Stack));
         const subjectVerbs = verbsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, subjectId: subject.id } as Verb));
 
         const vocabPromises = subjectStacks.map(stack => 
-          getDocs(collection(stacksCollectionRef, stack.id, 'vocabulary'))
-            .then(snapshot => snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, stackId: stack.id } as VocabularyItem)))
+            getDocs(collection(stacksCollectionRef, stack.id, 'vocabulary'))
+                .then(snapshot => snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, stackId: stack.id } as VocabularyItem)))
         );
-
         const subjectVocabArrays = await Promise.all(vocabPromises);
         const subjectVocab = subjectVocabArrays.flat();
-        
-        return { subjectStacks, subjectVerbs, subjectVocab };
+
+        return { subject, subjectStacks, subjectVerbs, subjectVocab };
+      });
+      
+      const allSubjectData = await Promise.all(allDataPromises);
+
+      const tempStacks: Stack[] = [];
+      const tempVocab: VocabularyItem[] = [];
+      const tempVerbs: Verb[] = [];
+      allSubjectData.forEach(data => {
+        tempStacks.push(...data.subjectStacks);
+        tempVocab.push(...data.subjectVocab);
+        tempVerbs.push(...data.subjectVerbs);
       });
 
-      const allDetails = await Promise.all(subjectDetailsPromises);
-      
-      const tempAllStacks = allDetails.flatMap(d => d.subjectStacks);
-      const tempAllVerbs = allDetails.flatMap(d => d.subjectVerbs);
-      const tempAllVocab = allDetails.flatMap(d => d.subjectVocab);
+      setAllStacks(tempStacks);
+      setAllVocab(tempVocab);
+      setAllVerbs(tempVerbs);
 
-      setAllStacks(tempAllStacks);
-      setAllVerbs(tempAllVerbs);
-      setAllVocab(tempAllVocab);
-
-      // --- Metric Calculations ---
-      const sessionsQuery = query(collection(firestore, 'users', user.uid, 'learningSessions'), orderBy('startTime', 'desc'));
+      // 3. Fetch Learning Session Data (optimized to last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const sessionsQuery = query(
+          collection(firestore, 'users', user.uid, 'learningSessions'),
+          where('startTime', '>=', Timestamp.fromDate(thirtyDaysAgo)),
+          orderBy('startTime', 'desc')
+      );
       const sessionsSnapshot = await getDocs(sessionsQuery);
       
-      // Ready for Test
-      if (sessionsSnapshot.docs.length >= 2) {
-        const [session1, session2] = sessionsSnapshot.docs;
-        const getCorrectIds = async (sessionId: string): Promise<Set<string>> => {
-          const correctIds = new Set<string>();
-          const vocabAnswersRef = collection(firestore, 'users', user.uid, 'learningSessions', sessionId, 'vocabulary');
-          const verbAnswersRef = collection(firestore, 'users', user.uid, 'learningSessions', sessionId, 'verbAnswers');
+      const tempAnswers: EnrichedAnswer[] = [];
+      const verbIdsForSubject = new Set(tempVerbs.map(v => v.id));
+      const vocabIdsForSubject = new Set(tempVocab.map(v => v.id));
+
+      for (const sessionDoc of sessionsSnapshot.docs) {
+          const sessionTimestamp = sessionDoc.data().startTime;
+          
+          const vocabAnswersRef = collection(sessionDoc.ref, 'vocabulary');
+          const verbAnswersRef = collection(sessionDoc.ref, 'verbAnswers');
+          
           const [vocabAnswersSnap, verbAnswersSnap] = await Promise.all([
-            getDocs(query(vocabAnswersRef, where('correct', '==', true))),
-            getDocs(query(verbAnswersRef, where('correct', '==', true)))
+              getDocs(vocabAnswersRef),
+              getDocs(verbAnswersRef),
           ]);
-          vocabAnswersSnap.forEach(doc => correctIds.add(doc.data().vocabularyId));
-          verbAnswersSnap.forEach(doc => correctIds.add(doc.data().practiceItemId));
-          return correctIds;
-        };
-        const [correctInSession1, correctInSession2] = await Promise.all([
-          getCorrectIds(session1.id),
-          getCorrectIds(session2.id)
-        ]);
-        const intersection = new Set([...correctInSession1].filter(id => correctInSession2.has(id)));
-        setReadyForTest(intersection.size);
-      } else {
-        setReadyForTest(0);
+
+          vocabAnswersSnap.forEach((doc) => {
+              const answer = doc.data() as LearningSessionVocabulary;
+              if (vocabIdsForSubject.has(answer.vocabularyId)) {
+                  tempAnswers.push({ ...answer, timestamp: sessionTimestamp, type: 'Vokabel' });
+              }
+          });
+          
+          verbAnswersSnap.forEach((doc) => {
+              const answer = doc.data() as LearningSessionVerbAnswer;
+              if (verbIdsForSubject.has(answer.verbId)) {
+                  tempAnswers.push({ ...answer, timestamp: sessionTimestamp, type: 'Verb' });
+              }
+          });
       }
-
-      // Weak Points
-      const answerStats: Map<string, { correct: number; incorrect: number }> = new Map();
-      const sessionAnswerPromises = sessionsSnapshot.docs.map(async (sessionDoc) => {
-        const vocabAnswersRef = collection(sessionDoc.ref, 'vocabulary');
-        const verbAnswersRef = collection(sessionDoc.ref, 'verbAnswers');
-        const [vocabAnswersSnap, verbAnswersSnap] = await Promise.all([
-          getDocs(vocabAnswersRef),
-          getDocs(verbAnswersRef),
-        ]);
-        return { vocabAnswersSnap, verbAnswersSnap };
-      });
-
-      const allSessionAnswers = await Promise.all(sessionAnswerPromises);
-
-      allSessionAnswers.forEach(({ vocabAnswersSnap, verbAnswersSnap }) => {
-        vocabAnswersSnap.forEach((doc) => {
-          const data = doc.data() as LearningSessionVocabulary;
-          const stats = answerStats.get(data.vocabularyId) || { correct: 0, incorrect: 0 };
-          data.correct ? stats.correct++ : stats.incorrect++;
-          answerStats.set(data.vocabularyId, stats);
-        });
-
-        verbAnswersSnap.forEach((doc) => {
-          const data = doc.data() as LearningSessionVerbAnswer;
-          const stats = answerStats.get(data.verbId) || { correct: 0, incorrect: 0 };
-          data.correct ? stats.correct++ : stats.incorrect++;
-          answerStats.set(data.verbId, stats);
-        });
-      });
-      
-      const calculatedWeakPoints: Omit<WeakPoint, 'term' | 'definition' | 'subjectName' | 'language' | 'stackId' | 'aiNote'>[] = [];
-      answerStats.forEach((stats, id) => {
-        if (stats.incorrect > 0) {
-          const total = stats.correct + stats.incorrect;
-          calculatedWeakPoints.push({ id, errorRate: (stats.incorrect / total) * 100, type: 'Vokabel', subjectId: '' });
-        }
-      });
-      
-      const sortedWeakPoints = calculatedWeakPoints.sort((a, b) => b.errorRate - a.errorRate).slice(0, 5);
-      
-      const enrichedWeakPoints: WeakPoint[] = sortedWeakPoints.map(wp => {
-        const vocabItem = tempAllVocab.find(v => v.id === wp.id);
-        const verbItem = tempAllVerbs.find(v => v.id === wp.id);
-        const item = vocabItem || verbItem;
-        const subject = subjects.find(s => s.id === item?.subjectId);
-        
-        if (!item || !subject) return null;
-
-        return {
-          ...wp,
-          term: vocabItem ? vocabItem.term : verbItem.infinitive,
-          definition: vocabItem ? vocabItem.definition : verbItem.translation,
-          subjectName: subject.name,
-          language: verbItem?.language || '',
-          type: vocabItem ? 'Vokabel' : 'Verb',
-          stackId: vocabItem?.stackId,
-          subjectId: subject.id,
-          aiNote: item.aiNote
-        };
-      }).filter((p): p is WeakPoint => p !== null);
-
-      setWeakPoints(enrichedWeakPoints);
+      setAllEnrichedAnswers(tempAnswers);
 
       setIsLoading(false);
     };
 
-    fetchDetailsAndMetrics();
-  }, [subjects, firestore, user, areSubjectsLoading]);
+    fetchAllData();
 
-  const { totalMastered, vocabAiCount, verbFormsAiCount } = useMemo(() => {
-    const vocabAi = allVocab.filter(v => v.source === 'ai').length;
-    const verbFormsAi = allVerbs
-      .filter(v => v.source === 'ai')
-      .reduce((count, verb) => {
-        return count + Object.values(verb.forms).reduce((subCount, tense) => subCount + Object.keys(tense).length, 0);
-      }, 0);
-    const mastered = allVocab.filter(v => v.isMastered).length + allVerbs.filter(v => v.isMastered).length;
-    return { totalMastered: mastered, vocabAiCount: vocabAi, verbFormsAiCount: verbFormsAi };
+  }, [user, firestore]);
+  
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isLoading) {
+      // Show spinner only if loading takes more than 300ms
+      timer = setTimeout(() => {
+        setShowSpinner(true);
+      }, 300);
+    } else {
+      setShowSpinner(false);
+    }
+
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
+  const metrics = useMemo(() => {
+    const totalMasteredVocab = allVocab.filter(v => v.isMastered).length;
+    const totalMasteredVerbs = allVerbs.filter(v => v.isMastered).length;
+    const totalMastered = totalMasteredVocab + totalMasteredVerbs;
+
+    const vocabAiCount = allVocab.filter(v => v.source === 'ai').length;
+    const verbFormsAiCount = allVerbs.filter(v => v.source === 'ai').length;
+    
+    const readyForTest = allVocab.filter(v => !v.isMastered).length;
+
+    return { totalMastered, vocabAiCount, verbFormsAiCount, readyForTest };
   }, [allVocab, allVerbs]);
 
-  if (areSubjectsLoading || isLoading) {
+  if (showSpinner) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="absolute inset-0 flex h-full items-center justify-center">
+        <LoadingSpinner />
       </div>
     );
   }
 
+  if (isLoading) {
+    return null; // Render nothing for the first 300ms to avoid flicker
+  }
+
   return (
     <div className="space-y-8">
-      <GlobalMetrics 
-        totalMastered={totalMastered}
-        vocabAiCount={vocabAiCount}
-        verbFormsAiCount={verbFormsAiCount}
-        readyForTest={readyForTest}
-      />
-      <WeakPointRadar weakPoints={weakPoints} />
+      <div className="text-center my-4 md:my-8">
+        <h1 className="text-3xl lg:text-4xl font-bold font-headline">Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-1">Daten der letzten 30 Tage</p>
+      </div>
+      <GlobalMetrics {...metrics} />
       <DeckGrid 
         subjects={subjects || []}
-        stacks={allStacks}
-        vocab={allVocab}
-        verbs={allVerbs}
+        allStacks={allStacks}
+        allVocab={allVocab}
+        allVerbs={allVerbs}
+        allEnrichedAnswers={allEnrichedAnswers}
       />
     </div>
   );

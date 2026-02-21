@@ -11,6 +11,7 @@ import { VerbSettings } from './_components/verb-settings';
 import { LanguageSettings } from './_components/language-settings';
 import { AccountSettings } from './_components/account-settings';
 import { TtsSettings } from './_components/tts-settings';
+import { DataSettings } from './_components/data-settings';
 
 function SettingsComponent() {
   const router = useRouter();
@@ -45,6 +46,8 @@ function SettingsComponent() {
         return <LanguageSettings />;
       case 'account':
         return <AccountSettings />;
+      case 'data':
+        return <DataSettings />;
       case 'profile':
       default:
         return <ProfileSettings />;

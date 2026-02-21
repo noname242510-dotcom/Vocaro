@@ -1,11 +1,10 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { X, Check, RotateCcw, Loader2, Lightbulb, ArrowLeft, Pencil, ChevronLeft, Smile, Frown, Meh, Languages } from 'lucide-react';
+import { X, Check, RotateCcw, Lightbulb, ArrowLeft, Pencil, ChevronLeft, Smile, Frown, Meh, Languages } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -29,7 +28,7 @@ import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { VocabDialog } from '../subjects/[subjectId]/_components/vocab-dialog';
 import { SpeakerButton } from '@/components/speaker-button';
-
+import { LoadingSpinner } from '@/components/loading-spinner';
 
 // Function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -50,6 +49,32 @@ interface LearnState {
   answeredIds: Map<string, AnswerStatus>;
   userInput: string;
 }
+
+const SESSION_STATE_KEY = 'learn-session-vocab-state';
+
+// JSON replacer/reviver to handle Map and Set
+const replacer = (key: string, value: any) => {
+  if(value instanceof Map) {
+    return { __type: 'Map', value: Array.from(value.entries()) };
+  }
+  if(value instanceof Set) {
+    return { __type: 'Set', value: Array.from(value.values()) };
+  }
+  return value;
+};
+
+const reviver = (key: string, value: any) => {
+    if(typeof value === 'object' && value !== null) {
+      if (value.__type === 'Map') {
+        return new Map(value.value);
+      }
+      if (value.__type === 'Set') {
+        return new Set(value.value);
+      }
+    }
+    return value;
+  };
+
 
 const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: string, correctAnswer: string, status: AnswerStatus }) => {
     if (status === 'incorrect') {
@@ -190,6 +215,7 @@ export default function LearnPage() {
   const [initialVocab, setInitialVocab] = useState<VocabularyItem[]>([]);
   const [totalVocabCount, setTotalVocabCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSpinner, setShowSpinner] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -199,6 +225,7 @@ export default function LearnPage() {
   const [showResults, setShowResults] = useState(false);
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [animationResetToken, setAnimationResetToken] = useState(0);
 
   const [subject, setSubject] = useState<Subject | null>(null);
 
@@ -207,6 +234,7 @@ export default function LearnPage() {
   
   const [isTermFirst, setIsTermFirst] = useState(true);
   const [shouldShowHints, setShouldShowHints] = useState(true);
+  const [hapticsEnabled, setHapticsEnabled] = useState(true);
 
   const [history, setHistory] = useState<LearnState[]>([]);
   
@@ -218,10 +246,15 @@ export default function LearnPage() {
   const [editingVocab, setEditingVocab] = useState<VocabularyItem | null>(null);
   const [isVocabDialogOpen, setIsVocabDialogOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [isAutoplayOn, setIsAutoplayOn] = useState(true);
 
 
   useEffect(() => {
-      setIsMounted(true);
+    setIsMounted(true);
+    setTtsEnabled(localStorage.getItem('tts-enabled') === 'true');
+    const autoplaySetting = localStorage.getItem('tts-autoplay-enabled');
+    setIsAutoplayOn(autoplaySetting === null ? true : autoplaySetting === 'true');
   }, []);
 
   const finishSession = async () => {
@@ -245,6 +278,8 @@ export default function LearnPage() {
 
         await batch.commit();
     }
+    
+    sessionStorage.removeItem(SESSION_STATE_KEY);
 
     const incorrectCount = incorrectlyAnsweredIds.size;
     const correctCount = totalVocabCount - incorrectCount;
@@ -263,6 +298,12 @@ export default function LearnPage() {
 
   const goToNextCard = (isCorrect: boolean) => {
     saveToHistory(); // Save state before moving to the next card
+    
+    if (vocabulary.length === 1 && isCorrect) {
+        finishSession();
+        return;
+    }
+
     const currentCard = vocabulary[currentIndex];
     let remainingCards = [...vocabulary];
   
@@ -279,6 +320,11 @@ export default function LearnPage() {
       remainingCards.push(cardToRepeat);
     }
   
+    // If we're repeating the last card, force a re-mount to reset animation state
+    if (remainingCards.length === 1 && !isCorrect) {
+      setAnimationResetToken(c => c + 1);
+    }
+
     if (remainingCards.length === 0) {
       finishSession();
     } else {
@@ -292,6 +338,11 @@ export default function LearnPage() {
   const handleCheckAnswer = () => {
     if (isFlipped) {
       const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted' || answerStatus === 'omitted-correct';
+      if (vocabulary.length <= 1 && isCorrect) {
+        finishSession();
+        return;
+      }
+      
       setIsExiting(true);
       setTimeout(() => {
         setIsFlipped(false);
@@ -344,14 +395,14 @@ export default function LearnPage() {
         const vocabDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', currentCard.stackId, 'vocabulary', currentCard.id);
         updateDoc(vocabDocRef, { isMastered: true }).catch(console.error); // Non-blocking update
       }
-      triggerHapticFeedback('light');
+      if (hapticsEnabled) triggerHapticFeedback('light');
     } else {
       setAnswerStatus('incorrect');
       if (!incorrectlyAnsweredIds.has(currentCard.id)) {
         setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
       }
       setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
-      triggerHapticFeedback('heavy', 'heavy');
+      if (hapticsEnabled) triggerHapticFeedback('heavy', 'heavy');
     }
   };
 
@@ -361,6 +412,11 @@ export default function LearnPage() {
   const handleClassicAnswer = (knewIt: boolean) => {
     if (!isFlipped || isExiting) return;
 
+    if (vocabulary.length <= 1 && knewIt) {
+        finishSession();
+        return;
+    }
+    
     const currentCard = vocabulary[currentIndex];
     
     if (knewIt) {
@@ -371,13 +427,13 @@ export default function LearnPage() {
             const vocabDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', currentCard.stackId, 'vocabulary', currentCard.id);
             updateDoc(vocabDocRef, { isMastered: true }).catch(console.error); // Non-blocking update
         }
-        triggerHapticFeedback('light');
+        if (hapticsEnabled) triggerHapticFeedback('light');
     } else {
         if (!incorrectlyAnsweredIds.has(currentCard.id)) {
             setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
         }
         setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
-        triggerHapticFeedback('heavy');
+        if (hapticsEnabled) triggerHapticFeedback('heavy');
     }
     
     setIsExiting(true);
@@ -417,8 +473,34 @@ export default function LearnPage() {
     };
   }, [isFlipped, isTypedMode, isExiting]);
   
-  const frontIsForeign = isTermFirst;
-  const currentCard = vocabulary[currentIndex];
+    useEffect(() => {
+        // Save state on change
+        if (!isLoading && vocabulary.length > 0) {
+            const stateToSave = {
+                vocabulary,
+                initialVocab,
+                currentIndex,
+                incorrectlyAnsweredIds,
+                answeredIds,
+                sessionId,
+                history,
+                totalVocabCount,
+            };
+            sessionStorage.setItem(SESSION_STATE_KEY, JSON.stringify(stateToSave, replacer));
+        }
+    }, [vocabulary, currentIndex, answeredIds, incorrectlyAnsweredIds, history, sessionId, totalVocabCount, initialVocab, isLoading]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isLoading) {
+      timer = setTimeout(() => {
+        setShowSpinner(true);
+      }, 300);
+    } else {
+      setShowSpinner(false);
+    }
+    return () => clearTimeout(timer);
+  }, [isLoading]);
 
   useEffect(() => {
     // Load settings from local storage
@@ -435,7 +517,42 @@ export default function LearnPage() {
     const typedModeSetting = localStorage.getItem('learn-mode-typed') === 'true';
     setIsTypedMode(typedModeSetting);
 
+    const hapticsSetting = localStorage.getItem('haptic-feedback-enabled') !== 'false';
+    setHapticsEnabled(hapticsSetting);
+
     if (!firestore || !user) return;
+    
+    // Check for saved session state
+    const savedStateJSON = sessionStorage.getItem(SESSION_STATE_KEY);
+
+    if (savedStateJSON) {
+        const savedState = JSON.parse(savedStateJSON, reviver);
+        const storedSubjectId = sessionStorage.getItem('learn-session-subject');
+        
+        if (storedSubjectId) {
+            setVocabulary(savedState.vocabulary);
+            setInitialVocab(savedState.initialVocab);
+            setCurrentIndex(savedState.currentIndex);
+            setIncorrectlyAnsweredIds(savedState.incorrectlyAnsweredIds);
+            setAnsweredIds(savedState.answeredIds);
+            setSessionId(savedState.sessionId);
+            setHistory(savedState.history || []);
+            setTotalVocabCount(savedState.totalVocabCount);
+            setSubjectId(storedSubjectId);
+
+            getDoc(doc(firestore, 'users', user.uid, 'subjects', storedSubjectId)).then(docSnap => {
+                if (docSnap.exists()) {
+                    setSubject({ ...docSnap.data(), id: docSnap.id } as Subject);
+                }
+            });
+            
+            setIsLoading(false);
+            return;
+        } else {
+            // If subject is missing, the saved state is invalid. Clear it.
+             sessionStorage.removeItem(SESSION_STATE_KEY);
+        }
+    }
 
     const createSession = async () => {
         const sessionRef = await addDoc(collection(firestore, 'users', user.uid, 'learningSessions'), {
@@ -445,7 +562,6 @@ export default function LearnPage() {
         });
         setSessionId(sessionRef.id);
     };
-    createSession();
 
     const fetchVocab = async () => {
       const vocabIdsJson = sessionStorage.getItem('learn-session-vocab');
@@ -517,6 +633,7 @@ export default function LearnPage() {
         if (uniqueVocab.length === 0 && vocabIds.length > 0) {
           setError('Ausgewählte Vokabeln konnten nicht geladen werden.');
         } else {
+          createSession();
           const shuffledVocab = shuffleArray(uniqueVocab);
           setVocabulary(shuffledVocab);
           setInitialVocab(shuffledVocab);
@@ -572,10 +689,11 @@ export default function LearnPage() {
     setAnswerStatus('accepted');
     const currentCard = vocabulary[currentIndex];
     setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'accepted'));
-    triggerHapticFeedback('light');
+    if (hapticsEnabled) triggerHapticFeedback('light');
   }
 
   const resetSession = () => {
+    sessionStorage.removeItem(SESSION_STATE_KEY);
     setVocabulary(shuffleArray(initialVocab));
     setCurrentIndex(0);
     setIsFlipped(false);
@@ -589,6 +707,7 @@ export default function LearnPage() {
   };
   
   const handleBackToSelection = () => {
+    sessionStorage.removeItem(SESSION_STATE_KEY);
     if (subjectId) {
         router.push(`/dashboard/subjects/${subjectId}?tab=vocabulary`);
     } else {
@@ -638,8 +757,16 @@ export default function LearnPage() {
     return "Das Fundament fehlt noch – wiederhole regelmäßig, um Fortschritt zu sehen.";
   };
 
+  if (showSpinner) {
+    return (
+        <div className="absolute inset-0 flex h-full items-center justify-center">
+            <LoadingSpinner />
+        </div>
+    );
+  }
+
   if (isLoading) {
-    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin" /></div>;
+    return null;
   }
 
   if (error) {
@@ -649,6 +776,8 @@ export default function LearnPage() {
     </div>;
   }
   
+  const currentCard = vocabulary[currentIndex];
+
   if (!currentCard && !showResults) {
      return <div className="flex flex-col items-center justify-center h-screen text-center">
         <p>Keine Vokabeln für diese Sitzung geladen.</p>
@@ -695,22 +824,19 @@ export default function LearnPage() {
   
   const expectedAnswer = isTermFirst ? currentCard.definition : currentCard.term;
 
-  const foreignFlag = subject?.emoji || '🌐';
-  const germanFlag = '🇩🇪';
-
+  const frontIsForeign = isTermFirst;
   const backIsForeign = !isTermFirst;
 
   const frontWord = frontIsForeign ? currentCard.term : currentCard.definition;
-  const frontFlag = frontIsForeign ? foreignFlag : germanFlag;
+  const frontFlag = frontIsForeign ? subject?.emoji || '🌐' : '🇩🇪';
 
   const backWord = backIsForeign ? currentCard.term : currentCard.definition;
-  const backFlag = backIsForeign ? foreignFlag : germanFlag;
+  const backFlag = backIsForeign ? subject?.emoji || '🌐' : '🇩🇪';
   
   const formattedPhonetic = currentCard.phonetic ? currentCard.phonetic.replace(/^\/|\/$/g, '') : '';
 
-  const ttsEnabled = isMounted && localStorage.getItem('tts-enabled') !== 'false';
-  const autoplayFront = ttsEnabled && !isFlipped && frontIsForeign;
-  const autoplayBack = ttsEnabled && isFlipped && backIsForeign;
+  const autoplayFront = isAutoplayOn && !isFlipped && frontIsForeign;
+  const autoplayBack = isAutoplayOn && isFlipped && backIsForeign;
 
 
   return (
@@ -753,7 +879,7 @@ export default function LearnPage() {
           isTypedMode ? "justify-end" : "justify-center"
         )}>
           <div
-            key={currentCard.id}
+            key={`${currentCard.id}-${animationResetToken}`}
             className={cn(
               "relative w-full min-h-[20rem] flex flex-col items-center justify-center p-2 md:p-4 rounded-2xl glass-effect border transition-opacity duration-300",
               !isExiting ? 'opacity-100' : 'opacity-0',
@@ -770,17 +896,19 @@ export default function LearnPage() {
               </div>
             </div>
             
-             <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
-               <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                  {/* Speaker for the foreign word */}
-                  <div className={cn("absolute inset-0 [backface-visibility:hidden]", !frontIsForeign && "opacity-0")}>
-                      <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} autoplay={autoplayFront} />
-                  </div>
-                  <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !backIsForeign && "opacity-0")}>
-                      <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} autoplay={autoplayBack} />
-                  </div>
-              </div>
-            </div>
+            {ttsEnabled && (
+                <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
+                <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                    {/* Speaker for the foreign word */}
+                    <div className={cn("absolute inset-0 [backface-visibility:hidden]", !frontIsForeign && "opacity-0")}>
+                        <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} autoplay={autoplayFront} />
+                    </div>
+                    <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !backIsForeign && "opacity-0")}>
+                        <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} autoplay={autoplayBack} />
+                    </div>
+                </div>
+                </div>
+            )}
             
              <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
                 <div className={cn(
@@ -824,8 +952,8 @@ export default function LearnPage() {
                         <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
                             <Popover>
                                 <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground">
-                                        <Languages className="h-5 w-5" />
+                                    <Button variant="ghost" size="icon">
+                                        <Languages className="h-6 w-6" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-2" side="top">
@@ -845,8 +973,8 @@ export default function LearnPage() {
                         <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
                             <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
                                 <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); }}>
-                                    <Lightbulb className="h-5 w-5" />
+                                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); }}>
+                                    <Lightbulb className="h-6 w-6" />
                                 </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto max-w-xs sm:max-w-sm" side="top">
@@ -949,22 +1077,3 @@ export default function LearnPage() {
     </>
   );
 }
-
-
-    
-
-
-
-    
-
-
-
-
-    
-
-
-
-
-
-
-

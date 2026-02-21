@@ -3,6 +3,8 @@
 
 
 
+
+
 export type Subject = {
   id: string;
   name: string;
@@ -59,6 +61,8 @@ export type Verb = {
   source?: 'ai' | 'manual';
 };
 
+export type GenerateVerbFormsOutput = Omit<Verb, 'id' | 'subjectId' | 'language'>;
+
 export type QuizSettings = {
   repetitionTimeframe: '24h' | '7d' | '30d' | 'all';
   enableConfetti: boolean;
@@ -73,14 +77,6 @@ export type UserSettings = {
   quiz: QuizSettings;
   appearance: AppearanceSettings;
 };
-
-// Passkey Authenticator-Struktur für Firestore
-export type Authenticator = {
-    credentialID: string;
-    credentialPublicKey: string;
-    counter: number;
-    transports?: AuthenticatorTransport[];
-}
 
 export type LearningSessionVocabulary = {
   id: string;

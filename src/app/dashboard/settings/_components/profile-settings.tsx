@@ -24,12 +24,11 @@ import { cn } from '@/lib/utils';
 
 
 const presetAvatars = [
-    '/avatars/avatar-1.svg',
-    '/avatars/avatar-2.svg',
-    '/avatars/avatar-3.svg',
-    '/avatars/avatar-4.svg',
-    '/avatars/avatar-5.svg',
-    '/avatars/avatar-6.svg',
+    '/avatars/631372-red-squirrel-570936_1920.jpg',
+    '/avatars/alexas_fotos-fox-1310840_1920.jpg',
+    '/avatars/alexas_fotos-raccoon-3538081_1920.jpg',
+    '/avatars/olafviking-snake-8282641_1920.jpg',
+    '/avatars/wildpixar-deer-1367217_1920.jpg',
 ];
 
 export function ProfileSettings() {
@@ -190,7 +189,13 @@ export function ProfileSettings() {
                         </DialogHeader>
                         <div className="grid grid-cols-3 gap-4 py-4">
                             {presetAvatars.map(url => (
-                                <button key={url} onClick={() => handleAvatarSelect(url)} className="p-2 rounded-full hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring aspect-square">
+                                <button 
+                                key={url} 
+                                onClick={() => handleAvatarSelect(url)} 
+                                className={cn(
+                                    "p-2 rounded-full hover:bg-accent focus:outline-none aspect-square",
+                                    user?.photoURL === url && "ring-2 ring-primary"
+                                )}>
                                     <Image src={url} alt="Avatar" width={80} height={80} className="rounded-full w-full h-full object-cover" />
                                 </button>
                             ))}

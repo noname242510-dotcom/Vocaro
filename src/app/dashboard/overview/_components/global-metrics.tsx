@@ -1,4 +1,4 @@
-import { BrainCircuit, Bot, ShieldCheck, FileText, FunctionSquare } from 'lucide-react';
+import { Star, Book, WholeWord, ShieldCheck } from 'lucide-react';
 
 interface GlobalMetricsProps {
   totalMastered: number;
@@ -9,10 +9,10 @@ interface GlobalMetricsProps {
 
 export function GlobalMetrics({ totalMastered, vocabAiCount, verbFormsAiCount, readyForTest }: GlobalMetricsProps) {
   const metrics = [
-    { label: 'Insgesamt gemeistert', value: totalMastered, icon: BrainCircuit },
+    { label: 'Insgesamt gemeistert', value: totalMastered, icon: Star },
     { label: 'Bereit für den Test', value: readyForTest, icon: ShieldCheck },
-    { label: 'Vokabeln (KI)', value: vocabAiCount, icon: FileText },
-    { label: 'Verbformen (KI)', value: verbFormsAiCount, icon: FunctionSquare },
+    { label: 'Vokabeln (KI-erstellt)', value: vocabAiCount, icon: Book },
+    { label: 'Verbformen (KI-generiert)', value: verbFormsAiCount, icon: WholeWord },
   ];
 
   return (

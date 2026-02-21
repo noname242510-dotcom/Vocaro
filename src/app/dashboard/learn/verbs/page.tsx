@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -7,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Check, Loader2, RotateCcw, X, Lightbulb, Pencil, ChevronLeft, Smile, Frown, Meh } from 'lucide-react';
+import { ArrowLeft, Check, RotateCcw, X, Lightbulb, Pencil, ChevronLeft, Smile, Frown, Meh } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Verb, VerbTense, Subject } from '@/lib/types';
 import {
@@ -19,7 +18,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Confetti } from '@/components/confetti';
 import { Input } from '@/components/ui/input';
@@ -28,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useFirebase } from '@/firebase';
 import { doc, getDoc, collection, addDoc, serverTimestamp, writeBatch, updateDoc } from 'firebase/firestore';
 import { SpeakerButton } from '@/components/speaker-button';
+import { LoadingSpinner } from '@/components/loading-spinner';
 
 
 // Function to shuffle an array
@@ -59,6 +58,31 @@ interface VerbLearnState {
   answeredIds: Map<string, AnswerStatus>;
   userInput: string;
 }
+
+const SESSION_STATE_KEY = 'learn-session-verb-state';
+
+// JSON replacer/reviver to handle Map and Set
+const replacer = (key: string, value: any) => {
+  if(value instanceof Map) {
+    return { __type: 'Map', value: Array.from(value.entries()) };
+  }
+  if(value instanceof Set) {
+    return { __type: 'Set', value: Array.from(value.values()) };
+  }
+  return value;
+};
+
+const reviver = (key: string, value: any) => {
+    if(typeof value === 'object' && value !== null) {
+      if (value.__type === 'Map') {
+        return new Map(value.value);
+      }
+      if (value.__type === 'Set') {
+        return new Set(value.value);
+      }
+    }
+    return value;
+  };
 
 
 const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: string, correctAnswer: string, status: AnswerStatus }) => {
@@ -224,6 +248,7 @@ export default function VerbPracticePage() {
     const [practiceItems, setPracticeItems] = useState<PracticeItem[]>([]);
     const [initialItems, setInitialItems] = useState<PracticeItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [showSpinner, setShowSpinner] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [subjectId, setSubjectId] = useState<string | null>(null);
     const [sessionId, setSessionId] = useState<string | null>(null);
@@ -238,9 +263,11 @@ export default function VerbPracticePage() {
     const [showResults, setShowResults] = useState(false);
     const [isExiting, setIsExiting] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
+    const [animationResetToken, setAnimationResetToken] = useState(0);
     
     const [isGermanFirst, setIsGermanFirst] = useState(true);
     const [shouldShowHints, setShouldShowHints] = useState(true);
+    const [hapticsEnabled, setHapticsEnabled] = useState(true);
 
     const [history, setHistory] = useState<VerbLearnState[]>([]);
     
@@ -250,10 +277,15 @@ export default function VerbPracticePage() {
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [ttsEnabled, setTtsEnabled] = useState(false);
+    const [isAutoplayOn, setIsAutoplayOn] = useState(true);
 
 
     useEffect(() => {
         setIsMounted(true);
+        setTtsEnabled(localStorage.getItem('tts-enabled') === 'true');
+        const autoplaySetting = localStorage.getItem('tts-autoplay-enabled');
+        setIsAutoplayOn(autoplaySetting === null ? true : autoplaySetting === 'true');
     }, []);
 
     const finishSession = async () => {
@@ -282,6 +314,8 @@ export default function VerbPracticePage() {
             await batch.commit();
         }
 
+        sessionStorage.removeItem(SESSION_STATE_KEY);
+
         const incorrectCount = incorrectlyAnsweredIds.size;
         const correctCount = totalItemCount - incorrectCount;
         const finalScore = totalItemCount > 0 ? Math.round((correctCount / totalItemCount) * 100) : 0;
@@ -294,6 +328,12 @@ export default function VerbPracticePage() {
     };
 
     const goToNextCard = (isCorrect: boolean) => {
+        
+        if (practiceItems.length === 1 && isCorrect) {
+            finishSession();
+            return;
+        }
+
         const currentCard = practiceItems[currentIndex];
         let remainingCards = [...practiceItems];
 
@@ -309,6 +349,10 @@ export default function VerbPracticePage() {
           const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
           remainingCards.push(cardToRepeat);
         }
+
+        if (remainingCards.length === 1 && !isCorrect) {
+            setAnimationResetToken(c => c + 1);
+        }
       
         if (remainingCards.length === 0) {
           finishSession();
@@ -322,7 +366,12 @@ export default function VerbPracticePage() {
 
     const handleCheckAnswer = () => {
         if (isFlipped) {
-          const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted' || answerStatus === 'omitted-correct';
+          const isCorrect = answerStatus === 'correct' || status === 'accepted' || status === 'omitted-correct';
+          if (practiceItems.length <= 1 && isCorrect) {
+            finishSession();
+            return;
+          }
+          
           setIsExiting(true);
           setTimeout(() => {
             setIsFlipped(false);
@@ -376,14 +425,14 @@ export default function VerbPracticePage() {
                 const verbDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'verbs', currentCard.verbId);
                 updateDoc(verbDocRef, { isMastered: true }).catch(console.error); // Non-blocking update
             }
-          triggerHapticFeedback('light');
+          if (hapticsEnabled) triggerHapticFeedback('light');
         } else {
           setAnswerStatus('incorrect');
           if (!incorrectlyAnsweredIds.has(currentCard.id)) {
             setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
           }
           setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
-          triggerHapticFeedback('heavy', 'heavy'); // Double tap
+          if (hapticsEnabled) triggerHapticFeedback('heavy', 'heavy'); // Double tap
         }
     };
 
@@ -393,6 +442,11 @@ export default function VerbPracticePage() {
     const handleClassicAnswer = (knewIt: boolean) => {
         if (!isFlipped || isExiting) return;
 
+        if (practiceItems.length <= 1 && knewIt) {
+            finishSession();
+            return;
+        }
+        
         saveToHistory();
     
         const currentCard = practiceItems[currentIndex];
@@ -405,13 +459,13 @@ export default function VerbPracticePage() {
                 const verbDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'verbs', currentCard.verbId);
                 updateDoc(verbDocRef, { isMastered: true }).catch(console.error);
             }
-            triggerHapticFeedback('light');
+            if (hapticsEnabled) triggerHapticFeedback('light');
         } else {
             if (!incorrectlyAnsweredIds.has(currentCard.id)) {
                 setIncorrectlyAnsweredIds(prev => new Set(prev).add(currentCard.id));
             }
             setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'incorrect'));
-            triggerHapticFeedback('heavy');
+            if (hapticsEnabled) triggerHapticFeedback('heavy');
         }
         
         setIsExiting(true);
@@ -452,8 +506,37 @@ export default function VerbPracticePage() {
       };
     }, [isFlipped, isTypedMode, isExiting]);
 
+     useEffect(() => {
+        // Save state on change
+        if (!isLoading && practiceItems.length > 0) {
+            const stateToSave = {
+                practiceItems,
+                initialItems,
+                currentIndex,
+                incorrectlyAnsweredIds,
+                answeredIds,
+                sessionId,
+                history,
+                totalItemCount,
+            };
+            sessionStorage.setItem(SESSION_STATE_KEY, JSON.stringify(stateToSave, replacer));
+        }
+    }, [practiceItems, currentIndex, answeredIds, incorrectlyAnsweredIds, history, sessionId, totalItemCount, initialItems, isLoading]);
+
     const frontIsGerman = isGermanFirst;
     const currentCard = practiceItems[currentIndex];
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (isLoading) {
+          timer = setTimeout(() => {
+            setShowSpinner(true);
+          }, 300);
+        } else {
+          setShowSpinner(false);
+        }
+        return () => clearTimeout(timer);
+      }, [isLoading]);
 
     useEffect(() => {
         const persistedQueryDirectionVerbs = localStorage.getItem('query-direction-verbs');
@@ -469,7 +552,40 @@ export default function VerbPracticePage() {
         const typedModeSetting = localStorage.getItem('learn-mode-typed') === 'true';
         setIsTypedMode(typedModeSetting);
 
+        const hapticsSetting = localStorage.getItem('haptic-feedback-enabled') !== 'false';
+        setHapticsEnabled(hapticsSetting);
+
         if (!firestore || !user) return;
+        
+        const savedStateJSON = sessionStorage.getItem(SESSION_STATE_KEY);
+        if (savedStateJSON) {
+            const savedState = JSON.parse(savedStateJSON, reviver);
+            const storedSubjectId = sessionStorage.getItem('verb-practice-subject-id');
+            
+            if (storedSubjectId) {
+                setPracticeItems(savedState.practiceItems);
+                setInitialItems(savedState.initialItems);
+                setCurrentIndex(savedState.currentIndex);
+                setIncorrectlyAnsweredIds(savedState.incorrectlyAnsweredIds);
+                setAnsweredIds(savedState.answeredIds);
+                setSessionId(savedState.sessionId);
+                setHistory(savedState.history || []);
+                setTotalItemCount(savedState.totalItemCount);
+                setSubjectId(storedSubjectId);
+                
+                getDoc(doc(firestore, 'users', user.uid, 'subjects', storedSubjectId)).then(docSnap => {
+                    if (docSnap.exists()) {
+                        setSubject({ ...docSnap.data(), id: docSnap.id } as Subject);
+                    }
+                });
+
+                setIsLoading(false);
+                return;
+            } else {
+                sessionStorage.removeItem(SESSION_STATE_KEY);
+            }
+        }
+
 
         const createSession = async () => {
             const sessionRef = await addDoc(collection(firestore, 'users', user.uid, 'learningSessions'), {
@@ -479,12 +595,10 @@ export default function VerbPracticePage() {
             });
             setSessionId(sessionRef.id);
         };
-        createSession();
+        
 
         const sessionData = sessionStorage.getItem('verb-practice-session');
         const subjectIdData = sessionStorage.getItem('verb-practice-subject-id');
-
-        
 
         if (!sessionData || !subjectIdData) {
             setError('Keine Übungsdaten gefunden. Bitte gehe zurück und wähle Verben aus.');
@@ -561,6 +675,7 @@ export default function VerbPracticePage() {
                     return;
                 }
 
+                createSession();
                 const shuffledItems = shuffleArray(finalItems);
                 setPracticeItems(shuffledItems);
                 setInitialItems(shuffledItems);
@@ -621,10 +736,11 @@ export default function VerbPracticePage() {
         setAnswerStatus('accepted');
         const currentCard = practiceItems[currentIndex];
         setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'accepted'));
-        triggerHapticFeedback('light');
+        if (hapticsEnabled) triggerHapticFeedback('light');
     };
     
     const resetSession = () => {
+        sessionStorage.removeItem(SESSION_STATE_KEY);
         setPracticeItems(shuffleArray(initialItems));
         setCurrentIndex(0);
         setIsFlipped(false);
@@ -638,6 +754,7 @@ export default function VerbPracticePage() {
     };
 
     const handleBackToSubject = () => {
+        sessionStorage.removeItem(SESSION_STATE_KEY);
         if (subjectId) {
             router.push(`/dashboard/subjects/${subjectId}?tab=verbs`);
         } else {
@@ -667,8 +784,16 @@ export default function VerbPracticePage() {
         return "Das Fundament fehlt noch – wiederhole regelmäßig, um Fortschritt zu sehen.";
     };
 
+    if (showSpinner) {
+        return (
+            <div className="absolute inset-0 flex h-full items-center justify-center">
+                <LoadingSpinner />
+            </div>
+        );
+    }
+
     if (isLoading) {
-        return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin" /></div>;
+        return null;
     }
     
     if (error) {
@@ -721,21 +846,16 @@ export default function VerbPracticePage() {
         }
     };
     
-    // Check if the original 'front' of the item was German
-    const foreignWordFlag = subject?.emoji || '🌐';
-    const germanFlag = '🇩🇪';
-
     // Assign flags based on whether the content is German or foreign.
-    const frontFlag = frontIsGerman ? germanFlag : foreignWordFlag;
-    const backFlag = frontIsGerman ? foreignWordFlag : germanFlag;
+    const frontFlag = frontIsGerman ? '🇩🇪' : subject?.emoji || '🌐';
+    const backFlag = frontIsGerman ? subject?.emoji || '🌐' : '🇩🇪';
 
     // The text to be spoken is always the foreign language text.
     // If the front is German, the back is foreign, and vice-versa.
     const textToSpeak = frontIsGerman ? currentCard.back : currentCard.front;
 
-    const ttsEnabled = isMounted && localStorage.getItem('tts-enabled') !== 'false';
-    const autoplayFront = ttsEnabled && !isFlipped && !frontIsGerman; // Foreign word is on front
-    const autoplayBack = ttsEnabled && isFlipped && frontIsGerman; // Foreign word is on back
+    const autoplayFront = isAutoplayOn && !isFlipped && !frontIsGerman; // Foreign word is on front
+    const autoplayBack = isAutoplayOn && isFlipped && frontIsGerman; // Foreign word is on back
 
     return (
         <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-9rem)] -mx-4 sm:mx-auto sm:w-full sm:max-w-4xl">
@@ -775,7 +895,7 @@ export default function VerbPracticePage() {
                 isTypedMode ? "justify-end" : "justify-center"
             )}>
                 <div
-                    key={currentCard.id}
+                    key={`${currentCard.id}-${animationResetToken}`}
                     className={cn(
                         "relative w-full min-h-[20rem] flex flex-col items-center justify-center p-2 md:p-4 rounded-2xl glass-effect border transition-opacity duration-300",
                          !isExiting ? 'opacity-100' : 'opacity-0'
@@ -792,17 +912,18 @@ export default function VerbPracticePage() {
                         </div>
                     </div>
                     
-
-                     <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
-                        <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                            <div className={cn("absolute inset-0 [backface-visibility:hidden]", frontIsGerman && "opacity-0")}>
-                                <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} autoplay={autoplayFront} />
-                            </div>
-                            <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !frontIsGerman && "opacity-0")}>
-                                <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} autoplay={autoplayBack} />
+                    {ttsEnabled && (
+                        <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
+                            <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                                <div className={cn("absolute inset-0 [backface-visibility:hidden]", frontIsGerman && "opacity-0")}>
+                                    <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} autoplay={autoplayFront} />
+                                </div>
+                                <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !frontIsGerman && "opacity-0")}>
+                                    <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} autoplay={autoplayBack} />
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">
                         <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
@@ -813,8 +934,8 @@ export default function VerbPracticePage() {
                                {shouldShowHints && currentCard.isConjugation && (
                                     <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
                                         <PopoverTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-foreground" onClick={(e) => { e.stopPropagation(); }}>
-                                            <Lightbulb className="h-5 w-5" />
+                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); }}>
+                                            <Lightbulb className="h-6 w-6" />
                                         </Button>
                                         </PopoverTrigger>
                                         <PopoverContent
@@ -936,20 +1057,3 @@ export default function VerbPracticePage() {
         </div>
     );
 }
-
-
-    
-
-
-
-    
-
-
-
-
-
-
-
-
-
-

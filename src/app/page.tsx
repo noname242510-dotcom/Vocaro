@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,7 +43,7 @@ export default function LoginPage() {
     try {
       const auth = getAuth();
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      router.push('/dashboard/overview');
     } catch (error: any) {
       let description = 'Ein unbekannter Fehler ist aufgetreten.';
       switch (error.code) {
@@ -152,7 +152,9 @@ export default function LoginPage() {
       </main>
       <footer className="w-full text-center text-xs text-muted-foreground p-6">
         <p>© 2026 Vocaro. Entwickelt mit ♥ und KI-Unterstützung für moderne Sprachlernende.</p>
-        <p>Bald auch als App verfügbar.</p>
+        <p>
+          <Link href="/privacy" className="underline">Datenschutz</Link> · <Link href="/terms" className="underline">AGB</Link>
+        </p>
       </footer>
     </div>
   );

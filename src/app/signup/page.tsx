@@ -11,8 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Fingerprint, Sun, Moon } from 'lucide-react';
-import { startRegistration } from '@simplewebauthn/browser';
+import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
 
 
 export default function SignUpPage() {
@@ -54,7 +53,7 @@ export default function SignUpPage() {
       }
       
       // Use router.push for client-side navigation
-      router.push('/dashboard');
+      router.push('/dashboard/overview');
 
     } catch (error: any) {
         let description = 'Ein unbekannter Fehler ist aufgetreten.';
@@ -79,48 +78,6 @@ export default function SignUpPage() {
       });
     }
   };
-
-  const handlePasskeyRegister = async () => {
-    if (!username.trim()) {
-      toast({ variant: 'destructive', title: 'Benutzername fehlt', description: 'Bitte gib zuerst einen Benutzernamen ein.' });
-      return;
-    }
-    
-    try {
-        // Schritt 1: Registrierungs-Optionen vom Server abrufen
-        const responseOptions = await fetch(`/api/passkey/generate-registration-options?username=${encodeURIComponent(username)}`);
-        const options = await responseOptions.json();
-        if(responseOptions.status !== 200) throw new Error(options.error);
-
-        // Schritt 2: Browser zur Erstellung eines Passkeys auffordern
-        const registrationResponse = await startRegistration(options);
-
-        // Schritt 3: Antwort an den Server zur Verifizierung senden
-        const responseVerification = await fetch('/api/passkey/verify-registration', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, ...registrationResponse }),
-        });
-        const { verified, customToken, error } = await responseVerification.json();
-
-        if (responseVerification.status !== 200) throw new Error(error);
-
-        // Schritt 4: Mit dem Custom Token bei Firebase anmelden
-        if (verified && customToken) {
-            const auth = getAuth();
-            await signInWithCustomToken(auth, customToken);
-            router.push('/dashboard');
-        } else {
-            throw new Error('Verifizierung fehlgeschlagen.');
-        }
-    } catch (error: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Passkey-Registrierung fehlgeschlagen',
-            description: error.message || 'Ein unbekannter Fehler ist aufgetreten.'
-        });
-    }
-  }
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-background">
@@ -192,18 +149,6 @@ export default function SignUpPage() {
                 </Button>
               </div>
             </form>
-             <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">Oder</span>
-                </div>
-            </div>
-            <Button variant="outline" className="w-full" onClick={handlePasskeyRegister}>
-                <Fingerprint className="mr-2 h-4 w-4" />
-                Mit Passkey registrieren
-            </Button>
             <div className="mt-4 text-center text-sm">
               Hast du bereits ein Konto?{' '}
               <Link href="/" className="underline">
@@ -214,8 +159,10 @@ export default function SignUpPage() {
         </Card>
       </main>
       <footer className="w-full text-center text-xs text-muted-foreground p-6">
-        <p>© 2025 Vocaro. Entwickelt mit ♥ und KI-Unterstützung für moderne Sprachlernende.</p>
-        <p>Bald auch als App verfügbar.</p>
+        <p>© 2026 Vocaro. Entwickelt mit ♥ und KI-Unterstützung für moderne Sprachlernende.</p>
+        <p>
+          <Link href="/privacy" className="underline">Datenschutz</Link> · <Link href="/terms" className="underline">AGB</Link>
+        </p>
       </footer>
     </div>
   );

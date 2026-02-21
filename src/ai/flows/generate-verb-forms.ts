@@ -9,16 +9,13 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import type { Verb } from '@/lib/types';
+import type { Verb, GenerateVerbFormsOutput } from '@/lib/types';
 
 const GenerateVerbFormsInputSchema = z.object({
   verb: z.string().describe('The infinitive form of the verb to be conjugated.'),
   language: z.string().describe("The language of the verb, e.g., 'French', 'English'."),
 });
 type GenerateVerbFormsInput = z.infer<typeof GenerateVerbFormsInputSchema>;
-
-// This is the full output we expect from the flow, including German forms
-export type GenerateVerbFormsOutput = Omit<Verb, 'id' | 'subjectId' | 'language'>;
 
 
 const FlatConjugationSchema = z.object({

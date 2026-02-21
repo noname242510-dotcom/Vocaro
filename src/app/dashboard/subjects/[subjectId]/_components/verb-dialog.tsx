@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useContext } from 'react';
@@ -13,8 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Loader2, Wand2, AlertTriangle, Save, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { generateVerbForms, type GenerateVerbFormsOutput } from '@/ai/flows/generate-verb-forms';
-import type { Verb, VerbTense } from '@/lib/types';
+import { generateVerbForms } from '@/ai/flows/generate-verb-forms';
+import type { GenerateVerbFormsOutput, Verb, VerbTense } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';

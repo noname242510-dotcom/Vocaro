@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
-import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { PT_Sans, Merriweather, Inconsolata } from 'next/font/google';
 import { cn } from "@/lib/utils";
 import { ClientToaster } from "@/components/client-toaster";
-import { TaskProvider } from "@/contexts/task-context";
-import { TaskProgressToast } from "@/components/task-progress-toast";
-import { GlobalVerbResultListener } from "@/components/global-verb-result-listener";
 
 export const metadata: Metadata = {
   title: "Vocaro",
@@ -49,11 +45,7 @@ export default function RootLayout({
     <html lang="de" className="light">
       <body className={cn("antialiased min-h-screen font-body", ptSans.variable, merriweather.variable, inconsolata.variable)}>
         <FirebaseClientProvider>
-          <TaskProvider>
-            {children}
-            <TaskProgressToast />
-            <GlobalVerbResultListener />
-          </TaskProvider>
+          {children}
         </FirebaseClientProvider>
         <ClientToaster />
       </body>

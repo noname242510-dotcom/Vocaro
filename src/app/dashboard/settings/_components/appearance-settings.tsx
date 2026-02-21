@@ -10,6 +10,7 @@ import { SectionShell } from './section-shell';
 export function AppearanceSettings() {
   const [font, setFont] = useState('font-body');
   const [enableConfetti, setEnableConfetti] = useState(true);
+  const [hapticFeedback, setHapticFeedback] = useState(true);
 
   useEffect(() => {
     const persistedFont = localStorage.getItem('app-font') || 'font-body';
@@ -17,6 +18,9 @@ export function AppearanceSettings() {
 
     const persistedConfetti = localStorage.getItem('enable-confetti');
     setEnableConfetti(persistedConfetti === null ? true : persistedConfetti === 'true');
+    
+    const persistedHaptics = localStorage.getItem('haptic-feedback-enabled');
+    setHapticFeedback(persistedHaptics === null ? true : persistedHaptics === 'true');
   }, []);
 
   const handleFontChange = (newFont: string) => {
@@ -32,6 +36,11 @@ export function AppearanceSettings() {
     setEnableConfetti(checked);
     localStorage.setItem('enable-confetti', String(checked));
   };
+  
+  const handleHapticFeedbackChange = (checked: boolean) => {
+    setHapticFeedback(checked);
+    localStorage.setItem('haptic-feedback-enabled', String(checked));
+  }
   
   return (
     <SectionShell title="Darstellung" description="Passe an, wie Vocaro aussieht und sich anfühlt.">
@@ -65,6 +74,17 @@ export function AppearanceSettings() {
             </Label>
             <Switch id="confetti-mode" checked={enableConfetti} onCheckedChange={handleConfettiChange} />
           </div>
+
+          <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="haptic-feedback" className="flex flex-col space-y-1">
+              <span>Haptisches Feedback</span>
+              <span className="font-normal leading-snug text-muted-foreground">
+                Gibt bei Aktionen Vibrationsfeedback (auf unterstützten Geräten).
+              </span>
+            </Label>
+            <Switch id="haptic-feedback" checked={hapticFeedback} onCheckedChange={handleHapticFeedbackChange} />
+          </div>
+
         </CardContent>
       </Card>
     </SectionShell>

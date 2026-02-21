@@ -1,6 +1,5 @@
 'use client';
 
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -8,30 +7,17 @@ import { Switch } from '@/components/ui/switch';
 import { SectionShell } from './section-shell';
 
 export function TtsSettings() {
-  const [isEnabled, setIsEnabled] = useState(true);
-  const [isAutoPlaybackEnabled, setIsAutoPlaybackEnabled] = useState(true);
+  const [isEnabled, setIsEnabled] = useState(false);
+  const [isAutoplayEnabled, setIsAutoplayEnabled] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    
-    const enabledSetting = localStorage.getItem('tts-enabled');
-    if (enabledSetting === null) {
-      // If the setting is not in localStorage, default it to 'true'.
-      setIsEnabled(true);
-      localStorage.setItem('tts-enabled', 'true');
-    } else {
-      setIsEnabled(enabledSetting === 'true');
-    }
+    const persistedEnabled = localStorage.getItem('tts-enabled') === 'true';
+    setIsEnabled(persistedEnabled);
 
-    const autoPlaybackSetting = localStorage.getItem('tts-auto-playback');
-    if (autoPlaybackSetting === null) {
-      // Default auto-playback to 'true' as well.
-      setIsAutoPlaybackEnabled(true);
-      localStorage.setItem('tts-auto-playback', 'true');
-    } else {
-      setIsAutoPlaybackEnabled(autoPlaybackSetting === 'true');
-    }
+    const persistedAutoplay = localStorage.getItem('tts-autoplay-enabled');
+    setIsAutoplayEnabled(persistedAutoplay === null ? true : persistedAutoplay === 'true');
   }, []);
 
   const handleEnabledChange = (checked: boolean) => {
@@ -39,13 +25,13 @@ export function TtsSettings() {
     localStorage.setItem('tts-enabled', String(checked));
   };
 
-  const handleAutoPlaybackChange = (checked: boolean) => {
-    setIsAutoPlaybackEnabled(checked);
-    localStorage.setItem('tts-auto-playback', String(checked));
+  const handleAutoplayChange = (checked: boolean) => {
+    setIsAutoplayEnabled(checked);
+    localStorage.setItem('tts-autoplay-enabled', String(checked));
   };
-
+  
   if (!isMounted) {
-    return null; // Avoid hydration mismatch
+    return null; // Don't render on server
   }
 
   return (
@@ -56,28 +42,28 @@ export function TtsSettings() {
             <Label htmlFor="tts-enabled" className="flex flex-col space-y-1">
               <span>Sprachausgabe aktivieren</span>
               <span className="font-normal leading-snug text-muted-foreground">
-                Spielt Vokabeln und Verben laut ab.
+                Zeigt einen Button zum Abspielen von Vokabeln an.
               </span>
             </Label>
-            <Switch
-              id="tts-enabled"
-              checked={isEnabled}
-              onCheckedChange={handleEnabledChange}
+            <Switch 
+              id="tts-enabled" 
+              checked={isEnabled} 
+              onCheckedChange={handleEnabledChange} 
             />
           </div>
 
           {isEnabled && (
             <div className="flex items-center justify-between space-x-2">
-              <Label htmlFor="auto-playback-enabled" className="flex flex-col space-y-1">
-                <span>Automatische Wiedergabe</span>
+              <Label htmlFor="autoplay-enabled" className="flex flex-col space-y-1">
+                <span>Automatische Sprachausgabe</span>
                 <span className="font-normal leading-snug text-muted-foreground">
-                  Spielt die Aussprache automatisch ab, wenn eine neue Karte angezeigt wird.
+                  Spielt Vokabeln automatisch beim Anzeigen ab.
                 </span>
               </Label>
-              <Switch
-                id="auto-playback-enabled"
-                checked={isAutoPlaybackEnabled}
-                onCheckedChange={handleAutoPlaybackChange}
+              <Switch 
+                id="autoplay-enabled"
+                checked={isAutoplayEnabled}
+                onCheckedChange={handleAutoplayChange}
               />
             </div>
           )}

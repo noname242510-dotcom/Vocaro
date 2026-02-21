@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, type ReactNode } from 'react';
-import { FirebaseProvider } from '@/firebase/provider';
-import { initializeFirebase } from '@/firebase';
+import { FirebaseProvider } from './provider';
+import { initializeFirebase } from './init';
 import { setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { enableIndexedDbPersistence } from "firebase/firestore";
-import type { getSdks } from '@/firebase';
+import type { getSdks } from './init';
 
 type FirebaseServices = Awaited<ReturnType<typeof getSdks>>;
 

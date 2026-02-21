@@ -9,18 +9,23 @@ export async function POST(request: NextRequest) {
         }
         const idToken = authorization.split('Bearer ')[1];
         
-        const { password } = await request.json(); // Passwort kann null sein
+        const { password } = await request.json(); 
 
         const decodedToken = await authAdmin.verifyIdToken(idToken);
         const uid = decodedToken.uid;
         const user = await authAdmin.getUser(uid);
         const email = user.email;
 
-        // Führe die Passwortüberprüfung nur durch, wenn ein Passwort mitgesendet wurde und der Benutzer einen E-Mail-Provider hat.
-        if (password && user.providerData.some(p => p.providerId === 'password')) {
-             if (!email) {
+        const hasPasswordProvider = user.providerData.some(p => p.providerId === 'password');
+
+        if (hasPasswordProvider) {
+            if (!password) {
+                return NextResponse.json({ error: 'Passwort ist zur Bestätigung erforderlich.' }, { status: 400 });
+            }
+            if (!email) {
                 return NextResponse.json({ error: 'Benutzer-E-Mail nicht gefunden, Authentifizierung nicht möglich.' }, { status: 400 });
             }
+            
             const { initializeApp, getApps, deleteApp } = await import('firebase/app');
             const { getAuth: getClientAuth, signInWithEmailAndPassword } = await import('firebase/auth');
 
@@ -48,12 +53,6 @@ export async function POST(request: NextRequest) {
                     deleteApp(tempApp).catch(console.error);
                 }
             }
-        } else if (!user.providerData.some(p => p.providerId === 'password') && password) {
-            // Wenn der User kein Passwort hat, aber eins gesendet wurde -> Fehler
-            return NextResponse.json({ error: 'Dieser Account verwendet keine Passwörter.' }, { status: 400 });
-        } else if (user.providerData.some(p => p.providerId === 'password') && !password) {
-             // Wenn der User ein Passwort hat, aber keins gesendet wurde -> Fehler
-            return NextResponse.json({ error: 'Passwort ist zur Bestätigung erforderlich.' }, { status: 400 });
         }
         
         // Lösche den Benutzer aus Firebase Authentication

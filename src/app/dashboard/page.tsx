@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -125,8 +124,10 @@ export default function DashboardPage() {
         </div>
       </div>
       <footer className="w-full text-center text-xs text-muted-foreground p-6 mt-auto">
-        <p>© 2025 Vocaro. Entwickelt mit ♥ und KI-Unterstützung für moderne Sprachlernende.</p>
-        <p>Bald auch als App verfügbar.</p>
+        <p>© 2026 Vocaro. Entwickelt mit ♥ und KI-Unterstützung für moderne Sprachlernende.</p>
+        <p>
+          <Link href="/privacy" className="underline">Datenschutz</Link> · <Link href="/terms" className="underline">AGB</Link>
+        </p>
       </footer>
     </div>
   );
