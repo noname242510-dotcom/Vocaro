@@ -43,7 +43,7 @@ export default function LoginPage() {
     try {
       const auth = getAuth();
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard/overview');
+      router.push('/dashboard');
     } catch (error: any) {
       let description = 'Ein unbekannter Fehler ist aufgetreten.';
       switch (error.code) {

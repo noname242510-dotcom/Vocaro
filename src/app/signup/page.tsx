@@ -53,7 +53,7 @@ export default function SignUpPage() {
       }
       
       // Use router.push for client-side navigation
-      router.push('/dashboard/overview');
+      router.push('/dashboard');
 
     } catch (error: any) {
         let description = 'Ein unbekannter Fehler ist aufgetreten.';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
-import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase';
 import type { Subject, Stack, VocabularyItem, Verb, LearningSessionVocabulary, LearningSessionVerbAnswer } from '@/lib/types';
 import { collection, getDocs, query, orderBy, where, Timestamp } from 'firebase/firestore';
 import { DeckGrid } from './_components/deck-grid';
@@ -33,45 +33,55 @@ export default function DashboardOverviewPage() {
       const fetchedSubjects = subjectsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Subject));
       setSubjects(fetchedSubjects);
 
-      const allDataPromises = fetchedSubjects.map(async (subject) => {
-        // 2. Fetch Stacks, Verbs, Vocab for each subject
-        const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks');
-        const verbsCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'verbs');
-        
-        const [stacksSnapshot, verbsSnapshot] = await Promise.all([
-            getDocs(stacksCollectionRef),
-            getDocs(verbsCollectionRef)
-        ]);
-
-        const subjectStacks = stacksSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, subjectId: subject.id } as Stack));
-        const subjectVerbs = verbsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, subjectId: subject.id } as Verb));
-
-        const vocabPromises = subjectStacks.map(stack => 
-            getDocs(collection(stacksCollectionRef, stack.id, 'vocabulary'))
-                .then(snapshot => snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id, stackId: stack.id } as VocabularyItem)))
-        );
-        const subjectVocabArrays = await Promise.all(vocabPromises);
-        const subjectVocab = subjectVocabArrays.flat();
-
-        return { subject, subjectStacks, subjectVerbs, subjectVocab };
-      });
+      if (fetchedSubjects.length === 0) {
+        setIsLoading(false);
+        return;
+      }
       
-      const allSubjectData = await Promise.all(allDataPromises);
+      // 2. Fetch all stacks and verbs in parallel for all subjects
+      const allStacksAndVerbsPromises = fetchedSubjects.map(subject => {
+        const stacksRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks');
+        const verbsRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'verbs');
+        return Promise.all([
+            getDocs(stacksRef),
+            getDocs(verbsRef),
+            Promise.resolve(subject.id)
+        ]);
+      });
+
+      const results = await Promise.all(allStacksAndVerbsPromises);
 
       const tempStacks: Stack[] = [];
-      const tempVocab: VocabularyItem[] = [];
       const tempVerbs: Verb[] = [];
-      allSubjectData.forEach(data => {
-        tempStacks.push(...data.subjectStacks);
-        tempVocab.push(...data.subjectVocab);
-        tempVerbs.push(...data.subjectVerbs);
+      const allVocabPromises: Promise<VocabularyItem[]>[] = [];
+
+      results.forEach(([stacksSnapshot, verbsSnapshot, subjectId]) => {
+        verbsSnapshot.docs.forEach(doc => {
+            tempVerbs.push({ ...doc.data(), id: doc.id, subjectId } as Verb);
+        });
+
+        stacksSnapshot.docs.forEach(stackDoc => {
+            const stack = { ...stackDoc.data(), id: stackDoc.id, subjectId } as Stack;
+            tempStacks.push(stack);
+            
+            const vocabRef = collection(stackDoc.ref, 'vocabulary');
+            // This creates a promise for each stack's vocabulary fetch
+            const vocabPromise = getDocs(vocabRef).then(vocabSnap => 
+                vocabSnap.docs.map(vocabDoc => ({ ...vocabDoc.data(), id: vocabDoc.id, stackId: stack.id } as VocabularyItem))
+            );
+            allVocabPromises.push(vocabPromise);
+        });
       });
+      
+      // 3. Await all vocabulary fetches at once
+      const allVocabArrays = await Promise.all(allVocabPromises);
+      const tempVocab = allVocabArrays.flat();
 
       setAllStacks(tempStacks);
-      setAllVocab(tempVocab);
       setAllVerbs(tempVerbs);
+      setAllVocab(tempVocab);
 
-      // 3. Fetch Learning Session Data (optimized to last 30 days)
+      // 4. Fetch Learning Session Data in parallel
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const sessionsQuery = query(
@@ -81,13 +91,11 @@ export default function DashboardOverviewPage() {
       );
       const sessionsSnapshot = await getDocs(sessionsQuery);
       
-      const tempAnswers: EnrichedAnswer[] = [];
-      const verbIdsForSubject = new Set(tempVerbs.map(v => v.id));
-      const vocabIdsForSubject = new Set(tempVocab.map(v => v.id));
+      const verbIds = new Set(tempVerbs.map(v => v.id));
+      const vocabIds = new Set(tempVocab.map(v => v.id));
 
-      for (const sessionDoc of sessionsSnapshot.docs) {
+      const answerPromises = sessionsSnapshot.docs.map(async (sessionDoc) => {
           const sessionTimestamp = sessionDoc.data().startTime;
-          
           const vocabAnswersRef = collection(sessionDoc.ref, 'vocabulary');
           const verbAnswersRef = collection(sessionDoc.ref, 'verbAnswers');
           
@@ -95,22 +103,26 @@ export default function DashboardOverviewPage() {
               getDocs(vocabAnswersRef),
               getDocs(verbAnswersRef),
           ]);
-
+          
+          const sessionAnswers: EnrichedAnswer[] = [];
           vocabAnswersSnap.forEach((doc) => {
               const answer = doc.data() as LearningSessionVocabulary;
-              if (vocabIdsForSubject.has(answer.vocabularyId)) {
-                  tempAnswers.push({ ...answer, timestamp: sessionTimestamp, type: 'Vokabel' });
+              if (vocabIds.has(answer.vocabularyId)) {
+                  sessionAnswers.push({ ...answer, timestamp: sessionTimestamp, type: 'Vokabel' });
               }
           });
           
           verbAnswersSnap.forEach((doc) => {
               const answer = doc.data() as LearningSessionVerbAnswer;
-              if (verbIdsForSubject.has(answer.verbId)) {
-                  tempAnswers.push({ ...answer, timestamp: sessionTimestamp, type: 'Verb' });
+              if (verbIds.has(answer.verbId)) {
+                  sessionAnswers.push({ ...answer, timestamp: sessionTimestamp, type: 'Verb' });
               }
           });
-      }
-      setAllEnrichedAnswers(tempAnswers);
+          return sessionAnswers;
+      });
+
+      const allSessionAnswers = (await Promise.all(answerPromises)).flat();
+      setAllEnrichedAnswers(allSessionAnswers);
 
       setIsLoading(false);
     };

@@ -59,7 +59,7 @@ export default function DashboardLayout({
   };
 
   const navItems = [
-    { href: '/dashboard/overview', icon: LayoutDashboard, label: 'Dashboard' },
+    { href: '/dashboard/overview', icon: LayoutDashboard, label: 'Übersicht' },
     { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
   ];
 
@@ -112,16 +112,14 @@ export default function DashboardLayout({
                           isSubjectsActive ? 'bg-secondary' : 'bg-transparent'
                         )}
                       >
-                        <button
-                          className="flex items-center h-full"
-                          onClick={() => {
-                            router.push('/dashboard');
-                            setIsMenuOpen(false);
-                          }}
+                        <Link
+                          href="/dashboard"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex items-center h-full flex-1"
                         >
                           <Home className="mr-4 h-5 w-5" />
                           Fächerübersicht
-                        </button>
+                        </Link>
                         <CollapsibleTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
                             <ChevronDown className={cn("h-5 w-5 transition-transform", isSubjectsOpen && "rotate-180")} />
