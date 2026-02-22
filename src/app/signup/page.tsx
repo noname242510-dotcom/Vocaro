@@ -53,8 +53,10 @@ export default function SignUpPage() {
         await fetch('/api/user/create-profile', {
             method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
-            }
+            },
+            body: JSON.stringify({ displayName: username.trim() })
         });
       }
       

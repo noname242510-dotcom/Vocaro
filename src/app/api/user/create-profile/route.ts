@@ -13,17 +13,25 @@ export async function POST(request: NextRequest) {
         const decodedToken = await authAdmin.verifyIdToken(idToken);
         const uid = decodedToken.uid;
         
+        const { displayName } = await request.json();
         const user = await authAdmin.getUser(uid);
+
+        // Prioritize displayName from client, fallback to auth user object
+        const finalDisplayName = displayName || user.displayName || 'Unnamed User';
 
         const publicProfileRef = firestoreAdmin.collection('publicProfiles').doc(uid);
         
-        // Use set with merge:true to avoid overwriting if it somehow already exists
         await publicProfileRef.set({
-            displayName: user.displayName || 'Unnamed User',
-            displayName_lowercase: user.displayName?.toLowerCase() || 'unnamed user',
+            displayName: finalDisplayName,
+            displayName_lowercase: finalDisplayName.toLowerCase(),
             photoURL: user.photoURL || null,
             createdAt: FieldValue.serverTimestamp(),
         }, { merge: true });
+
+        // Also update the auth user's display name if it differs, to keep it in sync
+        if (user.displayName !== finalDisplayName) {
+            await authAdmin.updateUser(uid, { displayName: finalDisplayName });
+        }
 
         return NextResponse.json({ success: true, message: 'Public profile created/updated.' });
 

@@ -48,7 +48,11 @@ export default function LoginPage() {
         userCredential.user.getIdToken(true).then(token => {
           fetch('/api/user/create-profile', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ displayName: userCredential.user.displayName })
           });
         });
       }
