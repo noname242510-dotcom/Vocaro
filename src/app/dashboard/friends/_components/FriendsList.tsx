@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirebase } from '@/firebase/provider';
+import { useFirebase, useMemoFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -24,55 +24,97 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
   } from "@/components/ui/alert-dialog";
-import type { EnrichedFriendship } from '@/lib/types';
+import type { Friendship, PublicProfile } from '@/lib/types';
+import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
+
+type EnrichedFriend = PublicProfile & { friendshipId: string };
 
 export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) {
-  const [friends, setFriends] = useState<EnrichedFriendship[]>([]);
+  const { firestore, user } = useFirebase();
+  const [friends, setFriends] = useState<EnrichedFriend[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [friendToRemove, setFriendToRemove] = useState<EnrichedFriendship | null>(null);
+  const [friendToRemove, setFriendToRemove] = useState<EnrichedFriend | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
-  const { user } = useFirebase();
   const { toast } = useToast();
   const router = useRouter();
 
+  const friendsAsRequesterQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(
+      collection(firestore, 'friendships'),
+      where('requesterId', '==', user.uid),
+      where('status', '==', 'accepted')
+    );
+  }, [user, firestore]);
+
+  const friendsAsRecipientQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(
+      collection(firestore, 'friendships'),
+      where('recipientId', '==', user.uid),
+      where('status', '==', 'accepted')
+    );
+  }, [user, firestore]);
+
+  const { data: friendships1 } = useCollection<Friendship>(friendsAsRequesterQuery);
+  const { data: friendships2 } = useCollection<Friendship>(friendsAsRecipientQuery);
+
   useEffect(() => {
-    const fetchFriends = async () => {
-      if (!user) return;
+    const fetchFriendDetails = async () => {
+      if (!user || !firestore || friendships1 === null || friendships2 === null) {
+        setIsLoading(friendships1 === null || friendships2 === null);
+        return;
+      };
+      
       setIsLoading(true);
+      const allFriendships = [...(friendships1 || []), ...(friendships2 || [])];
+      const friendIds = allFriendships.map(f => f.requesterId === user.uid ? f.recipientId : f.requesterId);
+      
+      if (friendIds.length === 0) {
+        setFriends([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      const uniqueFriendIds = [...new Set(friendIds)];
+      
       try {
-        const token = await user.getIdToken();
-        const response = await fetch('/api/friends?status=accepted', {
-            headers: { 'Authorization': `Bearer ${token}` }
+        const profilesRef = collection(firestore, 'publicProfiles');
+        const profilesQuery = query(profilesRef, where('__name__', 'in', uniqueFriendIds));
+        const profilesSnapshot = await getDocs(profilesQuery);
+        const profilesData = profilesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as PublicProfile));
+        
+        const enriched = profilesData.map(profile => {
+          const friendship = allFriendships.find(f => f.requesterId === profile.id || f.recipientId === profile.id);
+          return { ...profile, friendshipId: friendship!.id };
         });
-        if (!response.ok) throw new Error('Failed to fetch friends');
-        const data = await response.json();
-        setFriends(data);
+
+        setFriends(enriched);
+
       } catch (error) {
-        console.error('Fehler beim Laden der Freunde:', error);
+        console.error("Fehler beim Laden der Freundesdetails:", error);
+        toast({ variant: 'destructive', title: 'Fehler', description: 'Freundesliste konnte nicht geladen werden.' });
       } finally {
         setIsLoading(false);
       }
     };
-    fetchFriends();
-  }, [user]);
+    fetchFriendDetails();
+  }, [friendships1, friendships2, user, firestore, toast]);
 
   const handleRemoveFriend = async () => {
-    if (!friendToRemove || !user) return;
+    if (!friendToRemove || !user || !firestore) return;
     setIsRemoving(true);
     try {
-        const token = await user.getIdToken();
-        const response = await fetch(`/api/friends?friendId=${friendToRemove.id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error('Failed to remove friend');
+      const friendshipDocRef = doc(firestore, 'friendships', friendToRemove.friendshipId);
+      await deleteDoc(friendshipDocRef);
         
-        toast({
-            title: 'Freund entfernt',
-            description: `${friendToRemove.displayName} ist nicht mehr dein Freund.`,
-        });
-        setFriends(prev => prev.filter(f => f.id !== friendToRemove.id));
-        onFriendAction();
+      toast({
+          title: 'Freund entfernt',
+          description: `${friendToRemove.displayName} ist nicht mehr dein Freund.`,
+      });
+      setFriends(prev => prev.filter(f => f.id !== friendToRemove.id));
+      onFriendAction();
 
     } catch (error) {
       toast({

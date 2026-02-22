@@ -1,62 +1,90 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useFirebase } from '@/firebase/provider';
+import { useState, useEffect, useMemo } from 'react';
+import { useFirebase, useMemoFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Check, X, Loader2 } from 'lucide-react';
-import type { EnrichedFriendship } from '@/lib/types';
+import type { Friendship, PublicProfile } from '@/lib/types';
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useCollection } from '@/firebase/firestore/use-collection';
+
+type EnrichedRequest = PublicProfile & { friendshipId: string };
 
 export function RequestsList({ onFriendAction }: { onFriendAction: () => void }) {
-  const [requests, setRequests] = useState<EnrichedFriendship[]>([]);
+  const { firestore, user } = useFirebase();
+  const [requests, setRequests] = useState<EnrichedRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const { user } = useFirebase();
   const { toast } = useToast();
 
+  const requestsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(
+      collection(firestore, 'friendships'),
+      where('recipientId', '==', user.uid),
+      where('status', '==', 'pending')
+    );
+  }, [user, firestore]);
+  const { data: friendshipRequests } = useCollection<Friendship>(requestsQuery);
+
   useEffect(() => {
-    const fetchRequests = async () => {
-      if (!user) return;
+    const fetchRequesterDetails = async () => {
+      if (!firestore || friendshipRequests === null) {
+        setIsLoading(friendshipRequests === null);
+        return;
+      };
+      
       setIsLoading(true);
+      const requesterIds = friendshipRequests.map(req => req.requesterId);
+
+      if (requesterIds.length === 0) {
+        setRequests([]);
+        setIsLoading(false);
+        return;
+      }
+      
       try {
-        const token = await user.getIdToken();
-        const response = await fetch('/api/friends?status=pending', {
-            headers: { 'Authorization': `Bearer ${token}` }
+        const profilesRef = collection(firestore, 'publicProfiles');
+        const profilesQuery = query(profilesRef, where('__name__', 'in', requesterIds));
+        const profilesSnapshot = await getDocs(profilesQuery);
+        const profilesData = profilesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as PublicProfile));
+
+        const enriched = profilesData.map(profile => {
+            const friendship = friendshipRequests.find(req => req.requesterId === profile.id);
+            return { ...profile, friendshipId: friendship!.id };
         });
-        if (!response.ok) throw new Error('Failed to fetch requests');
-        const data = await response.json();
-        setRequests(data);
+
+        setRequests(enriched);
+
       } catch (error) {
-        console.error('Fehler beim Laden der Anfragen:', error);
+        console.error("Fehler beim Laden der Anfragedetails:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchRequests();
-  }, [user]);
+    fetchRequesterDetails();
+  }, [friendshipRequests, firestore, toast]);
 
-  const handleRequest = async (requesterId: string, accept: boolean) => {
-    if (!user) return;
-    setProcessingId(requesterId);
+  const handleRequest = async (request: EnrichedRequest, accept: boolean) => {
+    if (!user || !firestore) return;
+    setProcessingId(request.id);
+    
+    const friendshipDocRef = doc(firestore, 'friendships', request.friendshipId);
+
     try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/friends', {
-        method: 'PUT',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ requesterId, status: accept ? 'accepted' : 'declined' }),
-      });
-      if (!response.ok) throw new Error(`Failed to ${accept ? 'accept' : 'decline'} request`);
-      
-      toast({
-        title: accept ? 'Anfrage angenommen' : 'Anfrage abgelehnt',
-      });
-      setRequests(prev => prev.filter(r => r.id !== requesterId));
+      if (accept) {
+        await updateDoc(friendshipDocRef, { status: 'accepted' });
+        toast({ title: 'Anfrage angenommen' });
+      } else {
+        await deleteDoc(friendshipDocRef);
+        toast({ title: 'Anfrage abgelehnt' });
+      }
+
+      setRequests(prev => prev.filter(r => r.id !== request.id));
       onFriendAction(); // Notify parent to refresh other components
 
     } catch (error) {
@@ -96,14 +124,14 @@ export function RequestsList({ onFriendAction }: { onFriendAction: () => void })
               <Button
                 size="icon"
                 variant="outline"
-                onClick={() => handleRequest(request.id, false)}
+                onClick={() => handleRequest(request, false)}
                 disabled={!!processingId}
               >
                 {processingId === request.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
               </Button>
               <Button
                 size="icon"
-                onClick={() => handleRequest(request.id, true)}
+                onClick={() => handleRequest(request, true)}
                 disabled={!!processingId}
               >
                 {processingId === request.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
