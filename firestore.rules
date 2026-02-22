@@ -26,6 +26,39 @@ service cloud.firestore {
     }
 
     /**
+     * @description Manages friendships between users.
+     * @path /friendships/{friendshipId}
+     */
+    match /friendships/{friendshipId} {
+      function isParticipant() {
+        return request.auth != null && (resource.data.requesterId == request.auth.uid || resource.data.recipientId == request.auth.uid);
+      }
+      
+      // Allow reading a friendship document if the user is a participant.
+      // This also secures 'list' queries, as Firestore ensures every document
+      // in the query result would pass this 'get' rule.
+      allow read: if isParticipant();
+      
+      // Allow creating a friendship if the requester is the current user,
+      // the status is pending, and the ID is correctly formed.
+      allow create: if request.auth != null 
+                    && request.resource.data.requesterId == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && friendshipId == [request.auth.uid, request.resource.data.recipientId].sort().join('_');
+
+      // Allow the recipient to update the status from 'pending' to 'accepted'.
+      // Only the 'status' field can be changed in this operation.
+      allow update: if request.auth != null
+                    && resource.data.recipientId == request.auth.uid
+                    && resource.data.status == 'pending'
+                    && request.resource.data.status == 'accepted'
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      
+      // Allow either participant to delete the friendship (unfriend or cancel request).
+      allow delete: if isParticipant();
+    }
+
+    /**
      * @description Protects the root `/users` collection. Only allows creating a user document with the ID matching the authenticated user's ID.
      * @path /users/{userId}
      * @allow (create) - Authenticated user creates their own user document.
@@ -74,11 +107,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get, list, create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
@@ -106,11 +136,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get, list, create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
@@ -138,11 +165,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get, list, create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
@@ -170,11 +194,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get, list, create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
@@ -202,11 +223,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get, list, create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
@@ -234,11 +252,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get, list, create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
@@ -266,11 +281,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get, list, create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
@@ -285,11 +297,9 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get, list, create: if isOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
   }
 }
+    
