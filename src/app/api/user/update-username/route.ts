@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authAdmin } from '@/lib/firebase-admin';
+import { authAdmin, firestoreAdmin } from '@/lib/firebase-admin';
 
 export async function POST(request: NextRequest) {
     try {
@@ -32,11 +32,18 @@ export async function POST(request: NextRequest) {
             // 'auth/user-not-found' ist der erwartete Fehler, also fahren wir fort.
         }
         
-        // 2. E-Mail und displayName aktualisieren
+        // 2. E-Mail und displayName in Auth aktualisieren
         await authAdmin.updateUser(uid, {
             email: newEmail,
             displayName: newUsername.trim(),
             emailVerified: true, 
+        });
+
+        // 3. displayName im publicProfile Dokument aktualisieren
+        const publicProfileRef = firestoreAdmin.collection('publicProfiles').doc(uid);
+        await publicProfileRef.update({
+            displayName: newUsername.trim(),
+            displayName_lowercase: newUsername.trim().toLowerCase()
         });
 
         return NextResponse.json({ success: true, message: 'Benutzername erfolgreich aktualisiert.' });

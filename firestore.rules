@@ -11,6 +11,19 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    /**
+     * @description Public profiles for user search and friend features.
+     * @path /publicProfiles/{userId}
+     * @allow (get, list) - Any authenticated user can read public profiles.
+     * @allow (create, update) - Only the owner can create or update their own profile.
+     * @deny (delete) - Profiles cannot be deleted.
+     */
+    match /publicProfiles/{userId} {
+      allow get, list: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
 
     /**
      * @description Protects the root `/users` collection. Only allows creating a user document with the ID matching the authenticated user's ID.
@@ -280,4 +293,3 @@ service cloud.firestore {
     }
   }
 }
-    

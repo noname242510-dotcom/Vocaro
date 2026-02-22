@@ -58,6 +58,7 @@ export default function SignUpPage() {
             const publicProfileRef = doc(firestore, 'publicProfiles', userCredential.user.uid);
             await setDoc(publicProfileRef, {
                 displayName: username.trim(),
+                displayName_lowercase: username.trim().toLowerCase(),
                 photoURL: userCredential.user.photoURL || null,
                 createdAt: new Date(),
             });

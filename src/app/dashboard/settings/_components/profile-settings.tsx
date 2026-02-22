@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { doc, updateDoc } from 'firebase/firestore';
 
 
 const presetAvatars = [
@@ -32,7 +33,7 @@ const presetAvatars = [
 ];
 
 export function ProfileSettings() {
-  const { user, isUserLoading } = useFirebase();
+  const { user, isUserLoading, firestore } = useFirebase();
   const { toast } = useToast();
 
   const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -145,9 +146,13 @@ export function ProfileSettings() {
 
 
   const handleAvatarSelect = async (avatarUrl: string) => {
-    if (!user) return;
+    if (!user || !firestore) return;
     try {
         await updateProfile(user, { photoURL: avatarUrl });
+
+        const publicProfileRef = doc(firestore, 'publicProfiles', user.uid);
+        await updateDoc(publicProfileRef, { photoURL: avatarUrl });
+
         toast({ title: "Profilbild aktualisiert" });
         setIsAvatarDialogOpen(false);
     } catch (error) {

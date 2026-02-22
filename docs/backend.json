@@ -15,6 +15,35 @@
         "id"
       ]
     },
+    "PublicProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PublicProfile",
+      "type": "object",
+      "description": "Represents the publicly visible information of a user.",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "The user's public display name."
+        },
+        "displayName_lowercase": {
+          "type": "string",
+          "description": "The user's public display name in lowercase for searching."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the user's profile picture."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the profile was created."
+        }
+      },
+      "required": [
+        "displayName",
+        "displayName_lowercase"
+      ]
+    },
     "Subject": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Subject",
@@ -368,6 +397,22 @@
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/publicProfiles/{userId}",
+        "definition": {
+          "entityName": "PublicProfile",
+          "schema": {
+            "$ref": "#/backend/entities/PublicProfile"
+          },
+          "description": "Stores public user profile information that is safe to be read by any authenticated user, used for features like user search.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, same as their auth UID."
+            }
+          ]
+        }
+      },
       {
         "path": "/users/{userId}",
         "definition": {
