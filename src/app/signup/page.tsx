@@ -11,10 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
-import { firestoreAdmin } from '@/lib/firebase-admin';
-import { doc, setDoc } from 'firebase/firestore';
-import { useFirebase } from '@/firebase/provider';
-
 
 export default function SignUpPage() {
   const [username, setUsername] = useState('');
@@ -22,7 +18,6 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const { firestore } = useFirebase();
   
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -53,16 +48,14 @@ export default function SignUpPage() {
           displayName: username.trim(),
         });
         
-        // Create public profile document in Firestore
-        if (firestore) {
-            const publicProfileRef = doc(firestore, 'publicProfiles', userCredential.user.uid);
-            await setDoc(publicProfileRef, {
-                displayName: username.trim(),
-                displayName_lowercase: username.trim().toLowerCase(),
-                photoURL: userCredential.user.photoURL || null,
-                createdAt: new Date(),
-            });
-        }
+        // Get the ID token and call the server to create the public profile
+        const token = await userCredential.user.getIdToken();
+        await fetch('/api/user/create-profile', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
       }
       
       router.push('/dashboard');
