@@ -1,10 +1,9 @@
-
 'use client';
 
 import Link from 'next/link';
 import { useState, useEffect }from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, createUserWithEmailAndPassword, updateProfile, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { firestoreAdmin } from '@/lib/firebase-admin';
+import { doc, setDoc } from 'firebase/firestore';
+import { useFirebase } from '@/firebase/provider';
 
 
 export default function SignUpPage() {
@@ -20,6 +22,7 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { firestore } = useFirebase();
   
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -39,7 +42,6 @@ export default function SignUpPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Create a dummy email from the username
     const email = `${username.trim()}@vocaro.app`;
 
     try {
@@ -50,9 +52,18 @@ export default function SignUpPage() {
         await updateProfile(userCredential.user, {
           displayName: username.trim(),
         });
+        
+        // Create public profile document in Firestore
+        if (firestore) {
+            const publicProfileRef = doc(firestore, 'publicProfiles', userCredential.user.uid);
+            await setDoc(publicProfileRef, {
+                displayName: username.trim(),
+                photoURL: userCredential.user.photoURL || null,
+                createdAt: new Date(),
+            });
+        }
       }
       
-      // Use router.push for client-side navigation
       router.push('/dashboard');
 
     } catch (error: any) {

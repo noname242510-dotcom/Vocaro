@@ -1,7 +1,6 @@
-
 'use client';
 
-import { Home, Settings, LogOut, Menu, Sun, Moon, ChevronDown, LayoutDashboard } from 'lucide-react';
+import { Home, Settings, LogOut, Menu, Sun, Moon, ChevronDown, LayoutDashboard, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -63,6 +62,7 @@ function DashboardLayoutContent({
 
   const navItems = [
     { href: '/dashboard/overview', icon: LayoutDashboard, label: 'Statistiken' },
+    { href: '/dashboard/friends', icon: Users, label: 'Freunde' },
     { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
   ];
 

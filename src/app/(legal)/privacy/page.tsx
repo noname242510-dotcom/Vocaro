@@ -35,9 +35,10 @@ export default function PrivacyPage() {
                 Wir erheben und verarbeiten folgende Daten:
             </p>
             <ul>
-                <li><strong>Kontoinformationen:</strong> Bei der Registrierung erheben wir Ihren Benutzernamen und eine (anonymisierte) E-Mail-Adresse sowie Ihr Passwort (verschlüsselt).</li>
+                <li><strong>Kontoinformationen:</strong> Bei der Registrierung erheben wir Ihren Benutzernamen und eine (anonymisierte) E-Mail-Adresse sowie Ihr Passwort (verschlüsselt). Ihr Profilbild ist für andere Nutzer sichtbar.</li>
                 <li><strong>Nutzergenerierte Inhalte:</strong> Alle von Ihnen erstellten Fächer, Vokabelstapel, Vokabeln und Verblisten werden in unserer Datenbank gespeichert.</li>
                 <li><strong>Nutzungsdaten:</strong> Wir speichern Ihren Lernfortschritt, einschliesslich richtiger und falscher Antworten, um die "Fehler-Fokus"-Funktion zu ermöglichen und Ihren Lernstand zu verfolgen.</li>
+                <li><strong>Freundschaftsdaten:</strong> Wenn Sie die Freunde-Funktion nutzen, werden Ihr Benutzername und Ihr Profilbild für andere Nutzer in der Suche sichtbar. Ihre Fächer und aggregierte Statistiken (Anzahl der Vokabeln/Verben) sind für bestätigte Freunde sichtbar.</li>
                 <li><strong>Technische Daten:</strong> Bei der Nutzung unserer App können technische Daten wie IP-Adresse, Browsertyp und Betriebssystem temporär verarbeitet werden, um die Funktionsfähigkeit sicherzustellen.</li>
             </ul>
 
@@ -48,13 +49,14 @@ export default function PrivacyPage() {
             <ul>
                 <li>Zur Bereitstellung, Wartung und Verbesserung unserer Dienste.</li>
                 <li>Zur Personalisierung Ihrer Lernerfahrung.</li>
+                <li>Zur Ermöglichung sozialer Interaktionen innerhalb der App (Freunde-Funktion).</li>
                 <li>Zur Gewährleistung der Sicherheit Ihres Kontos.</li>
                 <li>Zur Analyse der App-Nutzung, um unseren Service zu optimieren.</li>
             </ul>
 
             <h2>5. Datensicherheit</h2>
             <p>
-                Wir setzen auf Firebase von Google, einen Dienst, der hohe Sicherheitsstandards anwendet. Wir treffen technische und organisatorische Sicherheitsvorkehrungen, um Ihre Daten gegen Manipulation, Verlust oder unbefugten Zugriff zu schützen.
+                Wir setzen auf Firebase von Google, einen Dienst, der hohe Sicherheitsstandards anwendet. Wir treffen technische und organisatorische Sicherheitsvorkehrungen, um Ihre Daten gegen Manipulation, Verlust oder unbefugten Zugriff zu schützen. Der Zugriff auf Profildaten anderer Nutzer ist auf bestätigte Freunde beschränkt.
             </p>
             
             <h2>6. Ihre Rechte</h2>

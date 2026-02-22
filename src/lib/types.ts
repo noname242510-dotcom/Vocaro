@@ -1,4 +1,3 @@
-
 export type Subject = {
   id: string;
   name: string;
@@ -85,4 +84,27 @@ export type LearningSessionVerbAnswer = {
   practiceItemId: string;
   verbId: string;
   correct: boolean;
+};
+
+export type PublicProfile = {
+    id: string;
+    displayName: string;
+    photoURL?: string;
+    subjectCount?: number;
+    vocabCount?: number;
+    verbCount?: number;
+    createdAt: any; // server timestamp
+};
+
+export type Friendship = {
+    id: string;
+    requesterId: string;
+    recipientId: string;
+    status: 'pending' | 'accepted';
+    createdAt: any; // server timestamp
+}
+
+export type EnrichedFriendship = Friendship & {
+    displayName: string;
+    photoURL?: string;
 };
