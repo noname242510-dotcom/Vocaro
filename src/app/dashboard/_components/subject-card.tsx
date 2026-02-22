@@ -35,34 +35,38 @@ interface SubjectCardProps {
   subject: Subject;
   onSubjectDeleted: () => void;
   onSubjectRenamed: () => void;
+  ownerId?: string;
 }
 
-export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed }: SubjectCardProps) {
+export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed, ownerId }: SubjectCardProps) {
   const { firestore, user } = useFirebase();
   const [subjectToDelete, setSubjectToDelete] = useState<Subject | null>(null);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [renamedSubjectName, setRenamedSubjectName] = useState(subject.name);
   const [totalVocabCount, setTotalVocabCount] = useState(0);
 
+  const displayUserId = ownerId || user?.uid;
+  const isOwner = !ownerId || (user && ownerId === user.uid);
+
   const stacksCollectionRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks');
-  }, [firestore, user, subject.id]);
+    if (!displayUserId || !firestore) return null;
+    return collection(firestore, 'users', displayUserId, 'subjects', subject.id, 'stacks');
+  }, [firestore, displayUserId, subject.id]);
 
   const verbsCollectionRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return collection(firestore, 'users', user.uid, 'subjects', subject.id, 'verbs');
-  }, [firestore, user, subject.id]);
+    if (!displayUserId || !firestore) return null;
+    return collection(firestore, 'users', displayUserId, 'subjects', subject.id, 'verbs');
+  }, [firestore, displayUserId, subject.id]);
 
   const { data: stacks } = useCollection<Stack>(stacksCollectionRef);
   const { data: verbs } = useCollection<Verb>(verbsCollectionRef);
 
   useEffect(() => {
-    if (stacks && firestore && user) {
+    if (stacks && firestore && displayUserId) {
       const fetchAllVocabCounts = async () => {
         let count = 0;
         for (const stack of stacks) {
-          const vocabCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks', stack.id, 'vocabulary');
+          const vocabCollectionRef = collection(firestore, 'users', displayUserId, 'subjects', subject.id, 'stacks', stack.id, 'vocabulary');
           const vocabSnapshot = await getDocs(vocabCollectionRef);
           count += vocabSnapshot.size;
         }
@@ -72,7 +76,7 @@ export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed }: Sub
     } else if (stacks === null || stacks?.length === 0) {
       setTotalVocabCount(0);
     }
-  }, [stacks, firestore, user, subject.id]);
+  }, [stacks, firestore, displayUserId, subject.id]);
 
 
   const handleDeleteSubject = async () => {
@@ -143,46 +147,48 @@ export function SubjectCard({ subject, onSubjectDeleted, onSubjectRenamed }: Sub
               </div>
             </div>
           </div>
-          <div className="absolute top-4 right-4 flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              onClick={() => {
-                setRenamedSubjectName(subject.name);
-                setIsRenameDialogOpen(true);
-              }}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSubjectToDelete(subject);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird das Fach und alle zugehörigen Stapel und Vokabeln dauerhaft gelöscht.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel onClick={() => setSubjectToDelete(null)}>Abbrechen</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteSubject}>Löschen</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+          {isOwner && (
+            <div className="absolute top-4 right-4 flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                onClick={() => {
+                  setRenamedSubjectName(subject.name);
+                  setIsRenameDialogOpen(true);
+                }}
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSubjectToDelete(subject);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird das Fach und alle zugehörigen Stapel und Vokabeln dauerhaft gelöscht.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setSubjectToDelete(null)}>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteSubject}>Löschen</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-0 mt-auto absolute bottom-4 right-4">
           <Link href={`/dashboard/subjects/${subject.id}`} className="md:opacity-0 group-hover:opacity-100 transition-opacity">

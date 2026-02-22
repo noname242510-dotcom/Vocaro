@@ -12,6 +12,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    function areFriends(user1, user2) {
+      let friendshipId = user1 < user2 ? user1 + '_' + user2 : user2 + '_' + user1;
+      return get(/databases/$(database)/documents/friendships/$(friendshipId)).data.status == 'accepted';
+    }
+    
     /**
      * @description Public profiles for user search and friend features.
      * @path /publicProfiles/{userId}
@@ -117,7 +122,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get, list, create: if isOwner(userId);
+      allow get, list: if isOwner(userId) || areFriends(request.auth.uid, userId);
+      allow create: if isOwner(userId);
       allow update, delete: if isExistingOwner(userId);
     }
 
@@ -146,7 +152,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get, list, create: if isOwner(userId);
+      allow get, list: if isOwner(userId) || areFriends(request.auth.uid, userId);
+      allow create: if isOwner(userId);
       allow update, delete: if isExistingOwner(userId);
     }
 
@@ -175,7 +182,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get, list, create: if isOwner(userId);
+      allow get, list: if isOwner(userId) || areFriends(request.auth.uid, userId);
+      allow create: if isOwner(userId);
       allow update, delete: if isExistingOwner(userId);
     }
 
@@ -204,7 +212,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get, list, create: if isOwner(userId);
+      allow get, list: if isOwner(userId) || areFriends(request.auth.uid, userId);
+      allow create: if isOwner(userId);
       allow update, delete: if isExistingOwner(userId);
     }
 
@@ -312,5 +321,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

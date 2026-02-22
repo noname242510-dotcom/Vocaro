@@ -84,6 +84,7 @@ export default function UserProfilePage() {
                             subject={subject} 
                             onSubjectDeleted={() => {}}
                             onSubjectRenamed={() => {}}
+                            ownerId={userId}
                         />
                     ))}
                  </div>
