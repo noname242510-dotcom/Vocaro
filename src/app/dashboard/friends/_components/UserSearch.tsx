@@ -1,45 +1,34 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, UserPlus, Clock } from 'lucide-react';
 import type { PublicProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase/provider';
+import { useFirebase, useMemoFirebase } from '@/firebase/provider';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { collection } from 'firebase/firestore';
+
 
 export function UserSearch({ onFriendAction }: { onFriendAction: () => void }) {
-  const [users, setUsers] = useState<PublicProfile[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
   const { toast } = useToast();
-  const { user } = useFirebase();
+  const { user, firestore } = useFirebase();
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (!user) return;
-      setIsLoading(true);
-      try {
-        const token = await user.getIdToken();
-        const response = await fetch(`/api/users/search`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        setUsers(data.filter((p: PublicProfile) => p.id !== user?.uid));
-      } catch (error) {
-        console.error("Fehler beim Laden der Benutzer:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchUsers();
-  }, [user]);
+  const usersCollectionQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'publicProfiles');
+  }, [firestore]);
+
+  const { data: users, isLoading } = useCollection<PublicProfile>(usersCollectionQuery);
+
+  const filteredUsers = useMemo(() => {
+    if (!users || !user) return [];
+    return users.filter((p) => p.id !== user.uid);
+  }, [users, user]);
+
 
   const handleAddFriend = async (recipientId: string) => {
     if (!user) return;
@@ -81,12 +70,12 @@ export function UserSearch({ onFriendAction }: { onFriendAction: () => void }) {
     <div>
       {isLoading && <div className="text-center py-10"><Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" /></div>}
       
-      {!isLoading && users.length === 0 && (
+      {!isLoading && filteredUsers.length === 0 && (
         <p className="text-center text-muted-foreground py-10">Keine anderen Benutzer gefunden.</p>
       )}
 
       <div className="space-y-3">
-        {!isLoading && users.map((profile) => (
+        {!isLoading && filteredUsers.map((profile) => (
           <Card key={profile.id} className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
