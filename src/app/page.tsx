@@ -1,10 +1,9 @@
-
 'use client';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -42,7 +41,18 @@ export default function LoginPage() {
 
     try {
       const auth = getAuth();
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+      // Ensure profile exists on login. This is non-blocking.
+      if (userCredential.user) {
+        userCredential.user.getIdToken(true).then(token => {
+          fetch('/api/user/create-profile', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+        });
+      }
+
       router.push('/dashboard');
     } catch (error: any) {
       let description = 'Ein unbekannter Fehler ist aufgetreten.';
