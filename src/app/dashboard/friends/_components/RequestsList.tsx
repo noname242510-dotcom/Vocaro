@@ -29,18 +29,14 @@ export function RequestsList({ onFriendAction }: { onFriendAction: () => void })
         const data = await response.json();
         setRequests(data);
       } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Fehler',
-          description: 'Anfragen konnten nicht geladen werden.',
-        });
+        console.error('Fehler beim Laden der Anfragen:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchRequests();
-  }, [user, toast]);
+  }, [user]);
 
   const handleRequest = async (requesterId: string, accept: boolean) => {
     if (!user) return;

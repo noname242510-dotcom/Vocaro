@@ -22,7 +22,7 @@ export default function FriendsPage() {
       </div>
       <Tabs defaultValue="search" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="search">Suchen</TabsTrigger>
+          <TabsTrigger value="search">Benutzer</TabsTrigger>
           <TabsTrigger value="requests">Anfragen</TabsTrigger>
           <TabsTrigger value="friends">Meine Freunde</TabsTrigger>
         </TabsList>

@@ -48,17 +48,13 @@ export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) 
         const data = await response.json();
         setFriends(data);
       } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Fehler',
-          description: 'Freunde konnten nicht geladen werden.',
-        });
+        console.error('Fehler beim Laden der Freunde:', error);
       } finally {
         setIsLoading(false);
       }
     };
     fetchFriends();
-  }, [user, toast]);
+  }, [user]);
 
   const handleRemoveFriend = async () => {
     if (!friendToRemove || !user) return;

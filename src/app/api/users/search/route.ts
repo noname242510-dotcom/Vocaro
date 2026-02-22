@@ -25,21 +25,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const searchQuery = searchParams.get('query');
 
-    if (!searchQuery || searchQuery.trim().length < 1) {
-        return NextResponse.json({ error: 'Suchanfrage muss mindestens 1 Zeichen lang sein' }, { status: 400 });
-    }
-    
     try {
-        const lowerCaseQuery = searchQuery.toLowerCase();
-        
         const profilesRef = firestoreAdmin.collection('publicProfiles');
-        const q = profilesRef
-            .where('displayName_lowercase', '>=', lowerCaseQuery)
-            .where('displayName_lowercase', '<=', lowerCaseQuery + '\uf8ff')
-            .limit(10);
-            
-        const querySnapshot = await q.get();
+        let querySnapshot;
 
+        if (searchQuery && searchQuery.trim().length > 0) {
+            const lowerCaseQuery = searchQuery.toLowerCase();
+            const q = profilesRef
+                .where('displayName_lowercase', '>=', lowerCaseQuery)
+                .where('displayName_lowercase', '<=', lowerCaseQuery + '\uf8ff')
+                .limit(10);
+            querySnapshot = await q.get();
+        } else {
+            // No query, fetch all users, limit for performance
+            const q = profilesRef.orderBy('displayName_lowercase').limit(100);
+            querySnapshot = await q.get();
+        }
+            
         const matchingUsers = querySnapshot.docs.map(doc => ({
             id: doc.id,
             displayName: doc.data().displayName,
