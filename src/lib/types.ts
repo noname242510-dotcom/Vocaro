@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 export type Subject = {
   id: string;
   name: string;
@@ -63,19 +57,19 @@ export type Verb = {
 
 export type GenerateVerbFormsOutput = Omit<Verb, 'id' | 'subjectId' | 'language'>;
 
-export type QuizSettings = {
-  repetitionTimeframe: '24h' | '7d' | '30d' | 'all';
-  enableConfetti: boolean;
-};
-
-export type AppearanceSettings = {
-  font: 'font-body' | 'font-creative' | 'font-code';
-  theme: 'light' | 'dark' | 'system';
-};
-
 export type UserSettings = {
-  quiz: QuizSettings;
-  appearance: AppearanceSettings;
+  id: string;
+  font: 'font-body' | 'font-creative' | 'font-code';
+  enableConfetti: boolean;
+  hapticFeedback: boolean;
+  ttsEnabled: boolean;
+  ttsAutoplay: boolean;
+  vocabQueryDirection: boolean; // true: definition first
+  vocabShowHints: boolean;
+  vocabOverviewDirection: 'term' | 'definition';
+  verbQueryDirection: boolean; // true: definition first
+  verbShowHints: boolean;
+  darkMode: boolean;
 };
 
 export type LearningSessionVocabulary = {
@@ -92,5 +86,3 @@ export type LearningSessionVerbAnswer = {
   verbId: string;
   correct: boolean;
 };
-
-    

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SectionShell } from './section-shell';
-import { useFirebase } from '@/firebase/provider';
+import { useFirebase, useMemoFirebase } from '@/firebase/provider';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { getDocs, collection, collectionGroup, query, writeBatch, doc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -38,7 +38,7 @@ export function DataSettings() {
     const [isImporting, setIsImporting] = useState(false);
     const [importFile, setImportFile] = useState<File | null>(null);
 
-    const subjectsCollection = useMemo(() => {
+    const subjectsCollection = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return collection(firestore, 'users', user.uid, 'subjects');
     }, [firestore, user]);
@@ -240,7 +240,7 @@ export function DataSettings() {
 
 
     return (
-        <SectionShell title="Daten & Export" description="Verwalte und exportiere deine persönlichen Daten.">
+        <SectionShell title="Daten &amp; Export" description="Verwalte und exportiere deine persönlichen Daten.">
             <Card>
                 <CardHeader>
                     <CardTitle>Daten exportieren</CardTitle>

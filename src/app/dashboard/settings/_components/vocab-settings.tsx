@@ -1,51 +1,52 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { SectionShell } from './section-shell';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useSettings } from '@/contexts/settings-context';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { UserSettings } from '@/lib/types';
 
 export function VocabSettings() {
-  const [queryDirectionOverview, setQueryDirectionOverview] = useState('term'); // 'term' or 'definition'
-  const [queryDirectionFlashcards, setQueryDirectionFlashcards] = useState(false);
-  const [showVocabHints, setShowVocabHints] = useState(true);
+  const { settings, updateSettings, isLoading } = useSettings();
 
-  useEffect(() => {
-    // 'term' (Fremdwort) or 'definition' (Deutsch)
-    const persistedQueryDirectionOverview = localStorage.getItem('query-direction-overview');
-    // Ensure that the value is either 'term' or 'definition', default to 'term'
-    if (persistedQueryDirectionOverview === 'definition') {
-        setQueryDirectionOverview('definition');
-    } else {
-        setQueryDirectionOverview('term');
-    }
-    
-    // false: term -> definition, true: definition -> term
-    const persistedQueryDirectionFlashcards = localStorage.getItem('query-direction-flashcards') === 'true';
-    setQueryDirectionFlashcards(persistedQueryDirectionFlashcards);
-
-    const persistedShowVocabHints = localStorage.getItem('show-vocab-hints');
-    setShowVocabHints(persistedShowVocabHints === null ? true : persistedShowVocabHints === 'true');
-  }, []);
+  if (isLoading) {
+    return (
+       <SectionShell title="Vokabelabfrage" description="Verwalte deine Lern- und Abfrageeinstellungen für Vokabeln.">
+           <Card>
+               <CardContent className="pt-6 space-y-6">
+                   <div className="flex items-center justify-between space-x-2">
+                       <Skeleton className="h-10 w-48" />
+                       <Skeleton className="h-8 w-40" />
+                   </div>
+                    <div className="flex items-center justify-between space-x-2">
+                       <Skeleton className="h-10 w-48" />
+                       <Skeleton className="h-8 w-40" />
+                   </div>
+                    <div className="flex items-center justify-between space-x-2">
+                       <Skeleton className="h-10 w-48" />
+                       <Skeleton className="h-6 w-11" />
+                   </div>
+               </CardContent>
+           </Card>
+       </SectionShell>
+   )
+ }
 
   const handleQueryDirectionOverviewChange = (value: string) => {
-    setQueryDirectionOverview(value);
-    localStorage.setItem('query-direction-overview', value);
+    updateSettings({ vocabOverviewDirection: value as UserSettings['vocabOverviewDirection'] });
   };
   
   const handleQueryDirectionFlashcardsChange = (checked: boolean) => {
-    setQueryDirectionFlashcards(checked);
-    localStorage.setItem('query-direction-flashcards', String(checked));
+    updateSettings({ vocabQueryDirection: checked });
   };
   
   const handleShowVocabHintsChange = (checked: boolean) => {
-    setShowVocabHints(checked);
-    localStorage.setItem('show-vocab-hints', String(checked));
+    updateSettings({ vocabShowHints: checked });
   };
 
   return (
@@ -60,7 +61,7 @@ export function VocabSettings() {
               </span>
             </Label>
             <RadioGroup 
-              value={queryDirectionOverview} 
+              value={settings?.vocabOverviewDirection} 
               onValueChange={handleQueryDirectionOverviewChange}
               className="flex gap-4"
             >
@@ -85,9 +86,9 @@ export function VocabSettings() {
                 <span className="text-sm font-medium text-muted-foreground">Fremdwort</span>
                 <div 
                     className="p-2 cursor-pointer rounded-full hover:bg-accent"
-                    onClick={() => handleQueryDirectionFlashcardsChange(!queryDirectionFlashcards)}
+                    onClick={() => handleQueryDirectionFlashcardsChange(!settings?.vocabQueryDirection)}
                 >
-                    <ArrowRight className={cn("h-5 w-5 text-muted-foreground transition-transform duration-300", queryDirectionFlashcards && "rotate-180")} />
+                    <ArrowRight className={cn("h-5 w-5 text-muted-foreground transition-transform duration-300", settings?.vocabQueryDirection && "rotate-180")} />
                 </div>
                 <span className="text-sm font-medium text-muted-foreground">Deutsch</span>
             </div>
@@ -101,7 +102,7 @@ export function VocabSettings() {
             </Label>
             <Switch 
               id="show-hints"
-              checked={showVocabHints}
+              checked={settings?.vocabShowHints}
               onCheckedChange={handleShowVocabHintsChange}
             />
           </div>

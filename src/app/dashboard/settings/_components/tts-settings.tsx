@@ -1,38 +1,41 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { SectionShell } from './section-shell';
+import { useSettings } from '@/contexts/settings-context';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function TtsSettings() {
-  const [isEnabled, setIsEnabled] = useState(false);
-  const [isAutoplayEnabled, setIsAutoplayEnabled] = useState(true);
-  const [isMounted, setIsMounted] = useState(false);
+  const { settings, updateSettings, isLoading } = useSettings();
 
-  useEffect(() => {
-    setIsMounted(true);
-    const persistedEnabled = localStorage.getItem('tts-enabled') === 'true';
-    setIsEnabled(persistedEnabled);
-
-    const persistedAutoplay = localStorage.getItem('tts-autoplay-enabled');
-    setIsAutoplayEnabled(persistedAutoplay === null ? true : persistedAutoplay === 'true');
-  }, []);
+  if (isLoading) {
+    return (
+        <SectionShell title="Sprachausgabe" description="Passe die Text-zu-Sprache-Funktion an.">
+            <Card>
+                <CardContent className="pt-6 space-y-6">
+                    <div className="flex items-center justify-between space-x-2">
+                        <Skeleton className="h-10 w-48" />
+                        <Skeleton className="h-6 w-11" />
+                    </div>
+                </CardContent>
+            </Card>
+        </SectionShell>
+    )
+  }
 
   const handleEnabledChange = (checked: boolean) => {
-    setIsEnabled(checked);
-    localStorage.setItem('tts-enabled', String(checked));
+    updateSettings({ ttsEnabled: checked });
+    // If TTS is disabled, also disable autoplay
+    if (!checked) {
+      updateSettings({ ttsAutoplay: false });
+    }
   };
 
   const handleAutoplayChange = (checked: boolean) => {
-    setIsAutoplayEnabled(checked);
-    localStorage.setItem('tts-autoplay-enabled', String(checked));
+    updateSettings({ ttsAutoplay: checked });
   };
-  
-  if (!isMounted) {
-    return null; // Don't render on server
-  }
 
   return (
     <SectionShell title="Sprachausgabe" description="Passe die Text-zu-Sprache-Funktion an.">
@@ -47,12 +50,12 @@ export function TtsSettings() {
             </Label>
             <Switch 
               id="tts-enabled" 
-              checked={isEnabled} 
+              checked={settings?.ttsEnabled}
               onCheckedChange={handleEnabledChange} 
             />
           </div>
 
-          {isEnabled && (
+          {settings?.ttsEnabled && (
             <div className="flex items-center justify-between space-x-2">
               <Label htmlFor="autoplay-enabled" className="flex flex-col space-y-1">
                 <span>Automatische Sprachausgabe</span>
@@ -62,7 +65,7 @@ export function TtsSettings() {
               </Label>
               <Switch 
                 id="autoplay-enabled"
-                checked={isAutoplayEnabled}
+                checked={settings?.ttsAutoplay}
                 onCheckedChange={handleAutoplayChange}
               />
             </div>
