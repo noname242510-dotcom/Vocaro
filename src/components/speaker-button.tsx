@@ -20,9 +20,9 @@ const prepareTextForSpeech = (input: string, lang: string): string => {
   const langPrefix = lang.split('-')[0].toLowerCase();
 
   const replacements: Record<string, Record<string, string>> = {
-    en: { 'sb': 'somebody', 'sth': 'something', 'swh': 'somewhere', 'qn': 'someone', 'qc': 'something', 'adj': 'adjective', 'adv': 'adverb', 'prep': 'preposition', 'v': 'verb', 'n': 'noun' },
+    en: { 'sb': 'somebody', 'sth': 'something', 'swh': 'somewhere', 'smo': 'someone', 'adj': 'adjective', 'adv': 'adverb', 'prep': 'preposition', 'v': 'verb', 'n': 'noun', 'pl': 'plural' },
     fr: { 'qqn': 'quelqu’un', 'qqch': 'quelque chose', 'qn': 'quelqu’un', 'qc': 'quelque chose', 'qcq': 'quelconque', 'adj': 'adjectif', 'adv': 'adverbe', 'v': 'verbe', 'n': 'nom' },
-    de: { 'jmd': 'jemand', 'jmdm': 'jemandem', 'jmdn': 'jemanden', 'jmds': 'jemandes', 'etw': 'etwas', 'bzw': 'beziehungsweise', 'u.a': 'unter anderem', 'v.a': 'vor allem', 'adj': 'adjektiv', 'adv': 'adverb' },
+    de: { 'jmd': 'jemand', 'jmdm': 'jemandem', 'jmdn': 'jemanden', 'jmds': 'jemandes', 'etw': 'etwas', 'bzw': 'beziehungsweise', 'u.a': 'unter anderem', 'v.a': 'vor allem', 'adj': 'adjektiv', 'adv': 'adverb', 'sg': 'singular', 'pl': 'plural' },
     es: { 'algn': 'alguien', 'algo': 'algo', 'adj': 'adjetivo', 'adv': 'adverbio', 'v': 'verbo', 's': 'sustantivo' },
     it: { 'qc': 'qualcosa', 'qn': 'qualcuno', 'adj': 'aggettivo', 'adv': 'avverbio' },
     pt: { 'alg': 'alguém', 'algo': 'algo', 'adj': 'adjetivo', 'adv': 'advérbio' }
