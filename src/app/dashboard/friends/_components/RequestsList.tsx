@@ -21,7 +21,10 @@ export function RequestsList({ onFriendAction }: { onFriendAction: () => void })
       if (!user) return;
       setIsLoading(true);
       try {
-        const response = await fetch('/api/friends?status=pending');
+        const token = await user.getIdToken();
+        const response = await fetch('/api/friends?status=pending', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!response.ok) throw new Error('Failed to fetch requests');
         const data = await response.json();
         setRequests(data);
@@ -40,11 +43,16 @@ export function RequestsList({ onFriendAction }: { onFriendAction: () => void })
   }, [user, toast]);
 
   const handleRequest = async (requesterId: string, accept: boolean) => {
+    if (!user) return;
     setProcessingId(requesterId);
     try {
+      const token = await user.getIdToken();
       const response = await fetch('/api/friends', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ requesterId, status: accept ? 'accepted' : 'declined' }),
       });
       if (!response.ok) throw new Error(`Failed to ${accept ? 'accept' : 'decline'} request`);

@@ -3,10 +3,10 @@
 import { useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Search, Loader2, UserPlus, UserCheck, Clock } from 'lucide-react';
-import type { PublicProfile, EnrichedFriendship } from '@/lib/types';
+import { Search, Loader2, UserPlus, Clock } from 'lucide-react';
+import type { PublicProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase/provider';
 import debounce from 'lodash.debounce';
@@ -21,18 +21,24 @@ export function UserSearch({ onFriendAction }: { onFriendAction: () => void }) {
 
   const debouncedSearch = useCallback(
     debounce(async (searchQuery: string) => {
-      if (searchQuery.trim().length < 3) {
+      if (searchQuery.trim().length < 1) {
         setResults([]);
         return;
       }
+      if (!user) return;
+
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/users/search?query=${encodeURIComponent(searchQuery)}`);
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/users/search?query=${encodeURIComponent(searchQuery)}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        // Filter out the current user from results
         setResults(data.filter((p: PublicProfile) => p.id !== user?.uid));
       } catch (error) {
         toast({
@@ -54,10 +60,15 @@ export function UserSearch({ onFriendAction }: { onFriendAction: () => void }) {
   };
 
   const handleAddFriend = async (recipientId: string) => {
+    if (!user) return;
     try {
+      const token = await user.getIdToken();
       const response = await fetch('/api/friends', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ recipientId }),
       });
 
@@ -98,7 +109,7 @@ export function UserSearch({ onFriendAction }: { onFriendAction: () => void }) {
 
       {isLoading && <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />}
       
-      {!isLoading && query.length > 2 && results.length === 0 && (
+      {!isLoading && query.length > 0 && results.length === 0 && (
         <p className="text-center text-muted-foreground">Keine Benutzer gefunden.</p>
       )}
 

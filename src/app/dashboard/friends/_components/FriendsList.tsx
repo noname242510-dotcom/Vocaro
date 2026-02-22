@@ -40,7 +40,10 @@ export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) 
       if (!user) return;
       setIsLoading(true);
       try {
-        const response = await fetch('/api/friends?status=accepted');
+        const token = await user.getIdToken();
+        const response = await fetch('/api/friends?status=accepted', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (!response.ok) throw new Error('Failed to fetch friends');
         const data = await response.json();
         setFriends(data);
@@ -58,11 +61,13 @@ export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) 
   }, [user, toast]);
 
   const handleRemoveFriend = async () => {
-    if (!friendToRemove) return;
+    if (!friendToRemove || !user) return;
     setIsRemoving(true);
     try {
+        const token = await user.getIdToken();
         const response = await fetch(`/api/friends?friendId=${friendToRemove.id}`, {
             method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!response.ok) throw new Error('Failed to remove friend');
         
