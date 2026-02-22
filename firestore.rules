@@ -33,6 +33,14 @@ service cloud.firestore {
       function isParticipant() {
         return request.auth != null && (resource.data.requesterId == request.auth.uid || resource.data.recipientId == request.auth.uid);
       }
+
+      function isFriendshipIdValid(recipientId) {
+        let uid1 = request.auth.uid;
+        let uid2 = recipientId;
+        // Check if the friendshipId matches the client-side sorted order of the two UIDs
+        return (uid1 < uid2 && friendshipId == uid1 + '_' + uid2) || 
+               (uid2 < uid1 && friendshipId == uid2 + '_' + uid1);
+      }
       
       // Allow GET if the user is a participant.
       allow get: if isParticipant();
@@ -46,7 +54,7 @@ service cloud.firestore {
       allow create: if request.auth != null 
                     && request.resource.data.requesterId == request.auth.uid
                     && request.resource.data.status == 'pending'
-                    && friendshipId == [request.auth.uid, request.resource.data.recipientId].sort().join('_');
+                    && isFriendshipIdValid(request.resource.data.recipientId);
 
       // Allow the recipient to update the status from 'pending' to 'accepted'.
       // Only the 'status' field can be changed in this operation.
@@ -80,7 +88,7 @@ service cloud.firestore {
       allow get: if isOwner(userId);
       allow list: if false;
       allow create: if isOwner(userId);
-      allow update: if false;
+      allow update: if isOwner(userId);
       allow delete: if false;
     }
 
@@ -304,3 +312,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
