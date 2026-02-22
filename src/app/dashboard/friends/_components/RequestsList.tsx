@@ -46,11 +46,23 @@ export function RequestsList({ onFriendAction }: { onFriendAction: () => void })
         return;
       }
       
+      const profilesData: PublicProfile[] = [];
+
       try {
         const profilesRef = collection(firestore, 'publicProfiles');
-        const profilesQuery = query(profilesRef, where('__name__', 'in', requesterIds));
-        const profilesSnapshot = await getDocs(profilesQuery);
-        const profilesData = profilesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as PublicProfile));
+        
+        // Chunk the requester IDs
+        const CHUNK_SIZE = 30;
+        for (let i = 0; i < requesterIds.length; i += CHUNK_SIZE) {
+          const chunk = requesterIds.slice(i, i + CHUNK_SIZE);
+          if (chunk.length > 0) {
+            const profilesQuery = query(profilesRef, where('__name__', 'in', chunk));
+            const profilesSnapshot = await getDocs(profilesQuery);
+            profilesSnapshot.docs.forEach(doc => {
+              profilesData.push({ ...doc.data(), id: doc.id } as PublicProfile);
+            });
+          }
+        }
 
         const enriched = profilesData.map(profile => {
             const friendship = friendshipRequests.find(req => req.requesterId === profile.id);

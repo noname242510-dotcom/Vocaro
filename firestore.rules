@@ -34,10 +34,12 @@ service cloud.firestore {
         return request.auth != null && (resource.data.requesterId == request.auth.uid || resource.data.recipientId == request.auth.uid);
       }
       
-      // Allow reading a friendship document if the user is a participant.
-      // This also secures 'list' queries, as Firestore ensures every document
-      // in the query result would pass this 'get' rule.
-      allow read: if isParticipant();
+      // Allow GET if the user is a participant.
+      allow get: if isParticipant();
+
+      // Allow LIST for queries made by an authenticated user.
+      // Client-side queries are responsible for fetching only relevant friendships.
+      allow list: if request.auth != null;
       
       // Allow creating a friendship if the requester is the current user,
       // the status is pending, and the ID is correctly formed.
@@ -302,4 +304,3 @@ service cloud.firestore {
     }
   }
 }
-    

@@ -78,12 +78,23 @@ export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) 
       }
       
       const uniqueFriendIds = [...new Set(friendIds)];
+      const profilesData: PublicProfile[] = [];
       
       try {
         const profilesRef = collection(firestore, 'publicProfiles');
-        const profilesQuery = query(profilesRef, where('__name__', 'in', uniqueFriendIds));
-        const profilesSnapshot = await getDocs(profilesQuery);
-        const profilesData = profilesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as PublicProfile));
+        
+        // Chunk the friend IDs to stay within Firestore's 'in' query limit (30)
+        const CHUNK_SIZE = 30;
+        for (let i = 0; i < uniqueFriendIds.length; i += CHUNK_SIZE) {
+            const chunk = uniqueFriendIds.slice(i, i + CHUNK_SIZE);
+            if (chunk.length > 0) {
+                const profilesQuery = query(profilesRef, where('__name__', 'in', chunk));
+                const profilesSnapshot = await getDocs(profilesQuery);
+                profilesSnapshot.docs.forEach(doc => {
+                    profilesData.push({ ...doc.data(), id: doc.id } as PublicProfile);
+                });
+            }
+        }
         
         const enriched = profilesData.map(profile => {
           const friendship = allFriendships.find(f => f.requesterId === profile.id || f.recipientId === profile.id);
