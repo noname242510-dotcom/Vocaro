@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useEffect, useState } from 'react';
@@ -39,7 +40,7 @@ export default function DashboardOverviewPage() {
         return;
       }
       
-      // 2. Fetch all stacks and verbs for all subjects
+      // 2. Fetch all stacks and verbs for all subjects in parallel
       const allStacksAndVerbsPromises = fetchedSubjects.map(subject => {
         const stacksRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks');
         const verbsRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'verbs');
@@ -50,13 +51,27 @@ export default function DashboardOverviewPage() {
         ]);
       });
 
-      const results = await Promise.all(allStacksAndVerbsPromises);
+      // 3. In parallel, query for recent learning sessions
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const sessionsQuery = query(
+          collection(firestore, 'users', user.uid, 'learningSessions'),
+          where('startTime', '>=', Timestamp.fromDate(thirtyDaysAgo)),
+          orderBy('startTime', 'desc')
+      );
+      const sessionsPromise = getDocs(sessionsQuery);
+
+      // Await stacks/verbs and sessions results
+      const [stacksAndVerbsResults, sessionsSnapshot] = await Promise.all([
+        Promise.all(allStacksAndVerbsPromises),
+        sessionsPromise,
+      ]);
 
       const tempStacks: Stack[] = [];
       const tempVerbs: Verb[] = [];
       const allVocabPromises: Promise<VocabularyItem[]>[] = [];
 
-      results.forEach(([stacksSnapshot, verbsSnapshot, subjectId]) => {
+      stacksAndVerbsResults.forEach(([stacksSnapshot, verbsSnapshot, subjectId]) => {
         verbsSnapshot.docs.forEach(doc => {
             tempVerbs.push({ ...doc.data(), id: doc.id, subjectId } as Verb);
         });
@@ -73,22 +88,8 @@ export default function DashboardOverviewPage() {
         });
       });
       
-      // 3. Setup Learning Session Data Fetch
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const sessionsQuery = query(
-          collection(firestore, 'users', user.uid, 'learningSessions'),
-          where('startTime', '>=', Timestamp.fromDate(thirtyDaysAgo)),
-          orderBy('startTime', 'desc')
-      );
-      const sessionsPromise = getDocs(sessionsQuery);
-
-      // 4. Run vocab and session queries in parallel
-      const [allVocabArrays, sessionsSnapshot] = await Promise.all([
-        Promise.all(allVocabPromises),
-        sessionsPromise,
-      ]);
-
+      // 4. Fetch all vocabulary in parallel
+      const allVocabArrays = await Promise.all(allVocabPromises);
       const tempVocab = allVocabArrays.flat();
       
       setAllStacks(tempStacks);

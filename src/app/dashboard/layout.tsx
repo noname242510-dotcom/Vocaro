@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Home, Settings, LogOut, Menu, Sun, Moon, ChevronDown, LayoutDashboard } from 'lucide-react';
@@ -11,14 +12,13 @@ import { Logo } from '@/components/logo';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { GlobalVerbResultListener } from '@/components/global-verb-result-listener';
 import { TaskProgressToast } from '@/components/task-progress-toast';
-import { useFirebase } from '@/firebase/provider';
+import { useFirebase, useMemoFirebase } from '@/firebase/provider';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useMemoFirebase } from '@/firebase/provider';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { Subject } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TaskProvider } from '@/contexts/task-context';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export default function DashboardLayout({
   children,
