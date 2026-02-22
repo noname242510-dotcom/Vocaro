@@ -1,39 +1,81 @@
-// This file is intentionally left blank.
-// The user has requested a public profile page for friends.
-// This page will display a user's subjects and stats.
-// Implementation will require fetching data specific to the user ID in the URL.
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase/provider';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, doc } from 'firebase/firestore';
-import type { PublicProfile, Subject } from '@/lib/types';
+import { collection, doc, getDocs } from 'firebase/firestore';
+import type { PublicProfile, Subject, Stack, Verb } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { SubjectCard } from '../../_components/subject-card'; // Reusing the SubjectCard component
+import { Card } from '@/components/ui/card';
+
+function SimpleSubjectDisplay({ subject, ownerId }: { subject: Subject; ownerId: string; }) {
+    const { firestore } = useFirebase();
+    const [totalVocabCount, setTotalVocabCount] = useState(0);
+
+    const stacksCollectionRef = useMemoFirebase(() => {
+        if (!ownerId || !firestore) return null;
+        return collection(firestore, 'users', ownerId, 'subjects', subject.id, 'stacks');
+    }, [firestore, ownerId, subject.id]);
+
+    const verbsCollectionRef = useMemoFirebase(() => {
+        if (!ownerId || !firestore) return null;
+        return collection(firestore, 'users', ownerId, 'subjects', subject.id, 'verbs');
+    }, [firestore, ownerId, subject.id]);
+
+    const { data: stacks } = useCollection<Stack>(stacksCollectionRef);
+    const { data: verbs } = useCollection<Verb>(verbsCollectionRef);
+
+    useEffect(() => {
+        if (stacks && firestore && ownerId) {
+            const fetchAllVocabCounts = async () => {
+                let count = 0;
+                for (const stack of stacks) {
+                    const vocabCollectionRef = collection(firestore, 'users', ownerId, 'subjects', subject.id, 'stacks', stack.id, 'vocabulary');
+                    const vocabSnapshot = await getDocs(vocabCollectionRef);
+                    count += vocabSnapshot.size;
+                }
+                setTotalVocabCount(count);
+            };
+            fetchAllVocabCounts();
+        } else if (stacks === null || stacks?.length === 0) {
+            setTotalVocabCount(0);
+        }
+    }, [stacks, firestore, ownerId, subject.id]);
+
+    return (
+        <Card className="p-4">
+            <div className="flex items-center gap-4">
+                <span className="text-3xl">{subject.emoji}</span>
+                <div className="flex-1">
+                    <p className="font-semibold">{subject.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                        {totalVocabCount} Vokabeln · {verbs?.length ?? 0} Verben
+                    </p>
+                </div>
+            </div>
+        </Card>
+    );
+}
+
 
 export default function UserProfilePage() {
     const params = useParams();
     const router = useRouter();
     const userId = params.userId as string;
-    const { firestore, user: currentUser } = useFirebase();
+    const { firestore } = useFirebase();
 
-    // Fetch public profile data
     const publicProfileDocRef = useMemoFirebase(() => {
         if (!firestore || !userId) return null;
         return doc(firestore, 'publicProfiles', userId);
     }, [firestore, userId]);
     const { data: publicProfile, isLoading: isProfileLoading } = useDoc<PublicProfile>(publicProfileDocRef);
 
-    // Fetch user's subjects
     const subjectsCollectionRef = useMemoFirebase(() => {
         if (!firestore || !userId) return null;
-        // This assumes security rules allow the current user to read this collection
         return collection(firestore, 'users', userId, 'subjects');
     }, [firestore, userId]);
     const { data: subjects, isLoading: areSubjectsLoading } = useCollection<Subject>(subjectsCollectionRef);
@@ -75,15 +117,11 @@ export default function UserProfilePage() {
 
             <h2 className="text-2xl font-semibold mb-4 font-headline">Fächer</h2>
             {subjects && subjects.length > 0 ? (
-                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {subjects.map(subject => (
-                        // Note: The onSubjectDeleted/Renamed props will not work for another user's profile
-                        // This is acceptable for a read-only view.
-                        <SubjectCard 
+                        <SimpleSubjectDisplay 
                             key={subject.id} 
                             subject={subject} 
-                            onSubjectDeleted={() => {}}
-                            onSubjectRenamed={() => {}}
                             ownerId={userId}
                         />
                     ))}
