@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect }from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore'; // <-- Add firestore imports
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -44,19 +45,19 @@ export default function SignUpPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
       if (userCredential.user) {
-        await updateProfile(userCredential.user, {
+        const user = userCredential.user;
+        await updateProfile(user, {
           displayName: username.trim(),
         });
         
-        // Get the ID token and call the server to create the public profile
-        const token = await userCredential.user.getIdToken();
-        await fetch('/api/user/create-profile', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ displayName: username.trim() })
+        const firestore = getFirestore();
+        const publicProfileRef = doc(firestore, 'publicProfiles', user.uid);
+        
+        await setDoc(publicProfileRef, {
+            displayName: username.trim(),
+            displayName_lowercase: username.trim().toLowerCase(),
+            photoURL: user.photoURL || null,
+            createdAt: serverTimestamp(),
         });
       }
       

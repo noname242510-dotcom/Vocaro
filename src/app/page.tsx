@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getFirestore, doc, setDoc } from 'firebase/firestore'; // <-- Add firestore imports
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,25 +37,28 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Create a dummy email from the username
     const email = `${username.trim()}@vocaro.app`;
 
     try {
       const auth = getAuth();
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      // Ensure profile exists on login. This is non-blocking.
-      if (userCredential.user) {
-        userCredential.user.getIdToken(true).then(token => {
-          fetch('/api/user/create-profile', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ displayName: userCredential.user.displayName })
-          });
-        });
+      if (user) {
+        const finalDisplayName = user.displayName || username.trim();
+        if (finalDisplayName) {
+            const firestore = getFirestore();
+            const publicProfileRef = doc(firestore, "publicProfiles", user.uid);
+            // Non-blocking fire-and-forget write to create/update profile
+            setDoc(publicProfileRef, {
+                displayName: finalDisplayName,
+                displayName_lowercase: finalDisplayName.toLowerCase(),
+                photoURL: user.photoURL || null,
+            }, { merge: true }).catch(err => {
+                // Log error but don't block user
+                console.error("Failed to ensure public profile on login:", err);
+            });
+        }
       }
 
       router.push('/dashboard');
