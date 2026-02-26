@@ -108,3 +108,36 @@ export type EnrichedFriendship = Friendship & {
     displayName: string;
     photoURL?: string;
 };
+
+export type Group = {
+    id: string;
+    name: string;
+    createdBy: string;
+    createdAt: any; // server timestamp
+    memberCount?: number;
+}
+
+export type GroupMember = {
+    id: string;
+    displayName: string;
+    photoURL?: string;
+}
+
+export type GroupInvitation = {
+    id: string;
+    groupId: string;
+    groupName: string;
+    inviterId: string;
+    inviterName: string;
+    recipientId: string;
+    status: 'pending' | 'accepted' | 'declined';
+    createdAt: any; // server timestamp
+}
+
+export type GroupActivity = {
+    id: string;
+    userId: string;
+    correctCount: number;
+    incorrectCount: number;
+    timestamp: any; // server timestamp
+}

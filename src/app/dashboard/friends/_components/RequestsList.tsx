@@ -113,29 +113,30 @@ export function RequestsList({ onFriendAction }: { onFriendAction: () => void })
   const getInitials = (name: string) => (name ? name.charAt(0).toUpperCase() : '');
 
   if (isLoading) {
-    return <div className="text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" /></div>;
+    return <div className="text-center py-4"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
 
   if (requests.length === 0) {
-    return <p className="text-center text-muted-foreground">Keine offenen Freundschaftsanfragen.</p>;
+    return <p className="text-center text-muted-foreground text-sm p-4">Keine offenen Freundschaftsanfragen.</p>;
   }
 
   return (
     <div className="space-y-3">
       {requests.map((request) => (
-        <Card key={request.id} className="p-4">
+        <Card key={request.id} className="p-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Avatar>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-8 w-8">
                 <AvatarImage src={request.photoURL} />
                 <AvatarFallback>{getInitials(request.displayName)}</AvatarFallback>
               </Avatar>
-              <p><span className="font-semibold">{request.displayName}</span> möchte dein Freund sein.</p>
+              <p className="text-sm"><span className="font-semibold">{request.displayName}</span> möchte dein Freund sein.</p>
             </div>
             <div className="flex gap-2">
               <Button
                 size="icon"
                 variant="outline"
+                className="h-8 w-8"
                 onClick={() => handleRequest(request, false)}
                 disabled={!!processingId}
               >
@@ -143,6 +144,7 @@ export function RequestsList({ onFriendAction }: { onFriendAction: () => void })
               </Button>
               <Button
                 size="icon"
+                className="h-8 w-8"
                 onClick={() => handleRequest(request, true)}
                 disabled={!!processingId}
               >
