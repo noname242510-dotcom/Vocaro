@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -496,7 +497,9 @@ export default function LearnPage() {
   useEffect(() => {
     // Load settings from context
     if (settings) {
-        setIsTermFirst(settings.vocabQueryDirection);
+        // Corrected logic: `vocabQueryDirection: true` means definition first.
+        // So `isTermFirst` should be false.
+        setIsTermFirst(!settings.vocabQueryDirection);
         setShouldShowHints(settings.vocabShowHints);
         setHapticsEnabled(settings.hapticFeedback);
     }

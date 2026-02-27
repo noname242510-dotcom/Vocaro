@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -268,7 +269,6 @@ export default function VerbPracticePage() {
     const [showConfetti, setShowConfetti] = useState(false);
     const [animationResetToken, setAnimationResetToken] = useState(0);
     
-    const [isGermanFirst, setIsGermanFirst] = useState(true);
     const [shouldShowHints, setShouldShowHints] = useState(true);
     const [hapticsEnabled, setHapticsEnabled] = useState(true);
 
@@ -515,9 +515,7 @@ export default function VerbPracticePage() {
         }
     }, [practiceItems, currentIndex, answeredIds, incorrectlyAnsweredIds, history, sessionId, totalItemCount, initialItems, isLoading]);
 
-    const frontIsGerman = isGermanFirst;
-    const currentCard = practiceItems[currentIndex];
-
+    
     useEffect(() => {
         let timer: NodeJS.Timeout;
         if (isLoading) {
@@ -531,16 +529,15 @@ export default function VerbPracticePage() {
       }, [isLoading]);
 
     useEffect(() => {
-        if (settings) {
-            setIsGermanFirst(settings.verbQueryDirection);
-            setShouldShowHints(settings.verbShowHints);
-            setHapticsEnabled(settings.hapticFeedback);
+        if (!settings || !user || !firestore) {
+            return;
         }
-        
+
         const typedModeSetting = localStorage.getItem('learn-mode-typed') === 'true';
         setIsTypedMode(typedModeSetting);
 
-        if (!firestore || !user) return;
+        setShouldShowHints(settings.verbShowHints);
+        setHapticsEnabled(settings.hapticFeedback);
         
         const savedStateJSON = sessionStorage.getItem(SESSION_STATE_KEY);
         if (savedStateJSON) {
@@ -606,6 +603,8 @@ export default function VerbPracticePage() {
                 
                 const verbs: (Verb & { selectedTenses: string[] })[] = JSON.parse(sessionData);
                 const items: PracticeItem[] = [];
+                const germanFirst = settings.verbQueryDirection;
+
 
                 verbs.forEach((verb) => {
                     // If no tenses are selected, practice the infinitive translation
@@ -648,7 +647,7 @@ export default function VerbPracticePage() {
                 
                 // Apply German-first setting after generation
                 const finalItems = items.map(item => {
-                    if (isGermanFirst) {
+                    if (germanFirst) {
                         return { ...item, front: item.back, back: item.front };
                     }
                     return item;
@@ -676,7 +675,7 @@ export default function VerbPracticePage() {
         
         loadData();
 
-    }, [user, firestore, isGermanFirst, settings]);
+    }, [user, firestore, settings]);
 
     useEffect(() => {
         if (!isExiting && isTypedMode && inputRef.current) {
@@ -685,6 +684,7 @@ export default function VerbPracticePage() {
     }, [currentIndex, isExiting, isTypedMode]);
     
     const languageHint = subject?.name || 'English';
+    const isGermanFirst = settings?.verbQueryDirection ?? false;
 
 
     const correctAnswersCount = Array.from(answeredIds.values()).filter(status => status === 'correct' || status === 'accepted' || status === 'omitted-correct').length;
@@ -788,6 +788,8 @@ export default function VerbPracticePage() {
         </div>;
     }
 
+    const currentCard = practiceItems[currentIndex];
+
     if (!currentCard && !showResults) {
         return <div className="flex flex-col items-center justify-center h-screen text-center">
            <p>Keine Verben für diese Sitzung geladen.</p>
@@ -832,6 +834,7 @@ export default function VerbPracticePage() {
     };
     
     // Assign flags based on whether the content is German or foreign.
+    const frontIsGerman = isGermanFirst;
     const frontFlag = frontIsGerman ? '🇩🇪' : subject?.emoji || '🌐';
     const backFlag = frontIsGerman ? subject?.emoji || '🌐' : '🇩🇪';
 

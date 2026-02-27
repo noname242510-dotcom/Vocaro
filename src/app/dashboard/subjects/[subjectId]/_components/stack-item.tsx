@@ -41,6 +41,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useSettings } from '@/contexts/settings-context';
 
 
 interface StackItemProps {
@@ -56,6 +57,7 @@ interface StackItemProps {
 
 export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onDelete, onRename, onAddVocab, onEditVocab }: StackItemProps) {
   const { firestore, user } = useFirebase();
+  const { settings } = useSettings();
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -66,22 +68,10 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
   const { toast } = useToast();
   
   useEffect(() => {
-    // 'term' or 'definition'
-    const setting = localStorage.getItem('query-direction-overview');
-    setDisplayTermFirst(setting !== 'definition');
-    
-    // Add a listener for storage changes to update dynamically
-    const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === 'query-direction-overview') {
-            setDisplayTermFirst(event.newValue !== 'definition');
-        }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-        window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
+    if (settings) {
+      setDisplayTermFirst(settings.vocabOverviewDirection !== 'definition');
+    }
+  }, [settings]);
 
   const allVisibleInStackSelected = vocabulary.length > 0 && vocabulary.every(v => v.isSelected);
 
