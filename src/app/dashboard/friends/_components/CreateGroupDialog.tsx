@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import type { Friendship, PublicProfile } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -75,22 +75,23 @@ export function CreateGroupDialog({ isOpen, onOpenChange }: { isOpen: boolean; o
         try {
             const batch = writeBatch(firestore);
             const groupRef = doc(collection(firestore, 'groups'));
-            const memberIds = [user.uid]; // Creator is always a member
             
             // Create group
             batch.set(groupRef, {
+                id: groupRef.id,
                 name: groupName,
                 createdBy: user.uid,
                 createdAt: serverTimestamp(),
-                memberIds: memberIds, // Initially just the creator
+                memberIds: [user.uid], // Creator is always a member
                 memberCount: 1,
             });
 
             // Create invitations for selected friends
-            const invitationsRef = collection(firestore, 'groupInvitations');
             selectedFriends.forEach(friendId => {
-                const invitationRef = doc(invitationsRef);
+                const invitationId = `${groupRef.id}_${friendId}`;
+                const invitationRef = doc(firestore, 'groupInvitations', invitationId);
                 batch.set(invitationRef, {
+                    id: invitationId,
                     groupId: groupRef.id,
                     groupName: groupName,
                     inviterId: user.uid,

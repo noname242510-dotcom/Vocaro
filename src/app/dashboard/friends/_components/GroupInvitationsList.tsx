@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useFirebase, useMemoFirebase } from '@/firebase/provider';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, doc, query, where, updateDoc, writeBatch, arrayUnion, increment } from 'firebase/firestore';
+import { collection, doc, query, where, writeBatch, arrayUnion, increment, deleteDoc } from 'firebase/firestore';
 import type { GroupInvitation } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -43,14 +43,14 @@ export function GroupInvitationsList({ onAction }: { onAction: () => void }) {
           memberCount: increment(1)
         });
         
-        // Update invitation status
-        batch.update(invitationRef, { status: 'accepted' });
+        // Delete invitation
+        batch.delete(invitationRef);
         
         await batch.commit();
 
         toast({ title: 'Einladung angenommen', description: `Du bist jetzt Mitglied bei "${invitation.groupName}".` });
       } else {
-        await updateDoc(invitationRef, { status: 'declined' });
+        await deleteDoc(invitationRef);
         toast({ title: 'Einladung abgelehnt' });
       }
       onAction(); // This will trigger a re-fetch in parent components

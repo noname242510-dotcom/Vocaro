@@ -144,9 +144,7 @@
         "status": {
           "type": "string",
           "enum": [
-            "pending",
-            "accepted",
-            "declined"
+            "pending"
           ]
         },
         "createdAt": {
@@ -566,7 +564,7 @@
           "schema": {
             "$ref": "#/backend/entities/GroupInvitation"
           },
-          "description": "Stores pending, accepted, or declined invitations for users to join groups."
+          "description": "Stores pending invitations for users to join groups. The ID is a composite of groupId and recipientId."
         }
       },
       {

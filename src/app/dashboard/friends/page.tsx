@@ -1,6 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useFirebase, useMemoFirebase } from '@/firebase/provider';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { collection, query, where } from 'firebase/firestore';
+import type { Friendship, GroupInvitation } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserSearch } from './_components/UserSearch';
 import { FriendsList } from './_components/FriendsList';
@@ -14,10 +18,45 @@ import { Separator } from '@/components/ui/separator';
 
 export default function FriendsPage() {
   const [key, setKey] = useState(0); // Used to force re-renders on components
+  const { user, firestore } = useFirebase();
+  const [requestCount, setRequestCount] = useState(0);
+  const [invitationCount, setInvitationCount] = useState(0);
 
   const refreshData = () => {
     setKey(prevKey => prevKey + 1);
   };
+  
+  // Fetch counts for the notification badge
+  const requestsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(
+      collection(firestore, 'friendships'),
+      where('recipientId', '==', user.uid),
+      where('status', '==', 'pending')
+    );
+  }, [user, firestore, key]);
+
+  const invitationsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(
+      collection(firestore, 'groupInvitations'),
+      where('recipientId', '==', user.uid),
+      where('status', '==', 'pending')
+    );
+  }, [user, firestore, key]);
+  
+  const { data: friendRequests } = useCollection<Friendship>(requestsQuery);
+  const { data: groupInvites } = useCollection<GroupInvitation>(invitationsQuery);
+  
+  useEffect(() => {
+    setRequestCount(friendRequests?.length ?? 0);
+  }, [friendRequests]);
+  
+  useEffect(() => {
+    setInvitationCount(groupInvites?.length ?? 0);
+  }, [groupInvites]);
+
+  const totalNotifications = requestCount + invitationCount;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -30,8 +69,13 @@ export default function FriendsPage() {
         <div className="flex-1 flex justify-end">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
+                {totalNotifications > 0 && (
+                    <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
+                        {totalNotifications}
+                    </div>
+                )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 mr-4">
