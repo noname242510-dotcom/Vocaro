@@ -55,20 +55,20 @@ function LeaderboardTab({ group }: { group: Group }) {
                     const sessionsRef = collection(firestore, 'users', member.id, 'learningSessions');
                     const sessionsQuery = query(sessionsRef, where('startTime', '>=', thirtyDaysAgo));
                     const sessionsSnapshot = await getDocs(sessionsQuery);
-                    
+
                     for (const sessionDoc of sessionsSnapshot.docs) {
                         const vocabAnswersRef = collection(sessionDoc.ref, 'vocabulary');
                         const verbAnswersRef = collection(sessionDoc.ref, 'verbAnswers');
-                        
+
                         const [vocabAnswersSnap, verbAnswersSnap] = await Promise.all([
                             getDocs(query(vocabAnswersRef, where('correct', '==', true))),
                             getDocs(query(verbAnswersRef, where('correct', '==', true))),
                         ]);
-                        
+
                         score += vocabAnswersSnap.size;
                         score += verbAnswersSnap.size;
                     }
-                    
+
                     return { userId: member.id, displayName: member.displayName, photoURL: member.photoURL, score };
                 });
 
@@ -84,13 +84,13 @@ function LeaderboardTab({ group }: { group: Group }) {
 
         fetchLeaderboardData();
     }, [firestore, group]);
-    
+
     const getInitials = (name: string) => (name ? name.charAt(0).toUpperCase() : '');
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
     }
-    
+
     if (leaderboard.length === 0) {
         return <p className="text-center text-muted-foreground py-10">Noch keine Lernaktivitäten in den letzten 30 Tagen.</p>
     }
@@ -125,7 +125,7 @@ function CopyVocabDialog({ vocab, isOpen, onOpenChange }: { vocab: VocabularyIte
     const [isSaving, setIsSaving] = useState(false);
     const [selectedStackId, setSelectedStackId] = useState<string | undefined>();
     const [selectedSubjectId, setSelectedSubjectId] = useState<string | undefined>();
-    
+
     const userSubjectsQuery = useMemoFirebase(() => {
         if (!user || !firestore) return null;
         return collection(firestore, 'users', user.uid, 'subjects');
@@ -141,10 +141,10 @@ function CopyVocabDialog({ vocab, isOpen, onOpenChange }: { vocab: VocabularyIte
     useEffect(() => {
         setSelectedStackId(undefined); // Reset stack when subject changes
     }, [selectedSubjectId]);
-    
+
     const handleSave = async () => {
         if (!vocab || !selectedSubjectId || !selectedStackId || !user || !firestore) {
-            toast({ variant: 'destructive', title: 'Fehler', description: 'Bitte wähle ein Fach und einen Stapel aus.'});
+            toast({ variant: 'destructive', title: 'Fehler', description: 'Bitte wähle ein Fach und einen Stapel aus.' });
             return;
         };
         setIsSaving(true);
@@ -160,11 +160,11 @@ function CopyVocabDialog({ vocab, isOpen, onOpenChange }: { vocab: VocabularyIte
                 source: 'manual',
                 createdAt: serverTimestamp(),
             });
-            toast({ title: 'Kopiert!', description: `Vokabel "${vocab.term}" wurde zu deinem Stapel hinzugefügt.`});
+            toast({ title: 'Kopiert!', description: `Vokabel "${vocab.term}" wurde zu deinem Stapel hinzugefügt.` });
             onOpenChange(false);
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: 'Fehler', description: 'Vokabel konnte nicht kopiert werden.'});
+            toast({ variant: 'destructive', title: 'Fehler', description: 'Vokabel konnte nicht kopiert werden.' });
         } finally {
             setIsSaving(false);
         }
@@ -184,7 +184,7 @@ function CopyVocabDialog({ vocab, isOpen, onOpenChange }: { vocab: VocabularyIte
                             {userSubjects?.map(sub => <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
-                     <Select onValueChange={setSelectedStackId} disabled={!selectedSubjectId || !userStacks}>
+                    <Select onValueChange={setSelectedStackId} disabled={!selectedSubjectId || !userStacks}>
                         <SelectTrigger><SelectValue placeholder="Wähle einen Stapel" /></SelectTrigger>
                         <SelectContent>
                             {userStacks?.map(stack => <SelectItem key={stack.id} value={stack.id}>{stack.name}</SelectItem>)}
@@ -273,7 +273,7 @@ function MemberSubjects({ member }: { member: PublicProfile }) {
         return collection(firestore, 'users', member.id, 'subjects');
     }, [firestore, member.id]);
     const { data: subjects, isLoading } = useCollection<Subject>(subjectsQuery);
-    
+
     return (
         <AccordionItem value={member.id} className="border-b-0">
             <AccordionTrigger className="hover:no-underline bg-muted px-4 rounded-lg">
@@ -318,7 +318,7 @@ function DatabaseTab({ group }: { group: Group }) {
             const profilesRef = collection(firestore, 'publicProfiles');
             const q = query(profilesRef, where('__name__', 'in', group.memberIds.slice(0, 30)));
             const snapshot = await getDocs(q);
-            setMembers(snapshot.docs.map(d => ({...d.data(), id: d.id } as PublicProfile)));
+            setMembers(snapshot.docs.map(d => ({ ...d.data(), id: d.id } as PublicProfile)));
             setIsLoading(false);
         };
         fetchMembers();
@@ -350,7 +350,7 @@ export default function GroupDetailPage() {
     }, [firestore, groupId]);
 
     const { data: group, isLoading: isGroupLoading, forceUpdate } = useDoc<Group>(groupDocRef);
-    
+
     if (isGroupLoading) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-muted-foreground" /></div>;
     }
@@ -363,24 +363,22 @@ export default function GroupDetailPage() {
             </div>
         );
     }
-    
+
     return (
         <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-8">
-                 <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard/friends?tab=groups')} className="flex-shrink-0">
+                <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard/groups')} className="flex-shrink-0">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div className="flex flex-col items-center flex-grow">
                     <h1 className="text-3xl font-bold font-headline text-center">{group.name}</h1>
                     <p className="text-muted-foreground">{group.memberCount} Mitglieder</p>
                 </div>
-                 <div className="flex-shrink-0">
-                    {user?.uid === group.createdBy && (
-                         <Button onClick={() => setIsAddMemberOpen(true)}>
-                            <UserPlus className="mr-2 h-4 w-4" /> Mitglieder hinzufügen
-                        </Button>
-                    )}
-                 </div>
+                <div className="flex-shrink-0">
+                    <Button onClick={() => setIsAddMemberOpen(true)}>
+                        <UserPlus className="mr-2 h-4 w-4" /> Mitglieder hinzufügen
+                    </Button>
+                </div>
             </div>
 
             <Tabs defaultValue="leaderboard" className="w-full">

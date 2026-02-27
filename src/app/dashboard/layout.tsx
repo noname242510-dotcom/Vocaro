@@ -63,6 +63,7 @@ function DashboardLayoutContent({
   const navItems = [
     { href: '/dashboard/overview', icon: LayoutDashboard, label: 'Statistiken' },
     { href: '/dashboard/friends', icon: Users, label: 'Freunde' },
+    { href: '/dashboard/groups', icon: Users, label: 'Gruppen' },
     { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
   ];
 
