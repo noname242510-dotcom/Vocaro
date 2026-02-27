@@ -72,7 +72,7 @@ export default function FriendsPage() {
               <Button variant="outline" size="icon" className="relative">
                 <Bell className="h-5 w-5" />
                 {totalNotifications > 0 && (
-                    <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
+                    <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                         {totalNotifications}
                     </div>
                 )}

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useFirebase, useMemoFirebase } from '@/firebase/provider';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, doc, query, where, writeBatch, arrayUnion, increment, deleteDoc } from 'firebase/firestore';
+import { collection, doc, query, where, deleteDoc, runTransaction } from 'firebase/firestore';
 import type { GroupInvitation } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -35,18 +35,26 @@ export function GroupInvitationsList({ onAction }: { onAction: () => void }) {
     try {
       if (accept) {
         const groupRef = doc(firestore, 'groups', invitation.groupId);
-        const batch = writeBatch(firestore);
-        
-        // Add user to group's memberIds and increment count
-        batch.update(groupRef, {
-          memberIds: arrayUnion(user.uid),
-          memberCount: increment(1)
+        await runTransaction(firestore, async (transaction) => {
+            const groupDoc = await transaction.get(groupRef);
+            if (!groupDoc.exists()) {
+                throw "Gruppe existiert nicht mehr.";
+            }
+            const groupData = groupDoc.data();
+            if (groupData.memberIds.includes(user.uid)) {
+                // User is already a member, just delete invitation
+                transaction.delete(invitationRef);
+                return;
+            }
+            const newMemberIds = [...groupData.memberIds, user.uid];
+            const newMemberCount = (groupData.memberCount || groupData.memberIds.length) + 1;
+
+            transaction.update(groupRef, {
+                memberIds: newMemberIds,
+                memberCount: newMemberCount
+            });
+            transaction.delete(invitationRef);
         });
-        
-        // Delete invitation
-        batch.delete(invitationRef);
-        
-        await batch.commit();
 
         toast({ title: 'Einladung angenommen', description: `Du bist jetzt Mitglied bei "${invitation.groupName}".` });
       } else {

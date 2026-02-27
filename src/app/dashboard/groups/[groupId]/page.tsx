@@ -8,7 +8,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { doc, collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { Group, PublicProfile, Subject, Stack, VocabularyItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Users, Trophy, BookCopy, Download, Plus } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, Trophy, BookCopy, UserPlus, Plus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { AddMemberDialog } from './_components/AddMemberDialog';
 
 // --- Sub-Components for this Page ---
 
@@ -340,14 +341,15 @@ export default function GroupDetailPage() {
     const params = useParams();
     const router = useRouter();
     const groupId = params.groupId as string;
-    const { firestore } = useFirebase();
+    const { firestore, user } = useFirebase();
+    const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
 
     const groupDocRef = useMemoFirebase(() => {
         if (!firestore || !groupId) return null;
         return doc(firestore, 'groups', groupId);
     }, [firestore, groupId]);
 
-    const { data: group, isLoading: isGroupLoading } = useDoc<Group>(groupDocRef);
+    const { data: group, isLoading: isGroupLoading, forceUpdate } = useDoc<Group>(groupDocRef);
     
     if (isGroupLoading) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-muted-foreground" /></div>;
@@ -364,19 +366,21 @@ export default function GroupDetailPage() {
     
     return (
         <div className="max-w-4xl mx-auto">
-            <div className="flex items-center gap-4 mb-8">
-                <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard/friends?tab=groups')}>
+            <div className="flex items-center justify-between mb-8">
+                 <Button variant="ghost" size="icon" onClick={() => router.push('/dashboard/friends?tab=groups')} className="flex-shrink-0">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <div className="flex items-center gap-4">
-                    <div className="p-4 bg-secondary rounded-full">
-                      <Users className="h-8 w-8 text-secondary-foreground" />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-bold font-headline">{group.name}</h1>
-                        <p className="text-muted-foreground">{group.memberCount} Mitglieder</p>
-                    </div>
+                <div className="flex flex-col items-center flex-grow">
+                    <h1 className="text-3xl font-bold font-headline text-center">{group.name}</h1>
+                    <p className="text-muted-foreground">{group.memberCount} Mitglieder</p>
                 </div>
+                 <div className="flex-shrink-0">
+                    {user?.uid === group.createdBy && (
+                         <Button onClick={() => setIsAddMemberOpen(true)}>
+                            <UserPlus className="mr-2 h-4 w-4" /> Mitglieder hinzufügen
+                        </Button>
+                    )}
+                 </div>
             </div>
 
             <Tabs defaultValue="leaderboard" className="w-full">
@@ -391,6 +395,7 @@ export default function GroupDetailPage() {
                     <DatabaseTab group={group} />
                 </TabsContent>
             </Tabs>
+            <AddMemberDialog group={group} isOpen={isAddMemberOpen} onOpenChange={setIsAddMemberOpen} onInviteSent={forceUpdate} />
         </div>
     );
 }
