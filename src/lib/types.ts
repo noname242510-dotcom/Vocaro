@@ -114,7 +114,8 @@ export type Group = {
     name: string;
     createdBy: string;
     createdAt: any; // server timestamp
-    memberCount?: number;
+    memberIds: string[];
+    memberCount: number;
 }
 
 export type GroupMember = {
@@ -141,5 +142,3 @@ export type GroupActivity = {
     incorrectCount: number;
     timestamp: any; // server timestamp
 }
-
-    

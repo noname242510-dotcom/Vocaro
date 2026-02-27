@@ -31,24 +31,21 @@ export function GroupInvitationsList({ onAction }: { onAction: () => void }) {
     setProcessingId(invitation.id);
 
     const invitationRef = doc(firestore, 'groupInvitations', invitation.id);
-    const groupRef = doc(firestore, 'groups', invitation.groupId);
-    const memberRef = doc(firestore, 'groups', invitation.groupId, 'members', user.uid);
-
+    
     try {
       if (accept) {
+        const groupRef = doc(firestore, 'groups', invitation.groupId);
         const batch = writeBatch(firestore);
         
-        batch.set(memberRef, {
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-        });
-        
+        // Add user to group's memberIds and increment count
         batch.update(groupRef, {
           memberIds: arrayUnion(user.uid),
           memberCount: increment(1)
         });
         
+        // Update invitation status
         batch.update(invitationRef, { status: 'accepted' });
+        
         await batch.commit();
 
         toast({ title: 'Einladung angenommen', description: `Du bist jetzt Mitglied bei "${invitation.groupName}".` });
@@ -56,7 +53,7 @@ export function GroupInvitationsList({ onAction }: { onAction: () => void }) {
         await updateDoc(invitationRef, { status: 'declined' });
         toast({ title: 'Einladung abgelehnt' });
       }
-      onAction();
+      onAction(); // This will trigger a re-fetch in parent components
     } catch (error) {
       console.error("Error handling invitation: ", error);
       toast({ variant: 'destructive', title: 'Fehler', description: 'Aktion konnte nicht ausgeführt werden.' });

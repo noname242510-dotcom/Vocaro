@@ -319,5 +319,55 @@ service cloud.firestore {
       allow get, list, create: if isOwner(userId);
       allow update, delete: if isExistingOwner(userId);
     }
+
+    /**
+     * @description Manages learning groups.
+     * @path /groups/{groupId}
+     */
+    match /groups/{groupId} {
+      // Any member can read the group document
+      allow get: if request.auth != null && request.auth.uid in resource.data.memberIds;
+      
+      // Allow listing groups if the query is constrained by the client
+      allow list: if request.auth != null;
+
+      // Allow creating a group if the creator is the authenticated user and is in memberIds
+      allow create: if request.auth != null 
+                    && request.resource.data.createdBy == request.auth.uid
+                    && request.auth.uid in request.resource.data.memberIds;
+
+      // Allow the creator to update the group name or member list
+      allow update: if request.auth != null && resource.data.createdBy == request.auth.uid;
+      
+      // Allow the creator to delete the group
+      allow delete: if request.auth != null && resource.data.createdBy == request.auth.uid;
+    }
+    
+    /**
+     * @description Manages group invitations.
+     * @path /groupInvitations/{invitationId}
+     */
+    match /groupInvitations/{invitationId} {
+      function isInviterOrRecipient() {
+        // Check resource.data for existing docs, request.resource.data for new docs
+        return request.auth != null && 
+               (
+                 (resource != null && (resource.data.inviterId == request.auth.uid || resource.data.recipientId == request.auth.uid)) ||
+                 (request.resource != null && (request.resource.data.inviterId == request.auth.uid || request.resource.data.recipientId == request.auth.uid))
+               );
+      }
+      
+      allow read: if isInviterOrRecipient();
+      allow list: if request.auth != null; // Rely on client query to filter to user
+      allow create: if request.auth != null && request.resource.data.inviterId == request.auth.uid;
+      allow update: if request.auth != null 
+                    && resource.data.recipientId == request.auth.uid
+                    && resource.data.status == 'pending'
+                    && (request.resource.data.status == 'accepted' || request.resource.data.status == 'declined')
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+                    
+      // Allow inviter or recipient to delete (cancel or decline)
+      allow delete: if isInviterOrRecipient();
+    }
   }
 }
