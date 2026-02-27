@@ -271,7 +271,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get, list, create: if isOwner(userId);
+      allow get, list: if isOwner(userId) || areFriends(request.auth.uid, userId);
+      allow create: if isOwner(userId);
       allow update, delete: if isExistingOwner(userId);
     }
 
@@ -300,7 +301,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get, list, create: if isOwner(userId);
+      allow get, list: if isOwner(userId) || areFriends(request.auth.uid, userId);
+      allow create: if isOwner(userId);
       allow update, delete: if isExistingOwner(userId);
     }
 
@@ -316,7 +318,8 @@ service cloud.firestore {
         return isOwner(userId) && resource != null;
       }
 
-      allow get, list, create: if isOwner(userId);
+      allow get, list: if isOwner(userId) || areFriends(request.auth.uid, userId);
+      allow create: if isOwner(userId);
       allow update, delete: if isExistingOwner(userId);
     }
 
