@@ -27,6 +27,7 @@ import { useFirebase } from '@/firebase/provider';
 import { doc, getDoc, collection, addDoc, serverTimestamp, writeBatch, updateDoc } from 'firebase/firestore';
 import { SpeakerButton } from '@/components/speaker-button';
 import { LoadingSpinner } from '@/components/loading-spinner';
+import { useSettings } from '@/contexts/settings-context';
 
 
 // Function to shuffle an array
@@ -240,6 +241,7 @@ const germanPronounMap: Record<string, string> = {
 
 export default function VerbPracticePage() {
     const { firestore, user } = useFirebase();
+    const { settings } = useSettings();
     const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
     const speakerRef = useRef<{ play: () => void }>(null);
@@ -276,18 +278,7 @@ export default function VerbPracticePage() {
     const [userInput, setUserInput] = useState('');
     const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
     const [isHintPopoverOpen, setIsHintPopoverOpen] = useState(false);
-    const [isMounted, setIsMounted] = useState(false);
-    const [ttsEnabled, setTtsEnabled] = useState(false);
-    const [isAutoplayOn, setIsAutoplayOn] = useState(true);
 
-
-    useEffect(() => {
-        setIsMounted(true);
-        const ttsEnabledSetting = localStorage.getItem('tts-enabled');
-        setTtsEnabled(ttsEnabledSetting === 'true');
-        const autoplaySetting = localStorage.getItem('tts-autoplay-enabled');
-        setIsAutoplayOn(autoplaySetting === null ? true : autoplaySetting === 'true');
-    }, []);
 
     const finishSession = async () => {
         if (firestore && user && sessionId && answeredIds.size > 0) {
@@ -321,8 +312,7 @@ export default function VerbPracticePage() {
         const correctCount = totalItemCount - incorrectCount;
         const finalScore = totalItemCount > 0 ? Math.round((correctCount / totalItemCount) * 100) : 0;
         
-        const confettiEnabled = localStorage.getItem('enable-confetti') !== 'false';
-        if (finalScore >= 90 && confettiEnabled) {
+        if (finalScore >= 90 && settings?.enableConfetti) {
             setShowConfetti(true);
         }
         setShowResults(true);
@@ -540,21 +530,14 @@ export default function VerbPracticePage() {
       }, [isLoading]);
 
     useEffect(() => {
-        const persistedQueryDirectionVerbs = localStorage.getItem('query-direction-verbs');
-        if (persistedQueryDirectionVerbs !== null) {
-            setIsGermanFirst(persistedQueryDirectionVerbs === 'true');
-        } else {
-            setIsGermanFirst(true); // Default to German first
+        if (settings) {
+            setIsGermanFirst(settings.verbQueryDirection);
+            setShouldShowHints(settings.verbShowHints);
+            setHapticsEnabled(settings.hapticFeedback);
         }
-
-        const showHintsSetting = localStorage.getItem('show-verb-hints') !== 'false';
-        setShouldShowHints(showHintsSetting);
         
         const typedModeSetting = localStorage.getItem('learn-mode-typed') === 'true';
         setIsTypedMode(typedModeSetting);
-
-        const hapticsSetting = localStorage.getItem('haptic-feedback-enabled') !== 'false';
-        setHapticsEnabled(hapticsSetting);
 
         if (!firestore || !user) return;
         
@@ -692,7 +675,7 @@ export default function VerbPracticePage() {
         
         loadData();
 
-    }, [user, firestore, isGermanFirst]);
+    }, [user, firestore, isGermanFirst, settings]);
 
     useEffect(() => {
         if (!isExiting && isTypedMode && inputRef.current) {
@@ -855,8 +838,8 @@ export default function VerbPracticePage() {
     // If the front is German, the back is foreign, and vice-versa.
     const textToSpeak = frontIsGerman ? currentCard.back : currentCard.front;
 
-    const autoplayFront = isAutoplayOn && !isFlipped && !frontIsGerman; // Foreign word is on front
-    const autoplayBack = isAutoplayOn && isFlipped && frontIsGerman; // Foreign word is on back
+    const autoplayFront = (settings?.ttsAutoplay ?? true) && !isFlipped && !frontIsGerman; // Foreign word is on front
+    const autoplayBack = (settings?.ttsAutoplay ?? true) && isFlipped && frontIsGerman; // Foreign word is on back
 
     return (
         <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-9rem)] -mx-4 sm:mx-auto sm:w-full sm:max-w-4xl">
@@ -913,14 +896,28 @@ export default function VerbPracticePage() {
                         </div>
                     </div>
                     
-                    {ttsEnabled && (
+                    {settings?.ttsEnabled && (
                         <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
                             <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                                 <div className={cn("absolute inset-0 [backface-visibility:hidden]", frontIsGerman && "opacity-0")}>
-                                    <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} autoplay={autoplayFront} />
+                                    <SpeakerButton
+                                      ref={speakerRef}
+                                      text={textToSpeak}
+                                      languageHint={languageHint}
+                                      autoplay={autoplayFront}
+                                      ttsEnabled={settings?.ttsEnabled ?? false}
+                                      autoplayEnabled={settings?.ttsAutoplay ?? true}
+                                    />
                                 </div>
                                 <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !frontIsGerman && "opacity-0")}>
-                                    <SpeakerButton ref={speakerRef} text={textToSpeak} languageHint={languageHint} autoplay={autoplayBack} />
+                                    <SpeakerButton
+                                      ref={speakerRef}
+                                      text={textToSpeak}
+                                      languageHint={languageHint}
+                                      autoplay={autoplayBack}
+                                      ttsEnabled={settings?.ttsEnabled ?? false}
+                                      autoplayEnabled={settings?.ttsAutoplay ?? true}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -1058,5 +1055,3 @@ export default function VerbPracticePage() {
         </div>
     );
 }
-
-    

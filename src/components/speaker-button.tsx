@@ -10,6 +10,8 @@ interface SpeakerButtonProps {
   languageHint?: string;
   className?: string;
   autoplay?: boolean;
+  ttsEnabled: boolean;
+  autoplayEnabled: boolean;
 }
 
 const prepareTextForSpeech = (input: string, lang: string): string => {
@@ -85,20 +87,13 @@ const prepareTextForSpeech = (input: string, lang: string): string => {
 };
 
 export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps>(
-  ({ text, languageHint, className, autoplay }, ref) => {
+  ({ text, languageHint, className, autoplay, ttsEnabled, autoplayEnabled }, ref) => {
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isTTSEnabled, setisTTSEnabled] = useState(false);
-    const [isAutoPlaybackEnabled, setIsAutoPlaybackEnabled] = useState(false);
     const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
     const lastTextRef = useRef<string>("");
 
     useEffect(() => {
-      const ttsEnabled = localStorage.getItem('tts-enabled') === 'true';
-      const autoPlaybackEnabled = localStorage.getItem('tts-auto-playback') === 'true';
-      setisTTSEnabled(ttsEnabled);
-      setIsAutoPlaybackEnabled(autoPlaybackEnabled);
-
-      if (!ttsEnabled) return;
+      if (!ttsEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
 
       const loadVoices = () => {
         voicesRef.current = window.speechSynthesis.getVoices();
@@ -113,7 +108,7 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
           window.speechSynthesis.cancel();
         }
       };
-    }, []);
+    }, [ttsEnabled]);
 
     const getLanguageCode = (hint?: string): string => {
       if (!hint) return 'en-US';
@@ -134,7 +129,7 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
     };
     
     const play = useCallback(() => {
-      if (!isTTSEnabled || typeof window === 'undefined' || !window.speechSynthesis || !text) return;
+      if (!ttsEnabled || typeof window === 'undefined' || !window.speechSynthesis || !text) return;
       
       if (voicesRef.current.length === 0) {
         setTimeout(play, 150);
@@ -186,12 +181,12 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
       };
       
       window.speechSynthesis.speak(utterance);
-    }, [text, languageHint, isTTSEnabled]);
+    }, [text, languageHint, ttsEnabled]);
 
     useImperativeHandle(ref, () => ({ play }));
 
     useEffect(() => {
-        if (isAutoPlaybackEnabled && autoplay && text && text !== lastTextRef.current) {
+        if (autoplayEnabled && autoplay && text && text !== lastTextRef.current) {
             const timer = setTimeout(() => {
                 play();
                 lastTextRef.current = text;
@@ -199,9 +194,9 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
             
             return () => clearTimeout(timer);
         }
-    }, [isAutoPlaybackEnabled, autoplay, text, play]);
+    }, [autoplayEnabled, autoplay, text, play]);
 
-    if (!isTTSEnabled) {
+    if (!ttsEnabled) {
       return null; 
     }
 

@@ -21,7 +21,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
@@ -29,6 +28,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { VocabDialog } from '../subjects/[subjectId]/_components/vocab-dialog';
 import { SpeakerButton } from '@/components/speaker-button';
 import { LoadingSpinner } from '@/components/loading-spinner';
+import { useSettings } from '@/contexts/settings-context';
 
 // Function to shuffle an array
 function shuffleArray<T>(array: T[]): T[] {
@@ -206,6 +206,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
 
 export default function LearnPage() {
   const { firestore, user } = useFirebase();
+  const { settings } = useSettings();
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const speakerRef = useRef<{ play: () => void }>(null);
@@ -245,18 +246,7 @@ export default function LearnPage() {
   
   const [editingVocab, setEditingVocab] = useState<VocabularyItem | null>(null);
   const [isVocabDialogOpen, setIsVocabDialogOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-  const [ttsEnabled, setTtsEnabled] = useState(false);
-  const [isAutoplayOn, setIsAutoplayOn] = useState(true);
 
-
-  useEffect(() => {
-    setIsMounted(true);
-    const ttsEnabledSetting = localStorage.getItem('tts-enabled');
-    setTtsEnabled(ttsEnabledSetting === 'true');
-    const autoplaySetting = localStorage.getItem('tts-autoplay-enabled');
-    setIsAutoplayOn(autoplaySetting === null ? true : autoplaySetting === 'true');
-  }, []);
 
   const finishSession = async () => {
     if (firestore && user && sessionId && answeredIds.size > 0) {
@@ -286,8 +276,7 @@ export default function LearnPage() {
     const correctCount = totalVocabCount - incorrectCount;
     const finalScore = totalVocabCount > 0 ? Math.round((correctCount / totalVocabCount) * 100) : 0;
     
-    const confettiEnabled = localStorage.getItem('enable-confetti') !== 'false';
-    if (finalScore >= 90 && confettiEnabled) {
+    if (finalScore >= 90 && settings?.enableConfetti) {
         setShowConfetti(true);
     }
     setShowResults(true);
@@ -504,22 +493,16 @@ export default function LearnPage() {
   }, [isLoading]);
 
   useEffect(() => {
-    // Load settings from local storage
-    const queryDirectionSetting = localStorage.getItem('query-direction-flashcards');
-    if (queryDirectionSetting !== null) {
-        setIsTermFirst(queryDirectionSetting === 'false');
-    } else {
-        setIsTermFirst(false); // Default to German -> Foreign
+    // Load settings from context
+    if (settings) {
+        setIsTermFirst(settings.vocabQueryDirection);
+        setShouldShowHints(settings.vocabShowHints);
+        setHapticsEnabled(settings.hapticFeedback);
     }
     
-    const showHintsSetting = localStorage.getItem('show-vocab-hints') !== 'false';
-    setShouldShowHints(showHintsSetting);
-    
+    // Load non-persistent UI state from local storage
     const typedModeSetting = localStorage.getItem('learn-mode-typed') === 'true';
     setIsTypedMode(typedModeSetting);
-
-    const hapticsSetting = localStorage.getItem('haptic-feedback-enabled') !== 'false';
-    setHapticsEnabled(hapticsSetting);
 
     if (!firestore || !user) return;
     
@@ -650,7 +633,7 @@ export default function LearnPage() {
 
     fetchVocab();
 
-  }, [firestore, user]);
+  }, [firestore, user, settings]);
 
   useEffect(() => {
     if (!isExiting && isTypedMode && inputRef.current) {
@@ -836,8 +819,8 @@ export default function LearnPage() {
   
   const formattedPhonetic = currentCard.phonetic ? currentCard.phonetic.replace(/^\/|\/$/g, '') : '';
 
-  const autoplayFront = isAutoplayOn && !isFlipped && frontIsForeign;
-  const autoplayBack = isAutoplayOn && isFlipped && backIsForeign;
+  const autoplayFront = (settings?.ttsAutoplay ?? true) && !isFlipped && frontIsForeign;
+  const autoplayBack = (settings?.ttsAutoplay ?? true) && isFlipped && backIsForeign;
 
 
   return (
@@ -897,15 +880,29 @@ export default function LearnPage() {
               </div>
             </div>
             
-            {ttsEnabled && (
+            {settings?.ttsEnabled && (
                 <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
                 <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
                     {/* Speaker for the foreign word */}
                     <div className={cn("absolute inset-0 [backface-visibility:hidden]", !frontIsForeign && "opacity-0")}>
-                        <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} autoplay={autoplayFront} />
+                        <SpeakerButton
+                          ref={speakerRef}
+                          text={currentCard.term}
+                          languageHint={languageHint}
+                          autoplay={autoplayFront}
+                          ttsEnabled={settings?.ttsEnabled ?? false}
+                          autoplayEnabled={settings?.ttsAutoplay ?? true}
+                        />
                     </div>
                     <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !backIsForeign && "opacity-0")}>
-                        <SpeakerButton ref={speakerRef} text={currentCard.term} languageHint={languageHint} autoplay={autoplayBack} />
+                        <SpeakerButton
+                          ref={speakerRef}
+                          text={currentCard.term}
+                          languageHint={languageHint}
+                          autoplay={autoplayBack}
+                          ttsEnabled={settings?.ttsEnabled ?? false}
+                          autoplayEnabled={settings?.ttsAutoplay ?? true}
+                        />
                     </div>
                 </div>
                 </div>
@@ -1078,5 +1075,3 @@ export default function LearnPage() {
     </>
   );
 }
-
-    
