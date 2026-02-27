@@ -12,20 +12,66 @@ interface SpeakerButtonProps {
   autoplay?: boolean;
 }
 
-/**
- * Bereinigt den Text: Entfernt Klammern und ersetzt Abkürzungen
- */
 const prepareTextForSpeech = (input: string, lang: string): string => {
   let cleaned = input.replace(/[()]/g, '');
   const langPrefix = lang.split('-')[0].toLowerCase();
 
   const replacements: Record<string, Record<string, string>> = {
-    en: { 'sb': 'somebody', 'sth': 'something', 'swh': 'somewhere', 'smo': 'someone', 'adj': 'adjective', 'adv': 'adverb', 'prep': 'preposition', 'v': 'verb', 'n': 'noun', 'pl': 'plural' },
-    fr: { 'qqn': 'quelqu’un', 'qqch': 'quelque chose', 'qn': 'quelqu’un', 'qc': 'quelque chose', 'qcq': 'quelconque', 'adj': 'adjectif', 'adv': 'adverbe', 'v': 'verbe', 'n': 'nom' },
-    de: { 'jmd': 'jemand', 'jmdm': 'jemandem', 'jmdn': 'jemanden', 'jmds': 'jemandes', 'etw': 'etwas', 'bzw': 'beziehungsweise', 'u.a': 'unter anderem', 'v.a': 'vor allem', 'adj': 'adjektiv', 'adv': 'adverb', 'sg': 'singular', 'pl': 'plural' },
-    es: { 'algn': 'alguien', 'algo': 'algo', 'adj': 'adjetivo', 'adv': 'adverbio', 'v': 'verbo', 's': 'sustantivo' },
-    it: { 'qc': 'qualcosa', 'qn': 'qualcuno', 'adj': 'aggettivo', 'adv': 'avverbio' },
-    pt: { 'alg': 'alguém', 'algo': 'algo', 'adj': 'adjetivo', 'adv': 'advérbio' }
+    en: {
+      'sb': 'somebody',
+      'sth': 'something',
+      'swh': 'somewhere',
+      'qn': 'someone',
+      'qc': 'something',
+      'adj': 'adjective',
+      'adv': 'adverb',
+      'prep': 'preposition',
+      'v': 'verb',
+      'n': 'noun'
+    },
+    fr: {
+      'qqn': 'quelqu’un',
+      'qqch': 'quelque chose',
+      'qn': 'quelqu’un',
+      'qc': 'quelque chose',
+      'qcq': 'quelconque',
+      'adj': 'adjectif',
+      'adv': 'adverbe',
+      'v': 'verbe',
+      'n': 'nom'
+    },
+    de: {
+      'jmd': 'jemand',
+      'jmdm': 'jemandem',
+      'jmdn': 'jemanden',
+      'jmds': 'jemandes',
+      'etw': 'etwas',
+      'bzw': 'beziehungsweise',
+      'u.a': 'unter anderem',
+      'v.a': 'vor allem',
+      'adj': 'adjektiv',
+      'adv': 'adverb'
+    },
+    es: {
+      'algn': 'alguien',
+      'algo': 'algo',
+      'adj': 'adjetivo',
+      'adv': 'adverbio',
+      'v': 'verbo',
+      's': 'sustantivo'
+    },
+    it: {
+      'qc': 'qualcosa',
+      'qn': 'qualcuno',
+      'adj': 'aggettivo',
+      'adv': 'avverbio'
+    },
+    pt: {
+      'alg': 'alguém',
+      'algo': 'algo',
+      'adj': 'adjetivo',
+      'adv': 'advérbio'
+    }
   };
 
   const langMap = replacements[langPrefix];
@@ -41,23 +87,29 @@ const prepareTextForSpeech = (input: string, lang: string): string => {
 export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps>(
   ({ text, languageHint, className, autoplay }, ref) => {
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isTTSEnabled, setisTTSEnabled] = useState(false);
+    const [isAutoPlaybackEnabled, setIsAutoPlaybackEnabled] = useState(false);
     const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
-    
-    // Wir tracken den Text, um bei Wiederholungen das Autoplay neu zu triggern
-    const lastPlayedTextRef = useRef<string>("");
+    const lastTextRef = useRef<string>("");
 
     useEffect(() => {
+      const ttsEnabled = localStorage.getItem('tts-enabled') === 'true';
+      const autoPlaybackEnabled = localStorage.getItem('tts-auto-playback') === 'true';
+      setisTTSEnabled(ttsEnabled);
+      setIsAutoPlaybackEnabled(autoPlaybackEnabled);
+
+      if (!ttsEnabled) return;
+
       const loadVoices = () => {
-        const availableVoices = window.speechSynthesis.getVoices();
-        if (availableVoices.length > 0) {
-          voicesRef.current = availableVoices;
-        }
+        voicesRef.current = window.speechSynthesis.getVoices();
       };
+      
       loadVoices();
       window.speechSynthesis.onvoiceschanged = loadVoices;
+
       return () => {
-        window.speechSynthesis.onvoiceschanged = null;
-        if (typeof window !== 'undefined' && window.speechSynthesis) {
+        if (window.speechSynthesis) {
+          window.speechSynthesis.onvoiceschanged = null;
           window.speechSynthesis.cancel();
         }
       };
@@ -82,7 +134,7 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
     };
     
     const play = useCallback(() => {
-      if (typeof window === 'undefined' || !window.speechSynthesis || !text) return;
+      if (!isTTSEnabled || typeof window === 'undefined' || !window.speechSynthesis || !text) return;
       
       if (voicesRef.current.length === 0) {
         setTimeout(play, 150);
@@ -97,14 +149,26 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
       utterance.lang = langCode;
 
       const voices = voicesRef.current;
-      const targetLang = langCode.split('-')[0].toLowerCase();
-      const langVoices = voices.filter(v => v.lang.toLowerCase().startsWith(targetLang));
+      const persistedVoiceURI = localStorage.getItem('tts-voice-uri');
       
-      const selectedVoice = 
-          langVoices.find(v => v.name.includes('Google') || v.name.includes('Natural')) ||
-          langVoices.find(v => v.name.includes('Microsoft') || v.name.includes('Apple')) ||
-          langVoices[0] ||
-          null;
+      let selectedVoice: SpeechSynthesisVoice | null = null;
+      
+      if (persistedVoiceURI) {
+        selectedVoice = voices.find(v => v.voiceURI === persistedVoiceURI) || null;
+      }
+      
+      if (!selectedVoice) {
+        const targetLang = langCode.split('-')[0].toLowerCase();
+        const langVoices = voices.filter(v => v.lang.toLowerCase().startsWith(targetLang));
+        
+        selectedVoice = 
+            langVoices.find(v => v.name.includes('Google')) ||
+            langVoices.find(v => v.name.includes('Natural')) ||
+            langVoices.find(v => v.name.includes('Microsoft')) ||
+            langVoices.find(v => v.name.includes('Apple')) ||
+            langVoices[0] ||
+            null;
+      }
 
       if (selectedVoice) {
         utterance.voice = selectedVoice;
@@ -112,41 +176,46 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
       
       utterance.rate = 0.85; 
       utterance.pitch = 1.0;
-
       utterance.onstart = () => setIsPlaying(true);
       utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = () => setIsPlaying(false);
+      utterance.onerror = (event) => {
+        if (event.error !== 'canceled' && event.error !== 'interrupted') {
+          console.error("SpeechSynthesis Error:", event.error);
+        }
+        setIsPlaying(false);
+      };
       
       window.speechSynthesis.speak(utterance);
-    }, [text, languageHint]);
+    }, [text, languageHint, isTTSEnabled]);
 
-    useImperativeHandle(ref, () => ({
-      play,
-    }));
+    useImperativeHandle(ref, () => ({ play }));
 
-    // Reset für Autoplay bei neuem (oder wiederholtem) Text
     useEffect(() => {
-        if (autoplay && text) {
-            // Die 0.2s Verzögerung nur für Autoplay
+        if (isAutoPlaybackEnabled && autoplay && text && text !== lastTextRef.current) {
             const timer = setTimeout(() => {
                 play();
-                lastPlayedTextRef.current = text;
+                lastTextRef.current = text;
             }, 200);
             
             return () => clearTimeout(timer);
         }
-    }, [autoplay, text, play]);
+    }, [isAutoPlaybackEnabled, autoplay, text, play]);
+
+    if (!isTTSEnabled) {
+      return null; 
+    }
 
     return (
       <div className={cn("relative h-10 w-10", className)}>
          <Button
           variant="ghost"
           size="icon"
-          className={cn("w-full h-full text-2xl")} // Kein Blau-Effekt mehr
+          className={cn("w-full h-full text-2xl")}
           onClick={(e) => {
             e.stopPropagation();
-            play(); // Manueller Klick spielt sofort ab
+            play();
           }}
+          aria-label="Play pronunciation"
         >
           <Volume2 className={cn("h-6 w-6", isPlaying && "animate-pulse")} />
         </Button>
@@ -156,5 +225,3 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
 );
 
 SpeakerButton.displayName = 'SpeakerButton';
-
-    
