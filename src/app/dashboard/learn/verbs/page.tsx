@@ -283,7 +283,8 @@ export default function VerbPracticePage() {
 
     useEffect(() => {
         setIsMounted(true);
-        setTtsEnabled(localStorage.getItem('tts-enabled') === 'true');
+        const ttsEnabledSetting = localStorage.getItem('tts-enabled');
+        setTtsEnabled(ttsEnabledSetting === 'true');
         const autoplaySetting = localStorage.getItem('tts-autoplay-enabled');
         setIsAutoplayOn(autoplaySetting === null ? true : autoplaySetting === 'true');
     }, []);
@@ -1057,3 +1058,5 @@ export default function VerbPracticePage() {
         </div>
     );
 }
+
+    
