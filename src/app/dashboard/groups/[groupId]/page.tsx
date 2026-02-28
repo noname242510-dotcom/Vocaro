@@ -5,10 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase/provider';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { doc, collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore';
 import type { Group, PublicProfile, Subject, Stack, VocabularyItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Users, Trophy, BookCopy, UserPlus, Plus } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, Trophy, BookCopy, UserPlus, Plus, Search } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -150,6 +150,16 @@ function CopyVocabDialog({ vocab, isOpen, onOpenChange }: { vocab: VocabularyIte
         setIsSaving(true);
         try {
             const stackVocabRef = collection(firestore, 'users', user.uid, 'subjects', selectedSubjectId, 'stacks', selectedStackId, 'vocabulary');
+
+            // Check for duplicates
+            const q = query(stackVocabRef, where('term', '==', vocab.term));
+            const existingDocs = await getDocs(q);
+            if (!existingDocs.empty) {
+                toast({ variant: 'default', title: 'Hinweis', description: `Vokabel "${vocab.term}" existiert bereits in diesem Stapel.` });
+                onOpenChange(false);
+                return;
+            }
+
             await addDoc(stackVocabRef, {
                 term: vocab.term,
                 definition: vocab.definition,
@@ -203,10 +213,147 @@ function CopyVocabDialog({ vocab, isOpen, onOpenChange }: { vocab: VocabularyIte
     )
 }
 
-function SubjectStacks({ subject, ownerId }: { subject: Subject; ownerId: string; }) {
+function BulkCopyDialog({ sourceStack, sourceVocabs, isOpen, onOpenChange }: {
+    sourceStack: Stack | null,
+    sourceVocabs: VocabularyItem[],
+    isOpen: boolean,
+    onOpenChange: (open: boolean) => void
+}) {
+    const { firestore, user } = useFirebase();
+    const { toast } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
+    const [selectedStackId, setSelectedStackId] = useState<string | undefined>();
+    const [selectedSubjectId, setSelectedSubjectId] = useState<string | undefined>();
+
+    const userSubjectsQuery = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return collection(firestore, 'users', user.uid, 'subjects');
+    }, [user, firestore]);
+    const { data: userSubjects } = useCollection<Subject>(userSubjectsQuery);
+
+    const userStacksQuery = useMemoFirebase(() => {
+        if (!user || !firestore || !selectedSubjectId) return null;
+        return collection(firestore, 'users', user.uid, 'subjects', selectedSubjectId, 'stacks');
+    }, [user, firestore, selectedSubjectId]);
+    const { data: userStacks } = useCollection<Stack>(userStacksQuery);
+
+    useEffect(() => {
+        setSelectedStackId(undefined); // Reset stack when subject changes
+    }, [selectedSubjectId]);
+
+    const handleSave = async () => {
+        if (!sourceStack || !selectedSubjectId || !selectedStackId || !user || !firestore) {
+            toast({ variant: 'destructive', title: 'Fehler', description: 'Bitte wähle ein Ziel-Fach und einen Ziel-Stapel aus.' });
+            return;
+        }
+
+        if (sourceVocabs.length === 0) {
+            toast({ variant: 'default', title: 'Hinweis', description: 'Dieser Stapel ist leer.' });
+            onOpenChange(false);
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const targetStackVocabRef = collection(firestore, 'users', user.uid, 'subjects', selectedSubjectId, 'stacks', selectedStackId, 'vocabulary');
+
+            // Get existing vocabs in the target stack to prevent duplicates
+            const existingVocabsSnapshot = await getDocs(targetStackVocabRef);
+            const existingTerms = new Set(existingVocabsSnapshot.docs.map(doc => doc.data().term.toLowerCase().trim()));
+
+            let addedCount = 0;
+            let duplicateCount = 0;
+
+            // Prepare batches (Firestore max 500 writes per batch, but we do them individually or in smaller logic chunks for simplicity here)
+            // Using a simple loop for clarity, though writeBatch is preferred for very large sets. For typical vocab it's fine.
+            const batch = writeBatch(firestore);
+            let operationsInBatch = 0;
+
+            for (const vocab of sourceVocabs) {
+                const termLower = vocab.term.toLowerCase().trim();
+                if (!existingTerms.has(termLower)) {
+                    const newDocRef = doc(targetStackVocabRef);
+                    batch.set(newDocRef, {
+                        term: vocab.term,
+                        definition: vocab.definition,
+                        phonetic: vocab.phonetic || '',
+                        notes: vocab.notes || '',
+                        relatedWord: vocab.relatedWord || null,
+                        isMastered: false,
+                        source: 'manual', // or maybe 'copied_from_group'
+                        createdAt: serverTimestamp(),
+                    });
+                    existingTerms.add(termLower); // Prevent duplicates within the same batch
+                    addedCount++;
+                    operationsInBatch++;
+
+                    // Commit batch if we hit limit (rarely needed for vocab, but safe)
+                    if (operationsInBatch === 490) {
+                        await batch.commit();
+                        operationsInBatch = 0;
+                    }
+                } else {
+                    duplicateCount++;
+                }
+            }
+
+            if (operationsInBatch > 0) {
+                await batch.commit();
+            }
+
+            if (addedCount > 0) {
+                toast({ title: 'Erfolgreich kopiert!', description: `${addedCount} Vokabeln aus "${sourceStack.name}" hinzugefügt. ${duplicateCount > 0 ? `(${duplicateCount} Duplikate ignoriert)` : ''}` });
+            } else {
+                toast({ title: 'Keine neuen Vokabeln', description: `Alle Vokabeln aus diesem Stapel (oder ignorierte Duplikate) existieren bereits in deinem Ziel-Stapel.` });
+            }
+
+            onOpenChange(false);
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Fehler beim Kopieren', description: 'Es ist ein Fehler aufgetreten.' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Stapel übernehmen</DialogTitle>
+                    <DialogDescription>Importiere alle {sourceVocabs.length} Vokabeln aus "{sourceStack?.name}" in einen deiner Stapel.</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <Select onValueChange={setSelectedSubjectId}>
+                        <SelectTrigger><SelectValue placeholder="Wähle das Ziel-Fach" /></SelectTrigger>
+                        <SelectContent>
+                            {userSubjects?.map(sub => <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <Select onValueChange={setSelectedStackId} disabled={!selectedSubjectId || !userStacks}>
+                        <SelectTrigger><SelectValue placeholder="Wähle den Ziel-Stapel" /></SelectTrigger>
+                        <SelectContent>
+                            {userStacks?.map(stack => <SelectItem key={stack.id} value={stack.id}>{stack.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
+                    <Button onClick={handleSave} disabled={isSaving || !selectedStackId}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Stapel kopieren
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function SubjectStacks({ subject, ownerId, searchTerm }: { subject: Subject; ownerId: string; searchTerm: string; }) {
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
     const [vocabToCopy, setVocabToCopy] = useState<VocabularyItem | null>(null);
+    const [bulkCopyData, setBulkCopyData] = useState<{ stack: Stack, vocabs: VocabularyItem[] } | null>(null);
 
     const stacksQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -214,26 +361,49 @@ function SubjectStacks({ subject, ownerId }: { subject: Subject; ownerId: string
     }, [firestore, ownerId, subject.id]);
     const { data: stacks, isLoading } = useCollection<Stack>(stacksQuery);
 
-    const handleCopyClick = (vocab: VocabularyItem) => {
+    const handleCopyClick = (vocab: VocabularyItem | null, stack: Stack, vocabulary: VocabularyItem[]) => {
         if (ownerId === user?.uid) {
-            toast({ description: "Das ist deine eigene Vokabel.", variant: 'default' });
+            toast({ description: "Das gehört bereits dir.", variant: 'default' });
             return;
         }
-        setVocabToCopy(vocab);
+
+        if (vocab) {
+            setVocabToCopy(vocab);
+        } else {
+            // Initiate Bulk Copy
+            setBulkCopyData({ stack, vocabs: vocabulary });
+        }
     };
+
+    // If there's a searchTerm we need to match it against subject name, stack name, or vocab items.
+    // If the subject matches, show all stacks. Wait, actually we can just pass the searchTerm down to StackVocab.
+    // However, if we filter, we might want to auto-expand. Let's handle filtering inside StackVocab or here.
+    const lowerSearch = searchTerm.toLowerCase().trim();
+    const subjectMatches = lowerSearch ? subject.name.toLowerCase().includes(lowerSearch) : true;
+
+    // We render the Stacks and pass the search term.
+    // If no stack matches and subject doesn't match, we might want to hide the subject. This requires lifting state,
+    // but for simplicity, we pass down the search term and let the UI just show empty things or we can filter here.
+    // Since Firebase data loads asynchronously, we let it render and filter the final view.
 
     return (
         <>
-            <Accordion type="multiple" className="w-full space-y-2">
+            <Accordion type="multiple" className="w-full space-y-2" value={lowerSearch ? stacks?.map(s => s.id) : undefined}>
                 {isLoading && <Loader2 className="mx-auto h-5 w-5 animate-spin" />}
-                {stacks?.map(stack => <StackVocab key={stack.id} stack={stack} ownerId={ownerId} onCopy={handleCopyClick} />)}
+                {stacks?.map(stack => <StackVocab key={stack.id} stack={stack} ownerId={ownerId} onCopy={handleCopyClick} searchTerm={searchTerm} subjectMatches={subjectMatches} />)}
             </Accordion>
             <CopyVocabDialog vocab={vocabToCopy} isOpen={!!vocabToCopy} onOpenChange={(open) => !open && setVocabToCopy(null)} />
+            <BulkCopyDialog
+                sourceStack={bulkCopyData?.stack || null}
+                sourceVocabs={bulkCopyData?.vocabs || []}
+                isOpen={!!bulkCopyData}
+                onOpenChange={(open) => !open && setBulkCopyData(null)}
+            />
         </>
     );
 }
 
-function StackVocab({ stack, ownerId, onCopy }: { stack: Stack, ownerId: string, onCopy: (vocab: VocabularyItem) => void }) {
+function StackVocab({ stack, ownerId, onCopy, searchTerm, subjectMatches }: { stack: Stack, ownerId: string, onCopy: (vocab: VocabularyItem | null, stack: Stack, vocabulary: VocabularyItem[]) => void, searchTerm: string, subjectMatches: boolean }) {
     const { firestore } = useFirebase();
     const vocabQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -241,38 +411,70 @@ function StackVocab({ stack, ownerId, onCopy }: { stack: Stack, ownerId: string,
     }, [firestore, ownerId, stack.subjectId, stack.id]);
     const { data: vocabulary, isLoading } = useCollection<VocabularyItem>(vocabQuery);
 
+    const lowerSearch = searchTerm.toLowerCase().trim();
+    const stackMatches = lowerSearch ? stack.name.toLowerCase().includes(lowerSearch) : true;
+
+    let filteredVocab = vocabulary;
+
+    if (lowerSearch && !subjectMatches && !stackMatches && vocabulary) {
+        filteredVocab = vocabulary.filter(v =>
+            v.term.toLowerCase().includes(lowerSearch) ||
+            (v.definition && v.definition.toLowerCase().includes(lowerSearch))
+        );
+    }
+
+    // Hide stack entirely if it's a search and nothing matches
+    if (lowerSearch && !subjectMatches && !stackMatches && (!filteredVocab || filteredVocab.length === 0)) {
+        return null; // Stack and its contents don't match the search
+    }
+
     return (
         <AccordionItem value={stack.id} className="border-b-0">
             <AccordionTrigger className="hover:no-underline bg-muted/30 px-3 rounded-md">
-                {stack.name} <Badge variant="secondary" className="ml-2">{vocabulary?.length ?? 0}</Badge>
+                {stack.name} <Badge variant="secondary" className="ml-2">{filteredVocab?.length ?? 0}</Badge>
             </AccordionTrigger>
             <AccordionContent className="pt-2">
+                <div className="flex justify-end pr-2 mb-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-primary hover:text-primary/80"
+                        onClick={() => onCopy(null, stack, filteredVocab || [])} // Bulk Copy remaining filtered vocabs or all
+                    >
+                        <BookCopy className="mr-2 h-4 w-4" /> Stapel übernehmen
+                    </Button>
+                </div>
                 {isLoading && <Loader2 className="mx-auto h-4 w-4 animate-spin" />}
                 <div className="pl-4 space-y-1">
-                    {vocabulary?.map(vocab => (
-                        <div key={vocab.id} className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-muted/50">
+                    {filteredVocab?.map(vocab => (
+                        <div key={vocab.id} className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-muted/50 group">
                             <div>
                                 <p className="font-medium">{vocab.term}</p>
                                 <p className="text-muted-foreground">{vocab.definition}</p>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onCopy(vocab)}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 group-hover:bg-primary/10" onClick={() => onCopy(vocab, stack, filteredVocab || [])}>
                                 <Plus className="h-4 w-4" />
                             </Button>
                         </div>
                     ))}
+                    {filteredVocab?.length === 0 && !isLoading && (
+                        <p className="text-muted-foreground text-sm py-2">Keine Treffer in diesem Stapel.</p>
+                    )}
                 </div>
             </AccordionContent>
         </AccordionItem>
     )
 }
 
-function MemberSubjects({ member }: { member: PublicProfile }) {
+function MemberSubjects({ member, searchTerm }: { member: PublicProfile; searchTerm: string; }) {
     const { firestore } = useFirebase();
     const subjectsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return collection(firestore, 'users', member.id, 'subjects');
     }, [firestore, member.id]);
     const { data: subjects, isLoading } = useCollection<Subject>(subjectsQuery);
+
+    const lowerSearch = searchTerm.toLowerCase().trim();
 
     return (
         <AccordionItem value={member.id} className="border-b-0">
@@ -286,20 +488,23 @@ function MemberSubjects({ member }: { member: PublicProfile }) {
                 <div className="pl-6 pr-2 space-y-2">
                     {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
                     {!isLoading && (!subjects || subjects.length === 0) && <p className="text-sm text-muted-foreground">Keine öffentlichen Fächer.</p>}
-                    {subjects?.map(subject => (
-                        <Accordion key={subject.id} type="single" collapsible className="w-full">
-                            <AccordionItem value={subject.id} className="border-b-0">
-                                <AccordionTrigger className="hover:no-underline bg-muted/50 px-3 rounded-md">
-                                    {subject.emoji} {subject.name}
-                                </AccordionTrigger>
-                                <AccordionContent className="pt-2">
-                                    <div className="pl-4">
-                                        <SubjectStacks subject={subject} ownerId={member.id} />
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
-                    ))}
+                    {subjects?.map(subject => {
+                        const subjectMatches = lowerSearch ? subject.name.toLowerCase().includes(lowerSearch) : false;
+                        return (
+                            <Accordion key={subject.id} type="multiple" className="w-full" value={lowerSearch || subjectMatches ? [subject.id] : undefined}>
+                                <AccordionItem value={subject.id} className="border-b-0">
+                                    <AccordionTrigger className="hover:no-underline bg-muted/50 px-3 rounded-md">
+                                        {subject.emoji} {subject.name}
+                                    </AccordionTrigger>
+                                    <AccordionContent className="pt-2">
+                                        <div className="pl-4">
+                                            <SubjectStacks subject={subject} ownerId={member.id} searchTerm={searchTerm} />
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
+                        )
+                    })}
                 </div>
             </AccordionContent>
         </AccordionItem>
@@ -310,6 +515,7 @@ function DatabaseTab({ group }: { group: Group }) {
     const { firestore, user } = useFirebase();
     const [members, setMembers] = useState<PublicProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         if (!firestore || !user || !group.memberIds) return;
@@ -328,10 +534,26 @@ function DatabaseTab({ group }: { group: Group }) {
         return <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
     }
 
+    const lowerSearch = searchTerm.toLowerCase().trim();
+    // In order to auto-open members, we can set the default value of the Accordion if there's a search term
+    const activeMembers = lowerSearch ? members.map(m => m.id) : undefined;
+
     return (
-        <Accordion type="single" collapsible className="w-full space-y-2">
-            {members.map(member => <MemberSubjects key={member.id} member={member} />)}
-        </Accordion>
+        <div className="space-y-4">
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                    type="text"
+                    placeholder="In der Gruppendatenbank suchen..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background pl-10 pr-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+            </div>
+            <Accordion type="multiple" className="w-full space-y-2" value={activeMembers}>
+                {members.map(member => <MemberSubjects key={member.id} member={member} searchTerm={searchTerm} />)}
+            </Accordion>
+        </div>
     );
 }
 

@@ -347,7 +347,9 @@ service cloud.firestore {
           // A user can add themselves to the group if a pending invitation exists.
           (
             request.resource.data.memberIds == resource.data.memberIds.concat([request.auth.uid]) &&
-            request.resource.data.memberCount == resource.data.memberCount + 1 &&
+            (
+                request.resource.data.memberCount == (resource.data.memberCount != null ? resource.data.memberCount : resource.data.memberIds.size()) + 1
+            ) &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'memberCount']) &&
             exists(/databases/$(database)/documents/groupInvitations/$(groupId + '_' + request.auth.uid)) &&
             get(/databases/$(database)/documents/groupInvitations/$(groupId + '_' + request.auth.uid)).data.status == 'pending'
