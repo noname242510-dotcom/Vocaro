@@ -571,7 +571,7 @@ export default function GroupDetailPage() {
         return doc(firestore, 'groups', groupId);
     }, [firestore, groupId]);
 
-    const { data: group, isLoading: isGroupLoading, forceUpdate } = useDoc<Group>(groupDocRef);
+    const { data: group, isLoading: isGroupLoading } = useDoc<Group>(groupDocRef);
 
     if (isGroupLoading) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-muted-foreground" /></div>;
@@ -615,7 +615,7 @@ export default function GroupDetailPage() {
                     <DatabaseTab group={group} />
                 </TabsContent>
             </Tabs>
-            <AddMemberDialog group={group} isOpen={isAddMemberOpen} onOpenChange={setIsAddMemberOpen} onInviteSent={forceUpdate} />
+            <AddMemberDialog group={group} isOpen={isAddMemberOpen} onOpenChange={setIsAddMemberOpen} onInviteSent={() => { }} />
         </div>
     );
 }
