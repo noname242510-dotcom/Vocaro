@@ -19,9 +19,10 @@ export function CreateGroupDialog({ isOpen, onOpenChange }: { isOpen: boolean; o
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
     const [groupName, setGroupName] = useState('');
+    const [groupDescription, setGroupDescription] = useState('');
     const [friends, setFriends] = useState<PublicProfile[]>([]);
     const [selectedFriends, setSelectedFriends] = useState<Set<string>>(new Set());
-    const [isLoading, setIsLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Fetch friends to invite
     const friendsAsRequesterQuery = useMemoFirebase(() => {
@@ -65,57 +66,60 @@ export function CreateGroupDialog({ isOpen, onOpenChange }: { isOpen: boolean; o
         });
     };
 
-    const handleCreateGroup = async () => {
+    const handleCreateGroup = async (e: React.FormEvent) => {
+        e.preventDefault();
         if (!groupName.trim() || !user || !firestore) {
             toast({ variant: 'destructive', title: 'Fehler', description: 'Gruppenname ist erforderlich.' });
             return;
         }
-        setIsLoading(true);
 
+        setIsSubmitting(true);
         try {
-            const batch = writeBatch(firestore);
             const groupRef = doc(collection(firestore, 'groups'));
-            
-            // Create group
-            batch.set(groupRef, {
-                id: groupRef.id,
-                name: groupName,
-                createdBy: user.uid,
-                createdAt: serverTimestamp(),
-                memberIds: [user.uid], // Creator is always a member
-                memberCount: 1,
-            });
+            const memberIds = [user.uid, ...Array.from(selectedFriends)];
 
-            // Create invitations for selected friends
-            selectedFriends.forEach(friendId => {
-                const invitationId = `${groupRef.id}_${friendId}`;
-                const invitationRef = doc(firestore, 'groupInvitations', invitationId);
-                batch.set(invitationRef, {
-                    id: invitationId,
-                    groupId: groupRef.id,
-                    groupName: groupName,
-                    inviterId: user.uid,
-                    inviterName: user.displayName,
-                    recipientId: friendId,
-                    status: 'pending',
-                    createdAt: serverTimestamp(),
-                });
-            });
+            const newGroup = {
+                id: groupRef.id,
+                name: groupName.trim(),
+                description: groupDescription.trim() || null,
+                createdBy: user.uid,
+                memberIds,
+                memberCount: memberIds.length,
+                createdAt: serverTimestamp(),
+            };
+
+            const batch = writeBatch(firestore);
+            batch.set(groupRef, newGroup);
 
             await batch.commit();
-            toast({ title: 'Erfolg!', description: `Gruppe "${groupName}" erstellt und Einladungen versendet.` });
+
+            toast({
+                title: 'Gruppe erstellt',
+                description: selectedFriends.size > 0
+                    ? `Die Gruppe "${groupName}" wurde erstellt und ${selectedFriends.size} Freund(e) wurden hinzugefügt.`
+                    : `Die Gruppe "${groupName}" wurde erstellt.`,
+            });
             onOpenChange(false);
+            // Reset form
+            setGroupName('');
+            setGroupDescription('');
+            setSelectedFriends(new Set());
         } catch (error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: 'Fehler', description: 'Gruppe konnte nicht erstellt werden.' });
+            console.error('Error creating group:', error);
+            toast({
+                title: 'Fehler',
+                description: 'Die Gruppe konnte nicht erstellt werden.',
+                variant: 'destructive',
+            });
         } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
-    
+
     useEffect(() => {
         if (!isOpen) {
             setGroupName('');
+            setGroupDescription('');
             setSelectedFriends(new Set());
         }
     }, [isOpen]);
@@ -133,6 +137,10 @@ export function CreateGroupDialog({ isOpen, onOpenChange }: { isOpen: boolean; o
                     <div className="grid gap-2">
                         <Label htmlFor="group-name">Gruppenname</Label>
                         <Input id="group-name" value={groupName} onChange={(e) => setGroupName(e.target.value)} />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="group-description">Beschreibung (Optional)</Label>
+                        <Input id="group-description" value={groupDescription} onChange={(e) => setGroupDescription(e.target.value)} />
                     </div>
                     {friends.length > 0 && (
                         <div className="grid gap-2">
@@ -162,9 +170,9 @@ export function CreateGroupDialog({ isOpen, onOpenChange }: { isOpen: boolean; o
                 </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
-                    <Button onClick={handleCreateGroup} disabled={isLoading || !groupName.trim()}>
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Gruppe erstellen
+                    <Button onClick={handleCreateGroup} disabled={isSubmitting || !groupName.trim()}>
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Erstellen
                     </Button>
                 </DialogFooter>
             </DialogContent>
