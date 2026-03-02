@@ -64,11 +64,11 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
     if (name.includes('mathe')) return '🔢';
     return '🌐';
   };
-  
+
   const handleDeleteSubject = async () => {
     if (user && firestore) {
       const subjectDocRef = doc(firestore, 'users', user.uid, 'subjects', subject.id);
-      
+
       try {
         const batch = writeBatch(firestore);
 
@@ -111,7 +111,7 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
         toast({ title: "Erfolg", description: "Fach umbenannt." });
         // No longer need to call onAction, Firestore real-time updates handle it.
       } catch (error) {
-         toast({ variant: 'destructive', title: "Fehler", description: "Das Fach konnte nicht umbenannt werden." });
+        toast({ variant: 'destructive', title: "Fehler", description: "Das Fach konnte nicht umbenannt werden." });
       } finally {
         setIsRenameDialogOpen(false);
       }
@@ -120,26 +120,29 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
 
   return (
     <>
-      <Card className="group relative hover:shadow-lg transition-shadow duration-300 flex flex-col justify-center items-center text-center p-6 min-h-[180px]">
-        <CardHeader className="p-0">
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-4xl">{subject.emoji}</span>
-            <div>
-              <CardTitle className="font-headline hover:underline">
-                <Link href={`/dashboard/subjects/${subject.id}`}>{subject.name}</Link>
+      <Card className="group relative hover:shadow-xl transition-all duration-300 flex flex-col justify-center items-center text-center p-8 min-h-[220px] rounded-[2.5rem] border-none bg-card shadow-sm hover:-translate-y-1">
+        <CardHeader className="p-0 w-full">
+          <div className="flex flex-col items-center gap-4">
+            <div className="bg-secondary/50 rounded-[2rem] p-6 group-hover:bg-primary/10 transition-colors">
+              <span className="text-5xl">{subject.emoji}</span>
+            </div>
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-bold font-headline">
+                <Link href={`/dashboard/subjects/${subject.id}`} className="hover:text-primary transition-colors">
+                  {subject.name}
+                </Link>
               </CardTitle>
-              <div className="flex items-center justify-center gap-1 mt-1">
-                <span className="text-muted-foreground text-sm">{subject.vocabCount} Vokabeln</span>
-                <span className="text-muted-foreground text-sm font-black">·</span>
-                <span className="text-muted-foreground text-sm">{subject.verbCount} Verben</span>
+              <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium">
+                <span className="text-sm px-3 py-1 bg-secondary rounded-full">{subject.vocabCount} Vokabeln</span>
+                <span className="text-sm px-3 py-1 bg-secondary rounded-full">{subject.verbCount} Verben</span>
               </div>
             </div>
           </div>
-          <div className="absolute top-4 right-4 flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute top-6 right-6 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full"
+              className="h-9 w-9 rounded-xl hover:bg-primary/10 hover:text-primary"
               onClick={() => {
                 setRenamedSubjectName(subject.name);
                 setIsRenameDialogOpen(true);
@@ -149,29 +152,30 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
             </Button>
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-destructive/10 hover:text-destructive">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="rounded-[2.5rem]">
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
+                  <AlertDialogTitle className="text-2xl">Bist du sicher?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Diese Aktion kann nicht rückgängig gemacht werden. Dadurch wird das Fach und alle zugehörigen Inhalte dauerhaft gelöscht.
+                    Diese Aktion kann nicht rückgängig gemacht werden. Das Fach &quot;{subject.name}&quot; wird dauerhaft gelöscht.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteSubject}>Löschen</AlertDialogAction>
+                <AlertDialogFooter className="gap-2">
+                  <AlertDialogCancel className="rounded-2xl h-12">Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteSubject} className="rounded-2xl h-12 bg-destructive hover:bg-destructive/90">Löschen</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           </div>
         </CardHeader>
-        <CardContent className="p-0 mt-auto absolute bottom-4 right-4">
-          <Link href={`/dashboard/subjects/${subject.id}`} className="md:opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-secondary">
-              <ArrowRight className="h-5 w-5" />
+        <CardContent className="p-0 mt-6 w-full">
+          <Link href={`/dashboard/subjects/${subject.id}`} className="w-full">
+            <Button variant="secondary" className="w-full rounded-2xl h-12 font-semibold group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+              Lernen
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
         </CardContent>

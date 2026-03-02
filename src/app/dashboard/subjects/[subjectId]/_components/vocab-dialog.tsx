@@ -56,10 +56,10 @@ export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave
       setOriginalData(initialData);
     }
   }, [vocabItem]);
-  
+
   const findStackIdForVocab = async (vocabId: string): Promise<string | null> => {
     if (!firestore || !user) return null;
-    
+
     const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks');
     const stacksSnapshot = await getDocs(stacksCollectionRef);
 
@@ -77,9 +77,9 @@ export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave
     setIsSaving(true);
     const stackId = await findStackIdForVocab(vocabItem.id);
     if (!stackId) {
-        // Handle error: couldn't find stack
-        setIsSaving(false);
-        return;
+      // Handle error: couldn't find stack
+      setIsSaving(false);
+      return;
     }
     const dataToSave: Partial<VocabularyItem> = {
       term: formData.term,
@@ -111,55 +111,58 @@ export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl" onOpenAutoFocus={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle>Vokabel bearbeiten</DialogTitle>
-          <DialogDescription>Ändere die Details für diese Vokabel.</DialogDescription>
+      <DialogContent className="sm:max-w-2xl rounded-[2.5rem] border-none shadow-2xl p-8" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <DialogHeader className="mb-6">
+          <DialogTitle className="text-2xl font-bold font-headline">Vokabel bearbeiten</DialogTitle>
+          <DialogDescription className="text-base">Ändere die Details für diese Vokabel.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="term" className="text-right">
+        <div className="grid gap-6 py-2">
+          <div className="grid gap-2">
+            <Label htmlFor="term" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">
               Fremdwort
             </Label>
-            <Textarea id="term" value={formData.term} onChange={handleInputChange} className="col-span-3" rows={2} />
+            <Textarea id="term" value={formData.term} onChange={handleInputChange} className="rounded-2xl border-none bg-secondary/30 focus-visible:ring-primary text-lg font-bold p-4" rows={2} />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="definition" className="text-right">
-              Deutsch
+          <div className="grid gap-2">
+            <Label htmlFor="definition" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">
+              Bedeutung (Deutsch)
             </Label>
-            <Textarea id="definition" value={formData.definition} onChange={handleInputChange} className="col-span-3" rows={2} />
+            <Textarea id="definition" value={formData.definition} onChange={handleInputChange} className="rounded-2xl border-none bg-secondary/30 focus-visible:ring-primary text-lg font-medium p-4" rows={2} />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="phonetic" className="text-right">
-              Lautschrift
-            </Label>
-            <Input id="phonetic" value={formData.phonetic} onChange={handleInputChange} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="notes" className="text-right">
-              Hinweise
-            </Label>
-            <Textarea id="notes" value={formData.notes} onChange={handleInputChange} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="relatedLanguage" className="text-right">
-              Ähnliches Wort
-            </Label>
-            <div className="col-span-3 grid grid-cols-2 gap-2">
-                <Input id="relatedLanguage" placeholder="Sprache" value={formData.relatedLanguage} onChange={handleInputChange} />
-                <Input id="relatedWord" placeholder="Wort" value={formData.relatedWord} onChange={handleInputChange} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid gap-2">
+              <Label htmlFor="phonetic" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                Lautschrift
+              </Label>
+              <Input id="phonetic" value={formData.phonetic} onChange={handleInputChange} className="rounded-xl border-none bg-secondary/30 h-12 px-4 font-mono" />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="relatedLanguage" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">
+                Ähnliches Wort
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Input id="relatedLanguage" placeholder="Sprache" value={formData.relatedLanguage} onChange={handleInputChange} className="rounded-xl border-none bg-secondary/30 h-12 px-4 text-sm" />
+                <Input id="relatedWord" placeholder="Wort" value={formData.relatedWord} onChange={handleInputChange} className="rounded-xl border-none bg-secondary/30 h-12 px-4 font-bold" />
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="notes" className="text-sm font-bold uppercase tracking-wider text-muted-foreground ml-1">
+              Hinweise & Notizen
+            </Label>
+            <Textarea id="notes" value={formData.notes} onChange={handleInputChange} className="rounded-2xl border-none bg-secondary/30 focus-visible:ring-primary p-4" rows={3} />
           </div>
         </div>
-        <DialogFooter className="sm:justify-between">
-            <Button variant="ghost" onClick={handleReset}>Zurücksetzen</Button>
-            <div className="flex gap-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
-                <Button onClick={handleSave} disabled={isSaving}>
-                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Speichern
-                </Button>
-            </div>
+        <DialogFooter className="mt-8 flex flex-col sm:flex-row gap-3">
+          <Button variant="ghost" onClick={handleReset} className="rounded-xl h-12 font-semibold">Zurücksetzen</Button>
+          <div className="flex-1" />
+          <div className="flex gap-3 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl h-12 px-6 border-2 font-semibold flex-1 sm:flex-none">Abbrechen</Button>
+            <Button onClick={handleSave} disabled={isSaving} className="rounded-xl h-12 px-8 font-bold flex-1 sm:flex-none">
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Speichern
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

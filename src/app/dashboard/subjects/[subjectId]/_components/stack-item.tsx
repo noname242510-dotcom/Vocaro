@@ -64,9 +64,9 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [newStackName, setNewStackName] = useState(stack.name);
   const [displayTermFirst, setDisplayTermFirst] = useState(true);
-  
+
   const { toast } = useToast();
-  
+
   useEffect(() => {
     if (settings) {
       setDisplayTermFirst(settings.vocabOverviewDirection !== 'definition');
@@ -77,103 +77,101 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
 
   const handleSelectAll = (checked: boolean) => {
     vocabulary?.forEach(v => {
-        onSelectionChange(v.id, checked);
+      onSelectionChange(v.id, checked);
     });
   }
 
   const handleDeleteStack = async () => {
     if (!firestore || !user) {
-        toast({ variant: 'destructive', title: 'Fehler', description: 'Nicht authentifiziert.' });
-        return;
+      toast({ variant: 'destructive', title: 'Fehler', description: 'Nicht authentifiziert.' });
+      return;
     }
     setIsDeleting(true);
     try {
-        const stackDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stack.id);
-        const vocabSnapshot = await getDocs(collection(stackDocRef, 'vocabulary'));
-        
-        const batch = writeBatch(firestore);
-        
-        vocabSnapshot.forEach((vocabDoc) => {
-            batch.delete(vocabDoc.ref);
-        });
-        
-        batch.delete(stackDocRef);
-        
-        await batch.commit();
+      const stackDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stack.id);
+      const vocabSnapshot = await getDocs(collection(stackDocRef, 'vocabulary'));
 
-        toast({ title: 'Erfolg', description: `Stapel "${stack.name}" wurde gelöscht.` });
-        onDelete(); // Notify parent to refresh stacks
+      const batch = writeBatch(firestore);
+
+      vocabSnapshot.forEach((vocabDoc) => {
+        batch.delete(vocabDoc.ref);
+      });
+
+      batch.delete(stackDocRef);
+
+      await batch.commit();
+
+      toast({ title: 'Erfolg', description: `Stapel "${stack.name}" wurde gelöscht.` });
+      onDelete(); // Notify parent to refresh stacks
     } catch (error) {
-        console.error("Error deleting stack: ", error);
-        toast({ variant: 'destructive', title: 'Fehler beim Löschen', description: 'Der Stapel konnte nicht gelöscht werden.' });
+      console.error("Error deleting stack: ", error);
+      toast({ variant: 'destructive', title: 'Fehler beim Löschen', description: 'Der Stapel konnte nicht gelöscht werden.' });
     } finally {
-        setIsDeleting(false);
-        setIsDeleteDialogOpen(false);
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
     }
   };
 
   const handleRenameStack = async () => {
     if (!firestore || !user || !newStackName.trim()) {
-        toast({ variant: 'destructive', title: 'Fehler', description: 'Der Stapelname darf nicht leer sein.' });
-        return;
+      toast({ variant: 'destructive', title: 'Fehler', description: 'Der Stapelname darf nicht leer sein.' });
+      return;
     }
     const stackDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stack.id);
     try {
-        await updateDoc(stackDocRef, { name: newStackName });
-        toast({ title: 'Erfolg', description: 'Stapel wurde umbenannt.'});
-        setIsRenameDialogOpen(false);
-        onRename();
+      await updateDoc(stackDocRef, { name: newStackName });
+      toast({ title: 'Erfolg', description: 'Stapel wurde umbenannt.' });
+      setIsRenameDialogOpen(false);
+      onRename();
     } catch (error) {
-        console.error("Error renaming stack: ", error);
-        toast({ variant: 'destructive', title: 'Fehler beim Umbenennen', description: 'Der Stapel konnte nicht umbenannt werden.' });
+      console.error("Error renaming stack: ", error);
+      toast({ variant: 'destructive', title: 'Fehler beim Umbenennen', description: 'Der Stapel konnte nicht umbenannt werden.' });
     }
   };
 
 
   return (
     <>
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-2xl bg-card">
-        <div className="w-full p-4 flex items-center justify-between group">
-           <div className="flex items-center gap-4 flex-1 min-w-0">
-              <div onClick={(e) => e.stopPropagation()}>
-                <Checkbox 
-                    checked={allVisibleInStackSelected}
-                    onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
-                />
-              </div>
-              <CollapsibleTrigger asChild>
-                <div className="cursor-pointer flex-1 flex items-center gap-2 min-w-0">
-                    <h3 className="font-headline text-lg truncate">{stack.name}</h3>
-                    <Badge variant="secondary" className="hidden md:inline-flex">
-                        {vocabulary.length || 0}
-                    </Badge>
-                </div>
-              </CollapsibleTrigger>
-          </div>
-          <div className="flex items-center gap-1 md:gap-2">
-            <div className="flex items-center gap-1 md:hidden">
-              <Badge variant="secondary">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border-none rounded-[2rem] bg-secondary/30 backdrop-blur-sm overflow-hidden transition-all duration-300">
+        <div className="w-full p-5 flex items-center justify-between group">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div onClick={(e) => e.stopPropagation()}>
+              <Checkbox
+                className="w-5 h-5 rounded-md border-2 border-primary/20 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                checked={allVisibleInStackSelected}
+                onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
+              />
+            </div>
+            <CollapsibleTrigger asChild>
+              <div className="cursor-pointer flex-1 flex items-center gap-3 min-w-0">
+                <h3 className="font-headline text-xl font-bold truncate">{stack.name}</h3>
+                <Badge variant="secondary" className="bg-background/50 rounded-lg font-bold">
                   {vocabulary.length || 0}
-              </Badge>
+                </Badge>
+              </div>
+            </CollapsibleTrigger>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:hidden">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                    <MoreHorizontal className="h-4 w-4" />
+                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-background/50">
+                    <MoreHorizontal className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem onClick={() => onAddVocab(stack)}>
+                <DropdownMenuContent align="end" className="w-48 rounded-2xl p-2 shadow-2xl">
+                  <DropdownMenuItem onClick={() => onAddVocab(stack)} className="rounded-xl">
                     <Plus className="mr-2 h-4 w-4" />
                     <span>Hinzufügen</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => {
                     setNewStackName(stack.name);
                     setIsRenameDialogOpen(true)
-                  }}>
+                  }} className="rounded-xl">
                     <Pen className="mr-2 h-4 w-4" />
                     <span>Umbenennen</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive">
+                  <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive rounded-xl">
                     <Trash2 className="mr-2 h-4 w-4" />
                     <span>Löschen</span>
                   </DropdownMenuItem>
@@ -182,73 +180,74 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
             </div>
 
             {/* Desktop Buttons */}
-            <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => onAddVocab(stack)}>
-                    <Plus className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => {
-                  setNewStackName(stack.name);
-                  setIsRenameDialogOpen(true)
-                }}>
-                    <Pen className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsDeleteDialogOpen(true)}>
-                    <Trash2 className="h-4 w-4" />
-                </Button>
+            <div className="hidden md:flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-background/50" onClick={() => onAddVocab(stack)}>
+                <Plus className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-background/50" onClick={() => {
+                setNewStackName(stack.name);
+                setIsRenameDialogOpen(true)
+              }}>
+                <Pen className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-background/50 text-destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
 
-             <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                    <ChevronDown className={cn('h-5 w-5 transition-transform duration-300', isOpen && 'rotate-180')} />
-                </Button>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-background/50">
+                <ChevronDown className={cn('h-6 w-6 transition-transform duration-300', isOpen && 'rotate-180')} />
+              </Button>
             </CollapsibleTrigger>
           </div>
         </div>
         <CollapsibleContent>
-          <div className="px-4 pb-4 space-y-3">
+          <div className="px-5 pb-5 space-y-3">
             {vocabulary && vocabulary.length > 0 ? (
               vocabulary.map((item) => (
-                <Card 
+                <Card
                   key={item.id}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50 shadow-none border"
+                  className="flex items-center gap-4 p-4 rounded-2xl hover:bg-background/80 transition-colors shadow-sm border-none bg-background/50"
                 >
-                  <Checkbox 
-                      id={`vocab-${item.id}`}
-                      checked={!!item.isSelected}
-                      onCheckedChange={(checked) => onSelectionChange(item.id, Boolean(checked))}
+                  <Checkbox
+                    id={`vocab-${item.id}`}
+                    className="w-5 h-5 rounded-md"
+                    checked={!!item.isSelected}
+                    onCheckedChange={(checked) => onSelectionChange(item.id, Boolean(checked))}
                   />
-                  <label htmlFor={`vocab-${item.id}`} className="flex-1 grid grid-cols-2 items-center gap-4 cursor-pointer">
-                    <span className="font-medium break-words hyphens-auto">{displayTermFirst ? item.term : item.definition}</span>
-                    <span className="text-muted-foreground break-words hyphens-auto">{displayTermFirst ? item.definition : item.term}</span>
+                  <label htmlFor={`vocab-${item.id}`} className="flex-1 grid grid-cols-2 items-center gap-6 cursor-pointer">
+                    <span className="font-bold text-lg break-words hyphens-auto">{displayTermFirst ? item.term : item.definition}</span>
+                    <span className="text-muted-foreground font-medium break-words hyphens-auto">{displayTermFirst ? item.definition : item.term}</span>
                   </label>
-                  <div className="h-8 w-8 hidden md:inline-flex items-center justify-center">
+                  <div className="flex items-center gap-2">
                     {item.relatedWord && (
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <Languages className="h-4 w-4" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-2">
-                                <div className="text-sm">
-                                    <span className="font-semibold">{item.relatedWord.language}:</span> {item.relatedWord.word}
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-secondary">
+                            <Languages className="h-5 w-5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-3 rounded-2xl shadow-xl">
+                          <div className="text-sm font-medium">
+                            <span className="text-primary font-bold">{item.relatedWord.language}:</span> {item.relatedWord.word}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     )}
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-secondary" onClick={() => onEditVocab(item)}>
+                      <Pen className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEditVocab(item)}>
-                    <Pen className="h-4 w-4" />
-                  </Button>
                 </Card>
               ))
             ) : (
-              <p className="p-4 text-center text-muted-foreground text-sm">Keine Vokabeln in diesem Stapel.</p>
+              <p className="p-8 text-center text-muted-foreground text-sm bg-background/30 rounded-2xl italic">Keine Vokabeln in diesem Stapel.</p>
             )}
           </div>
         </CollapsibleContent>
       </Collapsible>
-      
+
       <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -277,7 +276,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -300,7 +299,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
 
 // Add isSelected to VocabularyItem for local state management
 declare module '@/lib/types' {
-    interface VocabularyItem {
-        isSelected?: boolean;
-    }
+  interface VocabularyItem {
+    isSelected?: boolean;
+  }
 }

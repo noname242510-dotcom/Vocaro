@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Plus, Zap, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -27,7 +27,7 @@ export default function DashboardPage() {
   const { firestore, user } = useFirebase();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
-  
+
   const [subjectsWithCounts, setSubjectsWithCounts] = useState<SubjectWithCounts[]>([]);
   const [isCounting, setIsCounting] = useState(true);
   const [updateToken, setUpdateToken] = useState(0);
@@ -50,7 +50,7 @@ export default function DashboardPage() {
       setSubjectsWithCounts([]);
       return;
     }
-    
+
     if (subjects.length === 0) {
       setIsCounting(false);
       setSubjectsWithCounts([]);
@@ -62,7 +62,7 @@ export default function DashboardPage() {
       const countsPromises = subjects.map(async (subject) => {
         const stacksRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'stacks');
         const verbsRef = collection(firestore, 'users', user.uid, 'subjects', subject.id, 'verbs');
-        
+
         const [stacksSnapshot, verbsSnapshot] = await Promise.all([
           getDocs(stacksRef),
           getDocs(verbsRef),
@@ -122,74 +122,135 @@ export default function DashboardPage() {
   };
 
   const isLoading = areSubjectsLoading || isCounting;
+  const totalVocab = subjectsWithCounts.reduce((acc, s) => acc + s.vocabCount, 0);
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-10rem)]">
-      <div className="flex-grow">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {isLoading && subjectsWithCounts.length === 0 ? (
-            Array.from({ length: subjects?.length || 4 }).map((_, i) => (
-              <Card key={i} className="min-h-[180px] p-6 flex flex-col justify-center items-center text-center">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <Skeleton className="h-6 w-3/4 mt-4" />
-                  <div className="flex items-center justify-center gap-2 mt-2 w-full">
-                    <Skeleton className="h-4 w-1/3" />
-                    <Skeleton className="h-4 w-1/3" />
-                  </div>
-              </Card>
-            ))
-          ) : (
-            subjectsWithCounts.map((subject) => (
-              <SubjectCard 
-                key={subject.id} 
-                subject={subject} 
-                onAction={forceRefetch}
-              />
-            ))
-          )}
-          
+    <div className="space-y-10 pb-20">
+      {/* Welcome Section */}
+      <section className="relative overflow-hidden rounded-[2.5rem] bg-primary/5 p-8 md:p-12 border border-primary/10">
+        <div className="relative z-10 max-w-2xl">
+          <h1 className="text-4xl md:text-5xl font-bold font-headline tracking-tight mb-4">
+            Hallo, {user?.displayName?.split(' ')[0] || 'Lernende(r)'}! 👋
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground mb-8">
+            Du hast heute schon <span className="text-primary font-bold">12</span> Vokabeln gelernt. Dein Ziel sind 20. Fast geschafft!
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <Button size="lg" className="rounded-2xl px-8 h-12 shadow-lg shadow-primary/20" asChild>
+              <Link href="/dashboard/learn">
+                <Zap className="mr-2 h-5 w-5 fill-current" />
+                Jetzt lernen
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" className="rounded-2xl px-8 h-12 border-2" asChild>
+              <Link href="/dashboard/social">
+                <Users className="mr-2 h-5 w-5" />
+                Community
+              </Link>
+            </Button>
+          </div>
+        </div>
+        {/* Abstract shapes for premium feel */}
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
+      </section>
+
+      {/* Stats Quick View */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="rounded-[2rem] p-6 border-none bg-secondary/30 backdrop-blur-sm">
+          <p className="text-sm font-medium text-muted-foreground mb-1">Gesamt-Vokabeln</p>
+          <p className="text-3xl font-bold font-headline">{isLoading ? '...' : totalVocab}</p>
+        </Card>
+        <Card className="rounded-[2rem] p-6 border-none bg-secondary/30 backdrop-blur-sm">
+          <p className="text-sm font-medium text-muted-foreground mb-1">Lern-Streak</p>
+          <p className="text-3xl font-bold font-headline">5 Tage</p>
+        </Card>
+        <Card className="rounded-[2rem] p-6 border-none bg-secondary/30 backdrop-blur-sm">
+          <p className="text-sm font-medium text-muted-foreground mb-1">Meister-Level</p>
+          <p className="text-3xl font-bold font-headline">Gold</p>
+        </Card>
+        <Card className="rounded-[2rem] p-6 border-none bg-secondary/30 backdrop-blur-sm">
+          <p className="text-sm font-medium text-muted-foreground mb-1">Rang</p>
+          <p className="text-3xl font-bold font-headline">#42</p>
+        </Card>
+      </div>
+
+      {/* Subjects Section */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-2xl font-bold font-headline">Deine Fächer</h2>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Card className="flex items-center justify-center border-dashed hover:border-primary hover:shadow-lg transition-all duration-300 min-h-[180px] cursor-pointer">
-                <div className="rounded-full h-auto p-6 text-muted-foreground hover:text-primary flex flex-col items-center gap-2 text-center">
-                  <Plus className="h-8 w-8" />
-                  <span className="text-sm font-medium">Neues Fach</span>
-                </div>
-              </Card>
+              <Button variant="ghost" className="text-primary hover:text-primary hover:bg-primary/5 rounded-xl">
+                <Plus className="h-5 w-5 mr-1" />
+                Neu hinzufügen
+              </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="rounded-[2rem] sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Neues Fach erstellen</DialogTitle>
+                <DialogTitle className="text-2xl">Neues Fach erstellen</DialogTitle>
                 <DialogDescription>
                   Gib einen Namen für dein neues Fach ein.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">
-                    Name
-                  </Label>
+              <div className="grid gap-6 py-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-sm font-semibold px-1">Fachname</Label>
                   <Input
                     id="name"
                     value={newSubjectName}
                     onChange={(e) => setNewSubjectName(e.target.value)}
-                    className="col-span-3"
+                    className="h-12 rounded-xl text-lg px-4"
                     placeholder="z.B. Spanisch"
                     onKeyDown={(e) => e.key === 'Enter' && handleCreateSubject()}
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" onClick={handleCreateSubject}>Erstellen</Button>
+                <Button type="submit" onClick={handleCreateSubject} size="lg" className="w-full rounded-2xl h-12">Erstellen</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
-      </div>
-      <footer className="w-full text-center text-xs text-muted-foreground p-6 mt-auto">
-        <p>© 2026 Vocaro. Entwickelt mit ♥ und KI-Unterstützung für moderne Sprachlernende.</p>
-        <p>
-          <Link href="/privacy" className="underline">Datenschutz</Link> · <Link href="/terms" className="underline">AGB</Link>
+
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {isLoading && subjectsWithCounts.length === 0 ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="min-h-[180px] p-8 flex flex-col justify-center items-center text-center rounded-[2.5rem] border-none bg-secondary/20 shadow-none">
+                <Skeleton className="h-14 w-14 rounded-2xl mb-4" />
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2" />
+              </Card>
+            ))
+          ) : (
+            <>
+              {subjectsWithCounts.map((subject) => (
+                <SubjectCard
+                  key={subject.id}
+                  subject={subject}
+                  onAction={forceRefetch}
+                />
+              ))}
+
+              <button
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="flex flex-col items-center justify-center p-8 rounded-[2.5rem] border-2 border-dashed border-muted hover:border-primary hover:bg-primary/5 group transition-all duration-300 min-h-[180px]"
+              >
+                <div className="bg-muted group-hover:bg-primary/10 rounded-2xl p-4 mb-4 transition-colors">
+                  <Plus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
+                <span className="font-semibold text-muted-foreground group-hover:text-primary transition-colors">Neues Fach</span>
+              </button>
+            </>
+          )}
+        </div>
+      </section>
+
+      <footer className="w-full text-center text-sm text-muted-foreground p-12 mt-12 border-t">
+        <p className="font-medium">© 2026 Vocaro</p>
+        <p className="mt-2 text-xs opacity-70">
+          Entwickelt mit ♥ für moderne Sprachlernende. <br className="md:hidden" />
+          <Link href="/privacy" className="hover:text-primary underline-offset-4">Datenschutz</Link> · <Link href="/terms" className="hover:text-primary underline-offset-4">AGB</Link>
         </p>
       </footer>
     </div>
