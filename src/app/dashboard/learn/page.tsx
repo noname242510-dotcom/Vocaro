@@ -22,7 +22,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
@@ -133,10 +132,7 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
             const finalDiff: { type: 'correct' | 'extra' | 'missing' | 'substitution', value: string, original?: string }[] = [];
             for(let k = 0; k < diff.length; k++) {
                 if (diff[k].type === 'substitution') {
-                    // When we have a substitution, we show the user's incorrect word (extra)
-                    // and indicate the correct word was missing.
                     finalDiff.push({ type: 'extra', value: diff[k].value });
-                    // finalDiff.push({ type: 'missing', value: diff[k].original! });
                 } else {
                     finalDiff.push(diff[k]);
                 }
@@ -174,7 +170,6 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
         );
     }
     
-    // Omitted-correct case: show correct answer with yellow underline for optional part
     if (status === 'omitted-correct') {
         const optionalPartRegex = /(\([^)]+\))/g;
         const parts = [];
@@ -196,12 +191,10 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
         return <p className={cn("font-bold mt-4 break-words", "text-3xl md:text-4xl line-clamp-4")}>{parts}</p>;
     }
     
-    // Fully correct or accepted: just show the correct answer
     if (status === 'correct' || status === 'accepted') {
         return <p className={cn("font-bold mt-4 break-words", "text-3xl md:text-4xl line-clamp-4")}>{correctAnswer}</p>;
     }
 
-    // Default: nothing
     return null;
 }
 
@@ -229,10 +222,10 @@ export default function LearnPage() {
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [animationResetToken, setAnimationResetToken] = useState(0);
+  const [exitAnimation, setExitAnimation] = useState<'correct' | 'incorrect' | null>(null);
 
   const [subject, setSubject] = useState<Subject | null>(null);
 
-  const [isExiting, setIsExiting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   
   const [isTermFirst, setIsTermFirst] = useState(true);
@@ -257,7 +250,7 @@ export default function LearnPage() {
         
         answeredIds.forEach((status, vocabId) => {
             const isCorrect = status === 'correct' || status === 'accepted' || status === 'omitted-correct';
-            const newDocRef = doc(sessionVocabRef); // Auto-generate ID
+            const newDocRef = doc(sessionVocabRef);
             batch.set(newDocRef, {
                 learningSessionId: sessionId,
                 vocabularyId: vocabId,
@@ -265,7 +258,6 @@ export default function LearnPage() {
             });
         });
 
-        // Also update the session end time
         const sessionDocRef = doc(firestore, 'users', user.uid, 'learningSessions', sessionId);
         batch.update(sessionDocRef, { endTime: serverTimestamp() });
 
@@ -289,7 +281,7 @@ export default function LearnPage() {
   };
 
   const goToNextCard = (isCorrect: boolean) => {
-    saveToHistory(); // Save state before moving to the next card
+    saveToHistory();
     
     if (vocabulary.length === 1 && isCorrect) {
         finishSession();
@@ -312,7 +304,6 @@ export default function LearnPage() {
       remainingCards.push(cardToRepeat);
     }
   
-    // If we're repeating the last card, force a re-mount to reset animation state
     if (remainingCards.length === 1 && !isCorrect) {
       setAnimationResetToken(c => c + 1);
     }
@@ -328,6 +319,7 @@ export default function LearnPage() {
   };
 
   const handleCheckAnswer = () => {
+    if (exitAnimation) return;
     if (isFlipped) {
       const isCorrect = answerStatus === 'correct' || answerStatus === 'accepted' || answerStatus === 'omitted-correct';
       if (vocabulary.length <= 1 && isCorrect) {
@@ -335,12 +327,12 @@ export default function LearnPage() {
         return;
       }
       
-      setIsExiting(true);
+      setExitAnimation(isCorrect ? 'correct' : 'incorrect');
       setTimeout(() => {
         setIsFlipped(false);
         goToNextCard(isCorrect);
-        setIsExiting(false);
-      }, 500); // Duration matches animation
+        setExitAnimation(null);
+      }, 500);
       return;
     }
 
@@ -385,7 +377,7 @@ export default function LearnPage() {
       }
       if (!currentCard.isMastered && firestore && user && subjectId && currentCard.stackId) {
         const vocabDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', currentCard.stackId, 'vocabulary', currentCard.id);
-        updateDoc(vocabDocRef, { isMastered: true }).catch(console.error); // Non-blocking update
+        updateDoc(vocabDocRef, { isMastered: true }).catch(console.error);
       }
       if (hapticsEnabled) triggerHapticFeedback('light');
     } else {
@@ -402,7 +394,7 @@ export default function LearnPage() {
   handleCheckAnswerRef.current = handleCheckAnswer;
   
   const handleClassicAnswer = (knewIt: boolean) => {
-    if (!isFlipped || isExiting) return;
+    if (!isFlipped || exitAnimation) return;
 
     if (vocabulary.length <= 1 && knewIt) {
         finishSession();
@@ -417,7 +409,7 @@ export default function LearnPage() {
         }
         if (!currentCard.isMastered && firestore && user && subjectId && currentCard.stackId) {
             const vocabDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', currentCard.stackId, 'vocabulary', currentCard.id);
-            updateDoc(vocabDocRef, { isMastered: true }).catch(console.error); // Non-blocking update
+            updateDoc(vocabDocRef, { isMastered: true }).catch(console.error);
         }
         if (hapticsEnabled) triggerHapticFeedback('light');
     } else {
@@ -428,12 +420,12 @@ export default function LearnPage() {
         if (hapticsEnabled) triggerHapticFeedback('heavy');
     }
     
-    setIsExiting(true);
+    setExitAnimation(knewIt ? 'correct' : 'incorrect');
     setTimeout(() => {
         setIsFlipped(false);
         goToNextCard(knewIt);
-        setIsExiting(false);
-    }, 500); // Duration matches animation
+        setExitAnimation(null);
+    }, 500);
   };
 
   const handleClassicAnswerRef = useRef(handleClassicAnswer);
@@ -446,14 +438,14 @@ export default function LearnPage() {
   useEffect(() => {
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
       if (document.querySelector('[role="dialog"]')) return;
-      if (event.key === 'Enter' && !isExiting) {
+      if (event.key === 'Enter' && !exitAnimation) {
         if (isTypedMode) {
             handleCheckAnswerRef.current();
         } else {
             if (!isFlipped) {
                 handleFlipCard();
             } else {
-                handleClassicAnswerRef.current(true); // Assume 'knew it'
+                handleClassicAnswerRef.current(true);
             }
         }
       }
@@ -463,10 +455,9 @@ export default function LearnPage() {
     return () => {
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, [isFlipped, isTypedMode, isExiting]);
+  }, [isFlipped, isTypedMode, exitAnimation]);
   
     useEffect(() => {
-        // Save state on change
         if (!isLoading && vocabulary.length > 0) {
             const stateToSave = {
                 vocabulary,
@@ -495,22 +486,17 @@ export default function LearnPage() {
   }, [isLoading]);
 
   useEffect(() => {
-    // Load settings from context
     if (settings) {
-        // Corrected logic: `vocabQueryDirection: true` means definition first.
-        // So `isTermFirst` should be false.
         setIsTermFirst(!settings.vocabQueryDirection);
         setShouldShowHints(settings.vocabShowHints);
         setHapticsEnabled(settings.hapticFeedback);
     }
     
-    // Load non-persistent UI state from local storage
     const typedModeSetting = localStorage.getItem('learn-mode-typed') === 'true';
     setIsTypedMode(typedModeSetting);
 
     if (!firestore || !user) return;
     
-    // Check for saved session state
     const savedStateJSON = sessionStorage.getItem(SESSION_STATE_KEY);
 
     if (savedStateJSON) {
@@ -537,7 +523,6 @@ export default function LearnPage() {
             setIsLoading(false);
             return;
         } else {
-            // If subject is missing, the saved state is invalid. Clear it.
              sessionStorage.removeItem(SESSION_STATE_KEY);
         }
     }
@@ -588,7 +573,7 @@ export default function LearnPage() {
         }
       
         const allVocab: VocabularyItem[] = [];
-        const CHUNK_SIZE = 30; // Firestore 'in' query limit
+        const CHUNK_SIZE = 30;
         
         const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', storedSubjectId, 'stacks');
         const stacksSnapshot = await getDocs(stacksCollectionRef);
@@ -640,10 +625,10 @@ export default function LearnPage() {
   }, [firestore, user, settings]);
 
   useEffect(() => {
-    if (!isExiting && isTypedMode && inputRef.current) {
+    if (!exitAnimation && isTypedMode && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [currentIndex, isExiting, isTypedMode]);
+  }, [currentIndex, exitAnimation, isTypedMode]);
   
   const languageHint = subject?.name || 'English';
 
@@ -670,6 +655,7 @@ export default function LearnPage() {
       
       setAnswerStatus('unanswered');
       setIsFlipped(false);
+      setExitAnimation(null);
     }
   };
   
@@ -728,7 +714,6 @@ export default function LearnPage() {
     const vocabDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', stackId, 'vocabulary', vocabId);
     try {
         await updateDoc(vocabDocRef, data);
-        // Optimistically update local state
         setVocabulary(current => current.map(v => v.id === vocabId ? { ...v, ...data } : v));
         setInitialVocab(current => current.map(v => v.id === vocabId ? { ...v, ...data } : v));
     } catch (e) {
@@ -746,11 +731,7 @@ export default function LearnPage() {
   };
 
   if (showSpinner) {
-    return (
-        <div className="absolute inset-0 flex h-full items-center justify-center">
-            <LoadingSpinner />
-        </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (isLoading) {
@@ -869,134 +850,136 @@ export default function LearnPage() {
           <div
             key={`${currentCard.id}-${animationResetToken}`}
             className={cn(
-              "relative w-full min-h-[20rem] flex flex-col items-center justify-center p-2 md:p-4 rounded-2xl glass-effect border transition-opacity duration-300",
-              !isExiting ? 'opacity-100' : 'opacity-0',
+              "relative w-full min-h-[20rem] flex flex-col items-center justify-center p-2 md:p-4 rounded-2xl glass-effect border",
+              exitAnimation === 'correct' && 'animate-fly-out-correct',
+              exitAnimation === 'incorrect' && 'animate-fly-out-incorrect'
             )}
           >
-            <div className="absolute top-4 left-4 text-3xl [perspective:1000px]">
-              <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                  <div className="[backface-visibility:hidden]">
-                      <span>{frontFlag}</span>
+            <div className={cn("absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-100", exitAnimation === 'correct' && 'opacity-0')}>
+              <div className="absolute top-4 left-4 text-3xl [perspective:1000px]">
+                <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                    <div className="[backface-visibility:hidden]">
+                        <span>{frontFlag}</span>
+                    </div>
+                    <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                        <span>{backFlag}</span>
+                    </div>
+                </div>
+              </div>
+              
+              {settings?.ttsEnabled && (
+                  <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
+                  <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                      <div className={cn("absolute inset-0 [backface-visibility:hidden]", !frontIsForeign && "opacity-0")}>
+                          <SpeakerButton
+                            ref={speakerRef}
+                            text={currentCard.term}
+                            languageHint={languageHint}
+                            autoplay={autoplayFront}
+                            ttsEnabled={settings?.ttsEnabled ?? false}
+                            autoplayEnabled={settings?.ttsAutoplay ?? true}
+                          />
+                      </div>
+                      <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !backIsForeign && "opacity-0")}>
+                          <SpeakerButton
+                            ref={speakerRef}
+                            text={currentCard.term}
+                            languageHint={languageHint}
+                            autoplay={autoplayBack}
+                            ttsEnabled={settings?.ttsEnabled ?? false}
+                            autoplayEnabled={settings?.ttsAutoplay ?? true}
+                          />
+                      </div>
                   </div>
-                  <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                      <span>{backFlag}</span>
+                  </div>
+              )}
+              
+               <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
+                  <div className={cn(
+                      "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d] flex flex-col items-center justify-center",
+                      isFlipped && "[transform:rotateY(180deg)]"
+                  )}>
+                      {/* Front Side */}
+                      <div className="[backface-visibility:hidden] w-full">
+                          <div className="flex flex-col items-center justify-center text-center">
+                              <p className="font-bold text-3xl md:text-4xl break-words">{frontWord}</p>
+                              {frontIsForeign && formattedPhonetic && (
+                                  <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
+                              )}
+                          </div>
+                      </div>
+                      {/* Back Side */}
+                      <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] w-full flex flex-col items-center justify-center">
+                          {isTypedMode && answerStatus !== 'unanswered' ? (
+                              <div className="flex flex-col items-center justify-center text-center">
+                                  <AnswerFeedback userInput={userInput} correctAnswer={expectedAnswer} status={answerStatus} />
+                                  <div className="mt-4">
+                                      <FeedbackIcon status={answerStatus} />
+                                  </div>
+                              </div>
+                          ) : (
+                               <div className="flex flex-col items-center justify-center text-center break-words">
+                                  <p className={cn("font-bold break-words", "text-3xl md:text-4xl line-clamp-4")}>{backWord}</p>
+                                  {backIsForeign && formattedPhonetic && (
+                                      <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
+                                  )}
+                              </div>
+                          )}
+                      </div>
                   </div>
               </div>
-            </div>
-            
-            {settings?.ttsEnabled && (
-                <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
-                <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                    {/* Speaker for the foreign word */}
-                    <div className={cn("absolute inset-0 [backface-visibility:hidden]", !frontIsForeign && "opacity-0")}>
-                        <SpeakerButton
-                          ref={speakerRef}
-                          text={currentCard.term}
-                          languageHint={languageHint}
-                          autoplay={autoplayFront}
-                          ttsEnabled={settings?.ttsEnabled ?? false}
-                          autoplayEnabled={settings?.ttsAutoplay ?? true}
-                        />
-                    </div>
-                    <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !backIsForeign && "opacity-0")}>
-                        <SpeakerButton
-                          ref={speakerRef}
-                          text={currentCard.term}
-                          languageHint={languageHint}
-                          autoplay={autoplayBack}
-                          ttsEnabled={settings?.ttsEnabled ?? false}
-                          autoplayEnabled={settings?.ttsAutoplay ?? true}
-                        />
-                    </div>
-                </div>
-                </div>
-            )}
-            
-             <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
-                <div className={cn(
-                    "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d] flex flex-col items-center justify-center",
-                    isFlipped && "[transform:rotateY(180deg)]"
-                )}>
-                    {/* Front Side */}
-                    <div className="[backface-visibility:hidden] w-full">
-                        <div className="flex flex-col items-center justify-center text-center">
-                            <p className="font-bold text-3xl md:text-4xl break-words">{frontWord}</p>
-                            {frontIsForeign && formattedPhonetic && (
-                                <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
-                            )}
-                        </div>
-                    </div>
-                    {/* Back Side */}
-                    <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] w-full flex flex-col items-center justify-center">
-                        {isTypedMode && answerStatus !== 'unanswered' ? (
-                            <div className="flex flex-col items-center justify-center text-center">
-                                <AnswerFeedback userInput={userInput} correctAnswer={expectedAnswer} status={answerStatus} />
-                                <div className="mt-4">
-                                    <FeedbackIcon status={answerStatus} />
-                                </div>
-                            </div>
-                        ) : (
-                             <div className="flex flex-col items-center justify-center text-center break-words">
-                                <p className={cn("font-bold break-words", "text-3xl md:text-4xl line-clamp-4")}>{backWord}</p>
-                                {backIsForeign && formattedPhonetic && (
-                                    <p className="mt-2 text-lg md:text-xl text-muted-foreground font-mono">{formattedPhonetic}</p>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
 
-            {currentCard.relatedWord && (
-                <div className="absolute bottom-4 left-4 h-10 w-10 [perspective:1000px]">
-                    <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                        <div className="[backface-visibility:hidden] w-full h-full"></div>
-                        <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon">
-                                        <Languages className="h-6 w-6" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-2" side="top">
-                                    <div className="text-sm">
-                                        <span className="font-semibold">{currentCard.relatedWord.language}:</span> {currentCard.relatedWord.word}
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {shouldShowHints && currentCard.notes && (
-                <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">
-                    <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                        <div className="[backface-visibility:hidden] w-full h-full"></div>
-                        <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
-                            <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); }}>
-                                    <Lightbulb className="h-6 w-6" />
-                                </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto max-w-xs sm:max-w-sm" side="top">
-                                <div className="flex items-start gap-2">
-                                    <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
-                                    <p className="text-sm">{currentCard.notes}</p>
-                                </div>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
-                <div className="absolute bottom-4 w-full text-center opacity-75 transition-opacity duration-300">
-                    <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
-                        Ich hab's gewusst
-                    </Button>
-                </div>
-            )}
+              {currentCard.relatedWord && (
+                  <div className="absolute bottom-4 left-4 h-10 w-10 [perspective:1000px]">
+                      <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                          <div className="[backface-visibility:hidden] w-full h-full"></div>
+                          <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
+                              <Popover>
+                                  <PopoverTrigger asChild>
+                                      <Button variant="ghost" size="icon">
+                                          <Languages className="h-6 w-6" />
+                                      </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-2" side="top">
+                                      <div className="text-sm">
+                                          <span className="font-semibold">{currentCard.relatedWord.language}:</span> {currentCard.relatedWord.word}
+                                      </div>
+                                  </PopoverContent>
+                              </Popover>
+                          </div>
+                      </div>
+                  </div>
+              )}
+              {shouldShowHints && currentCard.notes && (
+                  <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">
+                      <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
+                          <div className="[backface-visibility:hidden] w-full h-full"></div>
+                          <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
+                              <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
+                                  <PopoverTrigger asChild>
+                                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); }}>
+                                      <Lightbulb className="h-6 w-6" />
+                                  </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto max-w-xs sm:max-w-sm" side="top">
+                                  <div className="flex items-start gap-2">
+                                      <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
+                                      <p className="text-sm">{currentCard.notes}</p>
+                                  </div>
+                                  </PopoverContent>
+                              </Popover>
+                          </div>
+                      </div>
+                  </div>
+              )}
+              {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
+                  <div className="absolute bottom-4 w-full text-center opacity-75 transition-opacity duration-300">
+                      <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
+                          Ich hab's gewusst
+                      </Button>
+                  </div>
+              )}
+            </div>
           </div>
           
           <div className="w-full max-w-2xl mx-auto sm:mt-2">
@@ -1004,7 +987,7 @@ export default function LearnPage() {
                 <div
                     className={cn(
                         'flex justify-center items-center transition-all duration-300',
-                        (isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
+                        (isFlipped || exitAnimation) && 'opacity-0 scale-90 hidden'
                     )}
                 >
                     {isTypedMode ? (
@@ -1027,7 +1010,7 @@ export default function LearnPage() {
                 <div
                     className={cn(
                         'flex justify-center items-center gap-2 transition-all duration-300',
-                        (!isFlipped || isExiting) && 'opacity-0 scale-90 hidden'
+                        (!isFlipped || exitAnimation) && 'opacity-0 scale-90 hidden'
                     )}
                 >
                     {isTypedMode ? (
@@ -1057,7 +1040,7 @@ export default function LearnPage() {
                 </div>
             </div>
             <div className="w-full text-center h-[36px]">
-                {history.length > 0 && !isExiting && (
+                {history.length > 0 && !exitAnimation && (
                   <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
                       <ChevronLeft className="mr-1 h-4 w-4" />
                       Zurück

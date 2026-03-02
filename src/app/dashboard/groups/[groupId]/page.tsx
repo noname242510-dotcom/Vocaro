@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useFirebase, useMemoFirebase } from '@/firebase/provider';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { doc, collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp, writeBatch, arrayUnion, increment } from 'firebase/firestore';
 import type { Group, PublicProfile, Subject, Stack, VocabularyItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, Users, Trophy, BookCopy, UserPlus, Plus, Search } from 'lucide-react';
@@ -151,7 +151,6 @@ function CopyVocabDialog({ vocab, isOpen, onOpenChange }: { vocab: VocabularyIte
         try {
             const stackVocabRef = collection(firestore, 'users', user.uid, 'subjects', selectedSubjectId, 'stacks', selectedStackId, 'vocabulary');
 
-            // Check for duplicates
             const q = query(stackVocabRef, where('term', '==', vocab.term));
             const existingDocs = await getDocs(q);
             if (!existingDocs.empty) {
@@ -238,7 +237,7 @@ function BulkCopyDialog({ sourceStack, sourceVocabs, isOpen, onOpenChange }: {
     const { data: userStacks } = useCollection<Stack>(userStacksQuery);
 
     useEffect(() => {
-        setSelectedStackId(undefined); // Reset stack when subject changes
+        setSelectedStackId(undefined);
     }, [selectedSubjectId]);
 
     const handleSave = async () => {
@@ -256,19 +255,13 @@ function BulkCopyDialog({ sourceStack, sourceVocabs, isOpen, onOpenChange }: {
         setIsSaving(true);
         try {
             const targetStackVocabRef = collection(firestore, 'users', user.uid, 'subjects', selectedSubjectId, 'stacks', selectedStackId, 'vocabulary');
-
-            // Get existing vocabs in the target stack to prevent duplicates
             const existingVocabsSnapshot = await getDocs(targetStackVocabRef);
             const existingTerms = new Set(existingVocabsSnapshot.docs.map(doc => doc.data().term.toLowerCase().trim()));
 
             let addedCount = 0;
             let duplicateCount = 0;
-
-            // Prepare batches (Firestore max 500 writes per batch, but we do them individually or in smaller logic chunks for simplicity here)
-            // Using a simple loop for clarity, though writeBatch is preferred for very large sets. For typical vocab it's fine.
             const batch = writeBatch(firestore);
-            let operationsInBatch = 0;
-
+            
             for (const vocab of sourceVocabs) {
                 const termLower = vocab.term.toLowerCase().trim();
                 if (!existingTerms.has(termLower)) {
@@ -280,31 +273,21 @@ function BulkCopyDialog({ sourceStack, sourceVocabs, isOpen, onOpenChange }: {
                         notes: vocab.notes || '',
                         relatedWord: vocab.relatedWord || null,
                         isMastered: false,
-                        source: 'manual', // or maybe 'copied_from_group'
+                        source: 'manual',
                         createdAt: serverTimestamp(),
                     });
-                    existingTerms.add(termLower); // Prevent duplicates within the same batch
+                    existingTerms.add(termLower);
                     addedCount++;
-                    operationsInBatch++;
-
-                    // Commit batch if we hit limit (rarely needed for vocab, but safe)
-                    if (operationsInBatch === 490) {
-                        await batch.commit();
-                        operationsInBatch = 0;
-                    }
                 } else {
                     duplicateCount++;
                 }
             }
 
-            if (operationsInBatch > 0) {
-                await batch.commit();
-            }
-
             if (addedCount > 0) {
+                await batch.commit();
                 toast({ title: 'Erfolgreich kopiert!', description: `${addedCount} Vokabeln aus "${sourceStack.name}" hinzugefügt. ${duplicateCount > 0 ? `(${duplicateCount} Duplikate ignoriert)` : ''}` });
             } else {
-                toast({ title: 'Keine neuen Vokabeln', description: `Alle Vokabeln aus diesem Stapel (oder ignorierte Duplikate) existieren bereits in deinem Ziel-Stapel.` });
+                toast({ title: 'Keine neuen Vokabeln', description: `Alle Vokabeln aus diesem Stapel existieren bereits in deinem Ziel-Stapel.` });
             }
 
             onOpenChange(false);
@@ -370,21 +353,12 @@ function SubjectStacks({ subject, ownerId, searchTerm }: { subject: Subject; own
         if (vocab) {
             setVocabToCopy(vocab);
         } else {
-            // Initiate Bulk Copy
             setBulkCopyData({ stack, vocabs: vocabulary });
         }
     };
 
-    // If there's a searchTerm we need to match it against subject name, stack name, or vocab items.
-    // If the subject matches, show all stacks. Wait, actually we can just pass the searchTerm down to StackVocab.
-    // However, if we filter, we might want to auto-expand. Let's handle filtering inside StackVocab or here.
     const lowerSearch = searchTerm.toLowerCase().trim();
     const subjectMatches = lowerSearch ? subject.name.toLowerCase().includes(lowerSearch) : true;
-
-    // We render the Stacks and pass the search term.
-    // If no stack matches and subject doesn't match, we might want to hide the subject. This requires lifting state,
-    // but for simplicity, we pass down the search term and let the UI just show empty things or we can filter here.
-    // Since Firebase data loads asynchronously, we let it render and filter the final view.
 
     return (
         <>
@@ -423,9 +397,8 @@ function StackVocab({ stack, ownerId, onCopy, searchTerm, subjectMatches }: { st
         );
     }
 
-    // Hide stack entirely if it's a search and nothing matches
     if (lowerSearch && !subjectMatches && !stackMatches && (!filteredVocab || filteredVocab.length === 0)) {
-        return null; // Stack and its contents don't match the search
+        return null;
     }
 
     return (
@@ -439,7 +412,7 @@ function StackVocab({ stack, ownerId, onCopy, searchTerm, subjectMatches }: { st
                         variant="ghost"
                         size="sm"
                         className="text-primary hover:text-primary/80"
-                        onClick={() => onCopy(null, stack, filteredVocab || [])} // Bulk Copy remaining filtered vocabs or all
+                        onClick={() => onCopy(null, stack, vocabulary || [])}
                     >
                         <BookCopy className="mr-2 h-4 w-4" /> Stapel übernehmen
                     </Button>
@@ -452,7 +425,7 @@ function StackVocab({ stack, ownerId, onCopy, searchTerm, subjectMatches }: { st
                                 <p className="font-medium">{vocab.term}</p>
                                 <p className="text-muted-foreground">{vocab.definition}</p>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 group-hover:bg-primary/10" onClick={() => onCopy(vocab, stack, filteredVocab || [])}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 group-hover:bg-primary/10" onClick={() => onCopy(vocab, stack, vocabulary || [])}>
                                 <Plus className="h-4 w-4" />
                             </Button>
                         </div>
@@ -535,7 +508,6 @@ function DatabaseTab({ group }: { group: Group }) {
     }
 
     const lowerSearch = searchTerm.toLowerCase().trim();
-    // In order to auto-open members, we can set the default value of the Accordion if there's a search term
     const activeMembers = lowerSearch ? members.map(m => m.id) : undefined;
 
     return (
