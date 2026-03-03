@@ -3,7 +3,7 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore'
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export async function initializeFirebase() {
@@ -34,10 +34,15 @@ export async function initializeFirebase() {
 
 export async function getSdks(firebaseApp: FirebaseApp) {
   const auth = getAuth(firebaseApp);
-  // Persistence is handled in FirebaseClientProvider to ensure it runs on the client.
+  const firestore = initializeFirestore(firebaseApp, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    })
+  });
+
   return {
     firebaseApp,
     auth: auth,
-    firestore: getFirestore(firebaseApp)
+    firestore
   };
 }

@@ -23,12 +23,13 @@ interface NavBarProps {
 
 export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
     const pathname = usePathname();
+    const [isSheetOpen, setIsSheetOpen] = React.useState(false);
 
     const navItems = [
         { href: '/dashboard', icon: Home, label: 'Home' },
         { id: 'subjects', icon: BookOpen, label: 'Fächer', isSheet: true },
         { href: '/dashboard/learn', icon: Zap, label: 'Lernen', isPrimary: true },
-        { href: '/dashboard/social', icon: Users, label: 'Social' },
+        { href: '/dashboard/community', icon: Users, label: 'Community' },
         { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
     ];
 
@@ -40,7 +41,7 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
                 {navItems.map((item) => {
                     if (item.isSheet) {
                         return (
-                            <Sheet key={item.id}>
+                            <Sheet key={item.id} open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                                 <SheetTrigger asChild>
                                     <button
                                         className={cn(
@@ -69,6 +70,7 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
                                                         <Link
                                                             key={subject.id}
                                                             href={`/dashboard/subjects/${subject.id}`}
+                                                            onClick={() => setIsSheetOpen(false)}
                                                             className="group flex items-center justify-between p-4 rounded-2xl bg-secondary/50 hover:bg-secondary transition-all"
                                                         >
                                                             <div className="flex items-center gap-4">
@@ -96,9 +98,17 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
 
                     if (item.isPrimary) {
                         return (
-                            <Link
-                                key={item.href}
-                                href={item.href || '#'}
+                            <button
+                                onClick={async () => {
+                                    if (subjects && subjects.length > 0) {
+                                        const firstSubject = subjects[0];
+                                        sessionStorage.setItem('learn-session-subject', firstSubject.id);
+                                        // Simple learn first subject for now
+                                        window.location.href = '/dashboard/learn';
+                                    } else {
+                                        window.location.href = '/dashboard';
+                                    }
+                                }}
                                 className="relative -top-3 flex flex-col items-center"
                             >
                                 <div className={cn(
@@ -108,7 +118,7 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
                                     <item.icon className="h-7 w-7 text-primary-foreground" />
                                 </div>
                                 <span className="text-[10px] mt-1 font-semibold text-primary">{item.label}</span>
-                            </Link>
+                            </button>
                         );
                     }
 

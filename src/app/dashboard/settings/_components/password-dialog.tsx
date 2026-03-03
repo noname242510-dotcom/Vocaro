@@ -13,6 +13,7 @@ import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
+  AlertDialogContent,
   AlertDialogFooter as AlertFooter,
   AlertDialogHeader as AlertHeader,
   AlertDialogTitle as AlertTitle,
@@ -62,16 +63,16 @@ export function PasswordDialog({
 
   if (!showPasswordField) {
     return (
-       <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
-        <AlertDialogContent>
+      <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
+        <AlertDialogContent aria-describedby="password-alert-description">
           <AlertHeader>
             <AlertTitle>{title}</AlertTitle>
-            <AlertDescription>{description}</AlertDescription>
+            <AlertDescription id="password-alert-description">{description}</AlertDescription>
           </AlertHeader>
           <AlertFooter>
             <AlertDialogCancel disabled={isUpdating}>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => onConfirm()} 
+            <AlertDialogAction
+              onClick={() => onConfirm()}
               disabled={isUpdating}
               className={cn(buttonVariants({ variant: actionButtonVariant }))}
             >
@@ -86,10 +87,10 @@ export function PasswordDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent>
+      <DialogContent aria-describedby="password-dialog-description">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription id="password-dialog-description">{description}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
@@ -110,8 +111,8 @@ export function PasswordDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUpdating}>
             Abbrechen
           </Button>
-          <Button 
-            onClick={handleConfirm} 
+          <Button
+            onClick={handleConfirm}
             disabled={isUpdating || !password}
             variant={actionButtonVariant}
           >

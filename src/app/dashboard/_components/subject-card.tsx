@@ -156,10 +156,10 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-[2.5rem]">
+              <AlertDialogContent className="rounded-[2.5rem]" aria-describedby="delete-subject-description">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-2xl">Bist du sicher?</AlertDialogTitle>
-                  <AlertDialogDescription>
+                  <AlertDialogDescription id="delete-subject-description">
                     Diese Aktion kann nicht rückgängig gemacht werden. Das Fach &quot;{subject.name}&quot; wird dauerhaft gelöscht.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -182,10 +182,10 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
       </Card>
 
       <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby="rename-subject-description">
           <DialogHeader>
             <DialogTitle>Fach umbenennen</DialogTitle>
-            <DialogDescription>
+            <DialogDescription id="rename-subject-description">
               Gib einen neuen Namen für das Fach &quot;{subject?.name}&quot; ein.
             </DialogDescription>
           </DialogHeader>

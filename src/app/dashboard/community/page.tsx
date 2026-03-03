@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Bell, Users, UserPlus, GraduationCap } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function SocialPage() {
+export default function CommunityPage() {
     const [key, setKey] = useState(0);
     const { user, firestore } = useFirebase();
     const [requestCount, setRequestCount] = useState(0);

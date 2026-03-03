@@ -328,10 +328,11 @@ export function VerbDialog({ isOpen, onOpenChange, language, onSave, subjectId, 
           onInteractOutside={(e) => {
             if (isRunning) e.preventDefault();
           }}
+          aria-describedby="verb-dialog-description"
         >
           <DialogHeader className="p-8 pb-4 flex-shrink-0 bg-secondary/20">
             <DialogTitle className="text-2xl font-bold font-headline">{existingVerb ? 'Verb bearbeiten' : 'Neues Verb hinzufügen'}</DialogTitle>
-            <DialogDescription className="text-base mt-1">
+            <DialogDescription id="verb-dialog-description" className="text-base mt-1">
               {generatedData ? 'Überprüfe und bearbeite die generierten Formen.' : 'Gib ein Verb im Infinitiv ein, um alle Formen zu generieren.'}
             </DialogDescription>
           </DialogHeader>

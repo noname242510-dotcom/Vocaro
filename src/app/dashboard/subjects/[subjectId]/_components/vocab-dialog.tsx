@@ -111,10 +111,10 @@ export function VocabDialog({ isOpen, onOpenChange, vocabItem, subjectId, onSave
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl rounded-[2.5rem] border-none shadow-2xl p-8" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-2xl rounded-[2.5rem] border-none shadow-2xl p-8" onOpenAutoFocus={(e) => e.preventDefault()} aria-describedby="vocab-dialog-description">
         <DialogHeader className="mb-6">
           <DialogTitle className="text-2xl font-bold font-headline">Vokabel bearbeiten</DialogTitle>
-          <DialogDescription className="text-base">Ändere die Details für diese Vokabel.</DialogDescription>
+          <DialogDescription id="vocab-dialog-description" className="text-base">Ändere die Details für diese Vokabel.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-6 py-2">
           <div className="grid gap-2">

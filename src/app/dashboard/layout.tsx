@@ -32,6 +32,8 @@ function DashboardLayoutContent({
   const { user, firestore, auth } = useFirebase();
   const { settings, updateSettings, isLoading: areSettingsLoading } = useSettings();
 
+  const isImmersiveMode = pathname.includes('/learn');
+
   const subjectsCollection = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return collection(firestore, 'users', user.uid, 'subjects');
@@ -60,7 +62,7 @@ function DashboardLayoutContent({
   const navItems = [
     { href: '/dashboard', icon: Home, label: 'Home' },
     { href: '/dashboard/overview', icon: LayoutDashboard, label: 'Statistiken' },
-    { href: '/dashboard/social', icon: Users, label: 'Social' },
+    { href: '/dashboard/community', icon: Users, label: 'Community' },
     { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
   ];
 
@@ -79,26 +81,28 @@ function DashboardLayoutContent({
       <GlobalVerbResultListener />
       <TaskProgressToast />
 
-      {/* Header */}
-      <header className="sticky top-4 z-40 w-[calc(100%-2rem)] mx-auto bg-background/80 backdrop-blur-md border rounded-[2rem] shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4 w-1/3">
-            {mounted && !areSettingsLoading && (
-              <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
-                {settings?.darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </Button>
-            )}
-          </div>
+      {/* Header (Hidden in Immersive Mode) */}
+      {!isImmersiveMode && (
+        <header className="sticky top-4 z-40 w-[calc(100%-2rem)] mx-auto bg-background/80 backdrop-blur-md border rounded-[2rem] shadow-sm">
+          <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-4 w-1/3">
+              {mounted && !areSettingsLoading && (
+                <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
+                  {settings?.darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                </Button>
+              )}
+            </div>
 
-          <div className="flex justify-center w-1/3">
-            <Logo className="text-2xl font-black" />
-          </div>
+            <div className="flex justify-center w-1/3">
+              <Logo className="text-2xl font-black" />
+            </div>
 
-          <div className="flex items-center justify-end gap-2 w-1/3">
-            <UserNav />
+            <div className="flex items-center justify-end gap-2 w-1/3">
+              <UserNav />
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <div className="flex max-w-7xl mx-auto">
         {/* Desktop Sidebar */}
@@ -162,8 +166,8 @@ function DashboardLayoutContent({
         </main>
       </div>
 
-      {/* Mobile Bottom NavBar */}
-      <NavBar subjects={subjects ?? null} isLoadingSubjects={areSubjectsLoading} />
+      {/* Mobile Bottom NavBar (Hidden in Immersive Mode) */}
+      {!isImmersiveMode && <NavBar subjects={subjects ?? null} isLoadingSubjects={areSubjectsLoading} />}
     </div>
   );
 }

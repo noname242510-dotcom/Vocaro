@@ -327,6 +327,15 @@ export default function LearnPage() {
   const currentItem = items[currentIndex];
   const progress = (currentIndex / items.length) * 100;
 
+  if (isLoading || !currentItem) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <LoadingSpinner />
+        <p className="text-muted-foreground animate-pulse font-medium">Lade deine Vokabeln...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-8 py-6 md:py-10 px-4">
       {/* Header */}
@@ -337,10 +346,10 @@ export default function LearnPage() {
               <ChevronLeft className="h-6 w-6" />
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="rounded-[2.5rem] border-none">
+          <AlertDialogContent className="rounded-[2.5rem] border-none" aria-describedby="quit-dialog-description">
             <AlertDialogHeader>
               <AlertDialogTitle>Lernen abbrechen?</AlertDialogTitle>
-              <AlertDialogDescription>Dein aktueller Fortschritt in dieser Sitzung geht verloren.</AlertDialogDescription>
+              <AlertDialogDescription id="quit-dialog-description">Dein aktueller Fortschritt in dieser Sitzung geht verloren.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel className="rounded-xl">Bleiben</AlertDialogCancel>
@@ -374,99 +383,117 @@ export default function LearnPage() {
       </div>
 
       {/* Card Stage */}
-      <div className="perspective-1000 min-h-[400px] relative">
-        <AnimatePresence mode="wait">
+      <div className="perspective-2000 min-h-[450px] relative w-full max-w-xl mx-auto">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={currentIndex}
-            initial={{ x: direction * 100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -direction * 100, opacity: 0 }}
-            className="w-full"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="w-full h-full"
           >
-            <div
-              className="relative w-full h-[400px] transition-all duration-700 preserve-3d cursor-pointer"
-              style={{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
-              onClick={() => !isTypedMode && setIsFlipped(!isFlipped)}
-            >
-              {/* Front */}
-              <Card className="absolute inset-0 backface-hidden rounded-[3rem] shadow-2xl border-none flex flex-col items-center justify-center p-8 bg-card text-center">
-                <span className="absolute top-8 left-8 text-[0.65rem] font-black uppercase tracking-[0.2em] text-muted-foreground/60 bg-secondary/40 px-3 py-1.5 rounded-full">
-                  {currentItem.type === 'vocab' ? 'Vokabel' : 'Verb'}
-                </span>
-
-                <div className="absolute top-8 right-8 flex gap-2">
-                  {currentItem.data.phonetic && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-secondary/40" onClick={(e) => e.stopPropagation()}>
-                          <Info className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="rounded-2xl p-4 w-auto">
-                        <p className="font-mono text-sm">{currentItem.data.phonetic}</p>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                  {currentItem.data.notes && (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-secondary/40" onClick={(e) => e.stopPropagation()}>
-                          <Lightbulb className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="rounded-2xl p-4 max-w-xs">
-                        <p className="text-sm">{currentItem.data.notes}</p>
-                      </PopoverContent>
-                    </Popover>
-                  )}
-                </div>
-
-                <h3 className="text-4xl md:text-5xl font-bold font-headline leading-tight">
-                  {currentItem.front}
-                </h3>
-              </Card>
-
-              {/* Back */}
-              <Card
-                className="absolute inset-0 backface-hidden rounded-[3rem] shadow-2xl border-none flex flex-col items-center justify-center p-8 bg-black text-white text-center"
-                style={{ transform: 'rotateY(180deg)' }}
+            <div className="relative w-full h-[450px] preserve-3d">
+              <motion.div
+                className="w-full h-full relative preserve-3d"
+                initial={false}
+                animate={{ rotateY: isFlipped ? 180 : 0 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 260,
+                  damping: 20,
+                  mass: 1
+                }}
               >
-                <div className="absolute top-8 left-8 flex items-center gap-2">
-                  <span className="text-[0.65rem] font-black uppercase tracking-[0.2em] bg-white/20 px-3 py-1.5 rounded-full">
-                    Antwort
-                  </span>
-                  <SpeakerButton
-                    text={currentItem.back}
-                    languageHint={settings?.vocabQueryDirection ? 'de-DE' : 'en-US'}
-                    ttsEnabled={settings?.ttsEnabled ?? true}
-                    autoplayEnabled={settings?.ttsAutoplay ?? false}
-                    className="h-10 w-10 bg-white/10 hover:bg-white/20 text-white rounded-full border-none"
-                  />
-                </div>
-
-                {currentItem.data.relatedWord && (
-                  <div className="absolute top-8 right-8">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-white/10 text-white" onClick={(e) => e.stopPropagation()}>
-                          <Languages className="h-4 w-4" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="rounded-2xl p-4 w-auto">
-                        <p className="text-xs text-muted-foreground uppercase font-bold mb-1">{currentItem.data.relatedWord.language}</p>
-                        <p className="font-bold">{currentItem.data.relatedWord.word}</p>
-                      </PopoverContent>
-                    </Popover>
+                {/* Front Side */}
+                <Card
+                  className="absolute inset-0 backface-hidden rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] border-none flex flex-col items-center justify-center p-8 bg-white overflow-hidden transition-shadow hover:shadow-[0_48px_80px_-20px_rgba(0,0,0,0.2)]"
+                  onClick={() => !isTypedMode && setIsFlipped(true)}
+                >
+                  <div className="absolute top-10 left-10 flex items-center gap-3">
+                    <span className="text-[0.6rem] font-black uppercase tracking-[0.25em] text-black/40 bg-black/5 px-4 py-2 rounded-full">
+                      {currentItem.type === 'vocab' ? 'Vocabulary' : 'Verb'}
+                    </span>
                   </div>
-                )}
 
-                <div className="space-y-4">
-                  <h3 className="text-4xl font-bold font-headline leading-tight">{currentItem.back}</h3>
-                  {currentItem.data.phonetic && (
-                    <p className="text-xl font-mono opacity-60">{currentItem.data.phonetic}</p>
+                  <div className="absolute top-10 right-10 flex gap-3">
+                    {currentItem.data.phonetic && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/5 hover:bg-black/10 text-black/60" onClick={(e) => e.stopPropagation()}>
+                            <Info className="h-5 w-5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="rounded-[2rem] p-6 shadow-2xl border-none bg-white/90 backdrop-blur-xl">
+                          <p className="font-mono text-base font-medium">{currentItem.data.phonetic}</p>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                    {currentItem.data.notes && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/5 hover:bg-black/10 text-black/60" onClick={(e) => e.stopPropagation()}>
+                            <Lightbulb className="h-5 w-5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="rounded-[2rem] p-6 shadow-2xl border-none bg-white/90 backdrop-blur-xl max-w-xs">
+                          <p className="text-base leading-relaxed text-black/80">{currentItem.data.notes}</p>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
+
+                  <motion.h3
+                    layoutId={`term-${currentIndex}`}
+                    className="text-5xl md:text-6xl font-black font-headline tracking-tight text-black text-center px-4"
+                  >
+                    {currentItem.front}
+                  </motion.h3>
+
+                  <div className="absolute bottom-12 flex flex-col items-center gap-2 opacity-20 group-hover:opacity-40 transition-opacity">
+                    <div className="w-12 h-1.5 bg-black rounded-full animate-bounce" />
+                    <span className="text-[0.6rem] font-black uppercase tracking-widest">Klicken zum Wenden</span>
+                  </div>
+                </Card>
+
+                {/* Back Side */}
+                <Card
+                  className="absolute inset-0 backface-hidden rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] border-none flex flex-col items-center justify-center p-8 bg-black text-white text-center"
+                  style={{ transform: 'rotateY(180deg)' }}
+                >
+                  <div className="absolute top-10 left-10 flex items-center gap-4">
+                    <span className="text-[0.6rem] font-black uppercase tracking-[0.25em] bg-white/20 text-white px-4 py-2 rounded-full">
+                      Definition
+                    </span>
+                    <SpeakerButton
+                      text={currentItem.back}
+                      languageHint={settings?.vocabQueryDirection ? 'de-DE' : 'en-US'}
+                      ttsEnabled={settings?.ttsEnabled ?? true}
+                      autoplayEnabled={settings?.ttsAutoplay ?? false}
+                      className="h-12 w-12 bg-white/10 hover:bg-white/20 text-white rounded-full border-none scale-110"
+                    />
+                  </div>
+
+                  <div className="space-y-6">
+                    <motion.h3
+                      layoutId={`def-${currentIndex}`}
+                      className="text-4xl md:text-5xl font-black font-headline tracking-tight leading-tight px-4"
+                    >
+                      {currentItem.back}
+                    </motion.h3>
+                    {currentItem.data.phonetic && (
+                      <p className="text-2xl font-mono tracking-wider opacity-40 italic">{currentItem.data.phonetic}</p>
+                    )}
+                  </div>
+
+                  {currentItem.data.relatedWord && (
+                    <div className="absolute bottom-12 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/5">
+                      <p className="text-[0.5rem] font-black uppercase tracking-[0.3em] text-white/40 mb-1">Ähnliches Wort ({currentItem.data.relatedWord.language})</p>
+                      <p className="text-xl font-bold tracking-tight">{currentItem.data.relatedWord.word}</p>
+                    </div>
                   )}
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             </div>
           </motion.div>
         </AnimatePresence>

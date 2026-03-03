@@ -22,9 +22,13 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection, addDoc, getDocs } from 'firebase/firestore';
 import { SubjectCard, type SubjectWithCounts } from './_components/subject-card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DashboardPage() {
   const { firestore, user } = useFirebase();
+  const router = useRouter();
+  const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
 
@@ -136,14 +140,40 @@ export default function DashboardPage() {
             Du hast heute schon <span className="text-primary font-bold">12</span> Vokabeln gelernt. Dein Ziel sind 20. Fast geschafft!
           </p>
           <div className="flex flex-wrap gap-4">
-            <Button size="lg" className="rounded-2xl px-8 h-12 shadow-lg shadow-primary/20" asChild>
-              <Link href="/dashboard/learn">
-                <Zap className="mr-2 h-5 w-5 fill-current" />
-                Jetzt lernen
-              </Link>
+            <Button
+              size="lg"
+              className="rounded-2xl px-8 h-12 shadow-lg shadow-primary/20"
+              onClick={async () => {
+                if (subjectsWithCounts.length > 0) {
+                  const firstSubject = subjectsWithCounts[0];
+                  // Ideally, we'd pick a subject that needs review, but for now we pick the first one
+                  sessionStorage.setItem('learn-session-subject', firstSubject.id);
+
+                  // Fetch all vocab IDs for this subject
+                  const vocabIds: string[] = [];
+                  const stacksRef = collection(firestore!, 'users', user!.uid, 'subjects', firstSubject.id, 'stacks');
+                  const stacksSnap = await getDocs(stacksRef);
+                  for (const stackDoc of stacksSnap.docs) {
+                    const vSnap = await getDocs(collection(stackDoc.ref, 'vocabulary'));
+                    vSnap.forEach(d => vocabIds.push(d.id));
+                  }
+
+                  if (vocabIds.length > 0) {
+                    sessionStorage.setItem('learn-session-vocab', JSON.stringify(vocabIds));
+                    router.push('/dashboard/learn');
+                  } else {
+                    toast({ title: "Keine Vokabeln", description: "Dieses Fach hat noch keine Vokabeln zum Lernen." });
+                  }
+                } else {
+                  setIsCreateDialogOpen(true);
+                }
+              }}
+            >
+              <Zap className="mr-2 h-5 w-5 fill-current" />
+              Jetzt lernen
             </Button>
             <Button size="lg" variant="outline" className="rounded-2xl px-8 h-12 border-2" asChild>
-              <Link href="/dashboard/social">
+              <Link href="/dashboard/community">
                 <Users className="mr-2 h-5 w-5" />
                 Community
               </Link>
@@ -186,10 +216,10 @@ export default function DashboardPage() {
                 Neu hinzufügen
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-[2rem] sm:max-w-[425px]">
+            <DialogContent className="rounded-[2rem] sm:max-w-[425px]" aria-describedby="dialog-description">
               <DialogHeader>
                 <DialogTitle className="text-2xl">Neues Fach erstellen</DialogTitle>
-                <DialogDescription>
+                <DialogDescription id="dialog-description">
                   Gib einen Namen für dein neues Fach ein.
                 </DialogDescription>
               </DialogHeader>

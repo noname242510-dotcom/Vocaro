@@ -131,10 +131,10 @@ export function AddMemberDialog({ group, isOpen, onOpenChange, onInviteSent }: A
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px]" aria-describedby="add-member-description">
                 <DialogHeader>
                     <DialogTitle>Freunde hinzufügen</DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription id="add-member-description">
                         Füge Freunde direkt zu deiner Gruppe hinzu.
                     </DialogDescription>
                 </DialogHeader>

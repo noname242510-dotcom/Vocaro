@@ -128,10 +128,10 @@ export function CreateGroupDialog({ isOpen, onOpenChange }: { isOpen: boolean; o
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px]" aria-describedby="create-group-description">
                 <DialogHeader>
                     <DialogTitle>Neue Gruppe erstellen</DialogTitle>
-                    <DialogDescription>Gib deiner Gruppe einen Namen und lade Freunde ein.</DialogDescription>
+                    <DialogDescription id="create-group-description">Gib deiner Gruppe einen Namen und lade Freunde ein.</DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">

@@ -19,32 +19,22 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   useEffect(() => {
     const init = async () => {
       const services = await initializeFirebase();
-      
+
       try {
         await setPersistence(services.auth, browserLocalPersistence);
       } catch (error) {
         console.error("Fehler beim Setzen der Auth-Persistence:", error);
       }
 
-      try {
-        await enableIndexedDbPersistence(services.firestore)
-      } catch (err: any) {
-        if (err.code == 'failed-precondition') {
-          console.warn("Firestore-Persistence konnte nicht aktiviert werden, da mehrere Tabs geöffnet sind.");
-        } else if (err.code == 'unimplemented') {
-          console.warn("Firestore-Persistence wird in diesem Browser nicht unterstützt.");
-        } else {
-          console.error("Firestore-Persistence fehlgeschlagen", err);
-        }
-      }
-
+      // Persistence is now handled automatically by Firebase v10+ if configured,
+      // but we ensure it's initialized correctly here if needed.
       setFirebaseServices(services);
     };
     init();
   }, []);
 
   if (!firebaseServices) {
-    return null; 
+    return null;
   }
 
   return (
