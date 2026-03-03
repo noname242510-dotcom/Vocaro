@@ -80,24 +80,21 @@ function DashboardLayoutContent({
       <TaskProgressToast />
 
       {/* Header */}
-      <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md border-b">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <header className="sticky top-4 z-40 w-[calc(100%-2rem)] mx-auto bg-background/80 backdrop-blur-md border rounded-[2rem] shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4 w-1/3">
             {mounted && !areSettingsLoading && (
               <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
                 {settings?.darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
             )}
-            <div className="hidden md:block">
-              <Logo className="text-2xl" />
-            </div>
           </div>
 
-          <div className="md:hidden">
-            <Logo className="text-2xl" />
+          <div className="flex justify-center w-1/3">
+            <Logo className="text-2xl font-black" />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2 w-1/3">
             <UserNav />
           </div>
         </div>

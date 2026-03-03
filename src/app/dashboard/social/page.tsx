@@ -73,17 +73,17 @@ export default function SocialPage() {
             </div>
 
             <Tabs defaultValue="groups" className="w-full">
-                <TabsList className="inline-flex h-12 items-center justify-center rounded-2xl bg-muted p-1 text-muted-foreground w-full md:w-auto mb-8">
-                    <TabsTrigger value="groups" className="rounded-xl px-8 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                        <GraduationCap className="h-4 w-4 mr-2" />
+                <TabsList className="inline-flex h-14 items-center justify-center rounded-[2rem] bg-secondary p-1.5 text-muted-foreground w-full md:w-auto mb-10 shadow-sm">
+                    <TabsTrigger value="groups" className="rounded-[1.5rem] px-10 h-11 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md font-bold transition-all">
+                        <GraduationCap className="h-5 w-5 mr-2" />
                         Gruppen
                     </TabsTrigger>
-                    <TabsTrigger value="friends" className="rounded-xl px-8 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                        <Users className="h-4 w-4 mr-2" />
+                    <TabsTrigger value="friends" className="rounded-[1.5rem] px-10 h-11 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md font-bold transition-all">
+                        <Users className="h-5 w-5 mr-2" />
                         Freunde
                     </TabsTrigger>
-                    <TabsTrigger value="search" className="rounded-xl px-8 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                        <UserPlus className="h-4 w-4 mr-2" />
+                    <TabsTrigger value="search" className="rounded-[1.5rem] px-10 h-11 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md font-bold transition-all">
+                        <UserPlus className="h-5 w-5 mr-2" />
                         Entdecken
                     </TabsTrigger>
                 </TabsList>

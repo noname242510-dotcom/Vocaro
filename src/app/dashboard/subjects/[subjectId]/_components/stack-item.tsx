@@ -297,9 +297,3 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
   );
 }
 
-// Add isSelected to VocabularyItem for local state management
-declare module '@/lib/types' {
-  interface VocabularyItem {
-    isSelected?: boolean;
-  }
-}

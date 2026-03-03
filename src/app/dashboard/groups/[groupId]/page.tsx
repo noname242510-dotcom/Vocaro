@@ -261,7 +261,7 @@ function BulkCopyDialog({ sourceStack, sourceVocabs, isOpen, onOpenChange }: {
             let addedCount = 0;
             let duplicateCount = 0;
             const batch = writeBatch(firestore);
-            
+
             for (const vocab of sourceVocabs) {
                 const termLower = vocab.term.toLowerCase().trim();
                 if (!existingTerms.has(termLower)) {
@@ -403,8 +403,8 @@ function StackVocab({ stack, ownerId, onCopy, searchTerm, subjectMatches }: { st
 
     return (
         <AccordionItem value={stack.id} className="border-b-0">
-            <AccordionTrigger className="hover:no-underline bg-muted/30 px-3 rounded-md">
-                {stack.name} <Badge variant="secondary" className="ml-2">{filteredVocab?.length ?? 0}</Badge>
+            <AccordionTrigger className="hover:no-underline bg-secondary/50 px-4 py-4 rounded-[1.5rem] font-bold">
+                {stack.name} <Badge variant="secondary" className="ml-2 bg-background/50 rounded-full">{filteredVocab?.length ?? 0}</Badge>
             </AccordionTrigger>
             <AccordionContent className="pt-2">
                 <div className="flex justify-end pr-2 mb-2">
@@ -420,13 +420,13 @@ function StackVocab({ stack, ownerId, onCopy, searchTerm, subjectMatches }: { st
                 {isLoading && <Loader2 className="mx-auto h-4 w-4 animate-spin" />}
                 <div className="pl-4 space-y-1">
                     {filteredVocab?.map(vocab => (
-                        <div key={vocab.id} className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-muted/50 group">
-                            <div>
-                                <p className="font-medium">{vocab.term}</p>
-                                <p className="text-muted-foreground">{vocab.definition}</p>
+                        <div key={vocab.id} className="flex items-center justify-between text-sm p-4 rounded-2xl hover:bg-secondary/50 transition-colors group border-none">
+                            <div className="flex-1">
+                                <p className="font-bold text-base">{vocab.term}</p>
+                                <p className="text-muted-foreground font-medium">{vocab.definition}</p>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 group-hover:bg-primary/10" onClick={() => onCopy(vocab, stack, vocabulary || [])}>
-                                <Plus className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full group-hover:bg-primary group-hover:text-primary-foreground" onClick={() => onCopy(vocab, stack, vocabulary || [])}>
+                                <Plus className="h-5 w-5" />
                             </Button>
                         </div>
                     ))}
@@ -451,7 +451,7 @@ function MemberSubjects({ member, searchTerm }: { member: PublicProfile; searchT
 
     return (
         <AccordionItem value={member.id} className="border-b-0">
-            <AccordionTrigger className="hover:no-underline bg-muted px-4 rounded-lg">
+            <AccordionTrigger className="hover:no-underline bg-secondary px-6 py-5 rounded-[2rem] font-bold">
                 <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8"><AvatarImage src={member.photoURL} /><AvatarFallback>{member.displayName.charAt(0)}</AvatarFallback></Avatar>
                     <span className="font-semibold">{member.displayName}</span>
@@ -466,7 +466,7 @@ function MemberSubjects({ member, searchTerm }: { member: PublicProfile; searchT
                         return (
                             <Accordion key={subject.id} type="multiple" className="w-full" value={lowerSearch || subjectMatches ? [subject.id] : undefined}>
                                 <AccordionItem value={subject.id} className="border-b-0">
-                                    <AccordionTrigger className="hover:no-underline bg-muted/50 px-3 rounded-md">
+                                    <AccordionTrigger className="hover:no-underline bg-secondary/30 px-4 py-4 rounded-[1.5rem] font-bold">
                                         {subject.emoji} {subject.name}
                                     </AccordionTrigger>
                                     <AccordionContent className="pt-2">

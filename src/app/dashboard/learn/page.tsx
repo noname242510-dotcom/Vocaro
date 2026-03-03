@@ -170,6 +170,19 @@ export default function LearnPage() {
   const [userInput, setUserInput] = useState('');
   const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
   const [direction, setDirection] = useState(0);
+  const [history, setHistory] = useState<number[]>([]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isFinished && items.length > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isFinished, items.length]);
 
   const [subject, setSubject] = useState<Subject | null>(null);
   const [subjectId, setSubjectId] = useState<string | null>(null);
@@ -276,6 +289,7 @@ export default function LearnPage() {
 
     if (currentIndex < items.length - 1) {
       setDirection(1);
+      setHistory(prev => [...prev, currentIndex]);
       setTimeout(() => {
         setCurrentIndex(prev => prev + 1);
         setIsFlipped(false);
@@ -295,66 +309,23 @@ export default function LearnPage() {
     }
   };
 
-  const handleCheckAnswer = () => {
-    if (answerStatus !== 'unanswered') {
-      handleAnswer(answerStatus === 'correct' || answerStatus === 'accepted' || answerStatus === 'omitted-correct');
-      return;
-    }
-
-    const currentItem = items[currentIndex];
-    const normalize = (s: string) => s.trim().toLowerCase().replace(/[()]/g, '');
-
-    if (normalize(userInput) === normalize(currentItem.back)) {
-      setAnswerStatus('correct');
-      setIsFlipped(true);
-    } else {
-      setAnswerStatus('incorrect');
-      setIsFlipped(true);
+  const handleGoBack = () => {
+    if (history.length > 0) {
+      const prevIndex = history[history.length - 1];
+      setHistory(prev => prev.slice(0, -1));
+      setDirection(-1);
+      setTimeout(() => {
+        setCurrentIndex(prevIndex);
+        setIsFlipped(false);
+        setAnswerStatus('unanswered');
+        setUserInput('');
+        setDirection(0);
+      }, 50);
     }
   };
 
-  const progress = (currentIndex / items.length) * 100;
-
-  if (isLoading) return <div className="flex items-center justify-center min-h-screen"><LoadingSpinner /></div>;
-
-  if (items.length === 0) return (
-    <div className="flex flex-col items-center justify-center h-[70vh] gap-6">
-      <h2 className="text-2xl font-bold font-headline">Keine Vokabeln gefunden</h2>
-      <Button asChild className="rounded-2xl"><Link href="/dashboard">Zurück</Link></Button>
-    </div>
-  );
-
-  if (isFinished) return (
-    <div className="max-w-xl mx-auto py-12 px-4 space-y-8">
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="bg-card p-10 rounded-[3.5rem] text-center shadow-2xl space-y-8 border-none"
-      >
-        <div className="inline-flex p-6 bg-primary/10 rounded-[2.5rem]">
-          <Trophy className="h-12 w-12 text-primary" />
-        </div>
-        <h2 className="text-4xl font-bold font-headline">Lektion beendet!</h2>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-secondary/30 p-6 rounded-[2rem]">
-            <p className="text-sm font-bold text-muted-foreground uppercase mb-1">Richtig</p>
-            <p className="text-3xl font-black text-emerald-500">{sessionStats.correct}</p>
-          </div>
-          <div className="bg-secondary/30 p-6 rounded-[2rem]">
-            <p className="text-sm font-bold text-muted-foreground uppercase mb-1">Streak</p>
-            <p className="text-3xl font-black text-orange-500">{sessionStats.maxStreak}</p>
-          </div>
-        </div>
-
-        <Button size="lg" className="w-full h-14 rounded-2xl text-lg font-bold" asChild>
-          <Link href="/dashboard">Zur Übersicht</Link>
-        </Button>
-      </motion.div>
-    </div>
-  );
-
   const currentItem = items[currentIndex];
+  const progress = (currentIndex / items.length) * 100;
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 py-6 md:py-10 px-4">
@@ -422,30 +393,79 @@ export default function LearnPage() {
                 <span className="absolute top-8 left-8 text-[0.65rem] font-black uppercase tracking-[0.2em] text-muted-foreground/60 bg-secondary/40 px-3 py-1.5 rounded-full">
                   {currentItem.type === 'vocab' ? 'Vokabel' : 'Verb'}
                 </span>
+
+                <div className="absolute top-8 right-8 flex gap-2">
+                  {currentItem.data.phonetic && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-secondary/40" onClick={(e) => e.stopPropagation()}>
+                          <Info className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="rounded-2xl p-4 w-auto">
+                        <p className="font-mono text-sm">{currentItem.data.phonetic}</p>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                  {currentItem.data.notes && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-secondary/40" onClick={(e) => e.stopPropagation()}>
+                          <Lightbulb className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="rounded-2xl p-4 max-w-xs">
+                        <p className="text-sm">{currentItem.data.notes}</p>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+
                 <h3 className="text-4xl md:text-5xl font-bold font-headline leading-tight">
                   {currentItem.front}
                 </h3>
-                {!isTypedMode && (
-                  <div className="absolute bottom-8 text-primary/40 font-bold flex items-center gap-2 animate-bounce">
-                    <span className="text-xs uppercase tracking-widest">Umdrehen</span>
-                    <RotateCcw className="h-4 w-4" />
-                  </div>
-                )}
               </Card>
 
               {/* Back */}
               <Card
-                className="absolute inset-0 backface-hidden rounded-[3rem] shadow-2xl border-none flex flex-col items-center justify-center p-8 bg-primary text-primary-foreground text-center"
+                className="absolute inset-0 backface-hidden rounded-[3rem] shadow-2xl border-none flex flex-col items-center justify-center p-8 bg-black text-white text-center"
                 style={{ transform: 'rotateY(180deg)' }}
               >
-                <span className="absolute top-8 left-8 text-[0.65rem] font-black uppercase tracking-[0.2em] bg-white/20 px-3 py-1.5 rounded-full">
-                  Antwort
-                </span>
-                {isTypedMode ? (
-                  <AnswerFeedback userInput={userInput} correctAnswer={currentItem.back} status={answerStatus} />
-                ) : (
-                  <h3 className="text-4xl font-bold font-headline leading-tight">{currentItem.back}</h3>
+                <div className="absolute top-8 left-8 flex items-center gap-2">
+                  <span className="text-[0.65rem] font-black uppercase tracking-[0.2em] bg-white/20 px-3 py-1.5 rounded-full">
+                    Antwort
+                  </span>
+                  <SpeakerButton
+                    text={currentItem.back}
+                    languageHint={settings?.vocabQueryDirection ? 'de-DE' : 'en-US'}
+                    ttsEnabled={settings?.ttsEnabled ?? true}
+                    autoplayEnabled={settings?.ttsAutoplay ?? false}
+                    className="h-10 w-10 bg-white/10 hover:bg-white/20 text-white rounded-full border-none"
+                  />
+                </div>
+
+                {currentItem.data.relatedWord && (
+                  <div className="absolute top-8 right-8">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-white/10 text-white" onClick={(e) => e.stopPropagation()}>
+                          <Languages className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="rounded-2xl p-4 w-auto">
+                        <p className="text-xs text-muted-foreground uppercase font-bold mb-1">{currentItem.data.relatedWord.language}</p>
+                        <p className="font-bold">{currentItem.data.relatedWord.word}</p>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 )}
+
+                <div className="space-y-4">
+                  <h3 className="text-4xl font-bold font-headline leading-tight">{currentItem.back}</h3>
+                  {currentItem.data.phonetic && (
+                    <p className="text-xl font-mono opacity-60">{currentItem.data.phonetic}</p>
+                  )}
+                </div>
               </Card>
             </div>
           </motion.div>
@@ -454,36 +474,40 @@ export default function LearnPage() {
 
       {/* Inputs / Actions */}
       <div className="max-w-md mx-auto w-full">
-        {isTypedMode && answerStatus === 'unanswered' ? (
-          <div className="flex gap-3">
-            <Input
-              ref={inputRef}
-              autoFocus
-              placeholder="Antwort tippen..."
-              className="h-14 rounded-2xl text-lg px-6 border-none bg-secondary/30 focus-visible:ring-primary"
-              value={userInput}
-              onChange={e => setUserInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleCheckAnswer()}
-            />
-            <Button size="icon" className="h-14 w-14 rounded-2xl shrink-0" onClick={handleCheckAnswer}>
-              <ArrowRight className="h-6 w-6" />
-            </Button>
-          </div>
+        {!isFlipped ? (
+          <Button
+            className="w-full h-20 rounded-[2rem] bg-black text-white hover:bg-black/90 text-xl font-black uppercase tracking-widest shadow-2xl"
+            onClick={() => setIsFlipped(true)}
+          >
+            Umdrehen
+          </Button>
         ) : (
-          <div className="flex justify-center gap-6">
-            <Button
-              variant="outline"
-              className="h-20 flex-1 rounded-[2rem] border-4 border-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all active:scale-95 text-lg font-bold"
-              onClick={() => handleAnswer(false)}
-            >
-              <X className="mr-2 h-6 w-6" /> Falsch
-            </Button>
-            <Button
-              className="h-20 flex-1 rounded-[2rem] bg-emerald-500 hover:bg-emerald-600 shadow-xl shadow-emerald-500/20 active:scale-95 text-lg font-bold"
-              onClick={() => handleAnswer(true)}
-            >
-              <Check className="mr-2 h-6 w-6" /> Richtig
-            </Button>
+          <div className="space-y-4">
+            <div className="flex justify-center gap-6">
+              <Button
+                variant="outline"
+                className="h-20 flex-1 rounded-[2rem] border-4 border-black text-black hover:bg-black hover:text-white transition-all active:scale-95 text-lg font-bold"
+                onClick={() => handleAnswer(false)}
+              >
+                <X className="mr-2 h-6 w-6" /> Wusste ich nicht
+              </Button>
+              <Button
+                className="h-20 flex-1 rounded-[2rem] bg-black text-white hover:bg-black/80 shadow-2xl active:scale-95 text-lg font-bold"
+                onClick={() => handleAnswer(true)}
+              >
+                <Check className="mr-2 h-6 w-6" /> Wusste ich
+              </Button>
+            </div>
+
+            {history.length > 0 && (
+              <Button
+                variant="ghost"
+                className="w-full h-12 rounded-2xl text-muted-foreground hover:text-black font-bold"
+                onClick={handleGoBack}
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" /> Zurück zur vorherigen Karte
+              </Button>
+            )}
           </div>
         )}
       </div>

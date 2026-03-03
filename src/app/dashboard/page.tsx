@@ -231,16 +231,6 @@ export default function DashboardPage() {
                   onAction={forceRefetch}
                 />
               ))}
-
-              <button
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="flex flex-col items-center justify-center p-8 rounded-[2.5rem] border-2 border-dashed border-muted hover:border-primary hover:bg-primary/5 group transition-all duration-300 min-h-[180px]"
-              >
-                <div className="bg-muted group-hover:bg-primary/10 rounded-2xl p-4 mb-4 transition-colors">
-                  <Plus className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
-                <span className="font-semibold text-muted-foreground group-hover:text-primary transition-colors">Neues Fach</span>
-              </button>
             </>
           )}
         </div>
