@@ -120,10 +120,10 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
 
   return (
     <>
-      <Card className="group relative hover:shadow-xl transition-all duration-300 flex flex-col justify-center items-center text-center p-8 min-h-[220px] rounded-[2.5rem] border-none bg-card shadow-sm hover:-translate-y-1">
+      <Card className="group relative hover:shadow-xl transition-all duration-300 flex flex-col justify-center items-center text-center p-8 min-h-[220px] rounded-2xl border-none bg-card shadow-sm hover:-translate-y-1">
         <CardHeader className="p-0 w-full">
           <div className="flex flex-col items-center gap-4">
-            <div className="bg-secondary/50 rounded-[2rem] p-6 group-hover:bg-primary/10 transition-colors">
+            <div className="bg-secondary/50 rounded-xl p-6 group-hover:bg-primary/10 transition-colors">
               <span className="text-5xl">{subject.emoji}</span>
             </div>
             <div className="space-y-1">
@@ -156,7 +156,7 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent className="rounded-[2.5rem]" aria-describedby="delete-subject-description">
+              <AlertDialogContent className="rounded-2xl" aria-describedby="delete-subject-description">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-2xl">Bist du sicher?</AlertDialogTitle>
                   <AlertDialogDescription id="delete-subject-description">

@@ -83,7 +83,7 @@ function DashboardLayoutContent({
 
       {/* Header (Hidden in Immersive Mode) */}
       {!isImmersiveMode && (
-        <header className="sticky top-4 z-40 w-[calc(100%-2rem)] mx-auto bg-background/80 backdrop-blur-md border rounded-[2rem] shadow-sm">
+        <header className="sticky top-4 z-40 w-[calc(100%-2rem)] mx-auto bg-background/80 backdrop-blur-md border rounded-2xl shadow-sm">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-4 w-1/3">
               {mounted && !areSettingsLoading && (
@@ -106,7 +106,7 @@ function DashboardLayoutContent({
 
       <div className="flex max-w-7xl mx-auto">
         {/* Desktop Sidebar */}
-        <aside className="hidden md:flex flex-col w-64 sticky top-16 h-[calc(100vh-4rem)] border-r p-6 overflow-y-auto">
+        <aside className={cn("hidden flex-col w-64 sticky top-4 h-[calc(100vh-2rem)] border rounded-2xl p-6 overflow-y-auto", isImmersiveMode ? "md:hidden" : "md:flex")}>
           <nav className="space-y-6">
             <div>
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-4">Navigation</h3>
@@ -161,7 +161,7 @@ function DashboardLayoutContent({
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8 min-h-[calc(100vh-4rem)]">
+        <main className="flex-1 p-4 md:p-8 min-h-[calc(100vh-4rem)] pb-24 md:pb-8">
           {children}
         </main>
       </div>

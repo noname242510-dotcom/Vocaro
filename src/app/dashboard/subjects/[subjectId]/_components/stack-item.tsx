@@ -132,7 +132,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
 
   return (
     <>
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border-none rounded-[2rem] bg-secondary/30 backdrop-blur-sm overflow-hidden transition-all duration-300">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border-none rounded-2xl bg-secondary/30 backdrop-blur-sm overflow-hidden transition-all duration-300">
         <div className="w-full p-5 flex items-center justify-between group">
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <div onClick={(e) => e.stopPropagation()}>

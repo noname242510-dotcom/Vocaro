@@ -108,7 +108,7 @@ export default function SubjectDetailPage() {
 
   // Vocab state
   const [allVocabulary, setAllVocabulary] = useState<Record<string, VocabularyItem[]>>({});
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [newStackName, setNewStackName] = useState('');
   const [activeStackId, setActiveStackId] = useState<string | null>(null);
   const [manualTerm, setManualTerm] = useState('');
@@ -149,7 +149,7 @@ export default function SubjectDetailPage() {
     return doc(firestore, 'users', user.uid, 'subjects', subjectId);
   }, [firestore, user, subjectId]);
 
-  const { data: subject, isLoading: isSubjectLoading, forceUpdate: forceSubjectUpdate } = useDoc<Subject>(subjectDocRef);
+  const { data: subject, isLoading: isSubjectLoading } = useDoc<Subject>(subjectDocRef);
 
   const stacksCollectionRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -248,7 +248,6 @@ export default function SubjectDetailPage() {
         emoji: newEmoji,
       });
       setIsRenameDialogOpen(false);
-      forceSubjectUpdate();
       toast({ title: 'Erfolg', description: 'Fach umbenannt.' });
     }
   };
@@ -284,21 +283,22 @@ export default function SubjectDetailPage() {
 
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setPreviewImage(null);
+    const files = Array.from(event.target.files || []).slice(0, 4);
+    if (files.length === 0) {
+      setPreviewImages([]);
+      return;
     }
+    const readers = files.map(file => new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    }));
+    Promise.all(readers).then(results => setPreviewImages(results));
   };
 
   const handleExtractAndSaveVocabulary = async () => {
-    if (!previewImage) {
-      toast({ variant: "destructive", title: "Kein Bild ausgewählt", description: "Bitte wähle zuerst ein Bild aus." });
+    if (previewImages.length === 0) {
+      toast({ variant: "destructive", title: "Kein Bild ausgewählt", description: "Bitte wähle 1–4 Bilder aus." });
       return;
     }
     if (!newStackName) {
@@ -309,13 +309,28 @@ export default function SubjectDetailPage() {
     setIsRunning(true);
 
     try {
-      const ocrResult = await suggestVocabularyFromImageContext({ imageDataUri: previewImage });
-      const extractedText = ocrResult.suggestedVocabulary.join('\n');
-      if (!extractedText.trim()) throw new Error("Im Bild wurde kein Text gefunden.");
+      // Process each image and collect all vocab
+      const allGeneratedVocab: { term: string; definition: string; phonetic?: string; relatedWord?: any; notes?: string }[] = [];
 
-      const generationResult = await generateVocabularyFromExtractedText({ extractedText });
-      const generatedVocab = generationResult.vocabulary;
-      if (generatedVocab.length === 0) throw new Error("Aus dem Text konnten keine Vokabeln generiert werden.");
+      for (const imageDataUri of previewImages) {
+        const ocrResult = await suggestVocabularyFromImageContext({ imageDataUri });
+        const extractedText = ocrResult.suggestedVocabulary.join('\n');
+        if (!extractedText.trim()) continue;
+
+        const generationResult = await generateVocabularyFromExtractedText({ extractedText });
+        allGeneratedVocab.push(...generationResult.vocabulary);
+      }
+
+      if (allGeneratedVocab.length === 0) throw new Error("Aus den Bildern konnten keine Vokabeln generiert werden.");
+
+      // Deduplicate by term (case-insensitive)
+      const seen = new Set<string>();
+      const deduplicatedVocab = allGeneratedVocab.filter(v => {
+        const key = v.term.toLowerCase().trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
 
       if (!user || !firestore || !stacksCollectionRef) throw new Error("Benutzer nicht authentifiziert.");
 
@@ -338,7 +353,7 @@ export default function SubjectDetailPage() {
       const vocabCollectionRef = collection(stackRef, 'vocabulary');
 
       const batch = writeBatch(firestore);
-      generatedVocab.forEach(vocabItem => {
+      deduplicatedVocab.forEach(vocabItem => {
         const newVocabDoc = doc(vocabCollectionRef);
         batch.set(newVocabDoc, {
           term: vocabItem.term,
@@ -352,7 +367,7 @@ export default function SubjectDetailPage() {
       });
       await batch.commit();
 
-      toast({ title: 'Erfolg!', description: `${generatedVocab.length} Vokabeln im Stapel "${newStackName}" gespeichert.` });
+      toast({ title: 'Erfolg!', description: `${deduplicatedVocab.length} Vokabeln aus ${previewImages.length} Bild(ern) im Stapel "${newStackName}" gespeichert.` });
       resetAndCloseAddVocabDialog();
       forceUpdate();
       fetchAllVocab();
@@ -531,7 +546,7 @@ export default function SubjectDetailPage() {
     setManualDefinition('');
     setManualPhonetic('');
     setManualNotes('');
-    setPreviewImage(null);
+    setPreviewImages([]);
     setActiveStackId(null);
     setIsAddVocabDialogOpen(false);
   };
@@ -911,12 +926,15 @@ export default function SubjectDetailPage() {
                           <Input id="stack-name-ocr" placeholder="z.B. Lektion 7: Reisen" value={newStackName} onChange={e => setNewStackName(e.target.value)} disabled={!!activeStackId} />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="picture">Bild</Label>
-                          <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" />
+                          <Label htmlFor="picture">Bilder (1–4)</Label>
+                          <Input id="picture" type="file" onChange={handleFileChange} accept="image/*" multiple />
+                          {previewImages.length > 0 && (
+                            <p className="text-xs text-muted-foreground">{previewImages.length} Bild(er) ausgewählt</p>
+                          )}
                         </div>
                       </div>
                       <DialogFooter className="pt-4">
-                        <Button onClick={handleExtractAndSaveVocabulary} disabled={!previewImage || !newStackName || isRunning} className="w-full">
+                        <Button onClick={handleExtractAndSaveVocabulary} disabled={previewImages.length === 0 || !newStackName || isRunning} className="w-full">
                           {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
                           Extrahieren und Speichern
                         </Button>

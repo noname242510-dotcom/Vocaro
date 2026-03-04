@@ -23,7 +23,7 @@
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
-    --radius: 1.5rem;
+    --radius: 0.75rem;
     --glass-bg: rgba(255, 255, 255, 0.5);
     --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     --glass-border: rgba(255, 255, 255, 0.3);

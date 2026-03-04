@@ -7,38 +7,25 @@ import { Card } from '@/components/ui/card';
 import {
   X,
   Check,
-  RotateCcw,
   Lightbulb,
   ChevronLeft,
-  Smile,
-  Frown,
-  Meh,
-  Languages,
   Zap,
-  Trophy,
   Pencil,
-  Sparkles,
-  Info,
   ArrowRight
 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase/provider';
 import {
   collection,
   getDocs,
-  query,
-  where,
-  documentId,
   doc,
   updateDoc,
   addDoc,
   serverTimestamp,
-  writeBatch,
   getDoc
 } from 'firebase/firestore';
-import type { VocabularyItem, Subject, Verb } from '@/lib/types';
+import type { VocabularyItem, Subject } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,9 +40,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { VocabDialog } from '../subjects/[subjectId]/_components/vocab-dialog';
 import { SpeakerButton } from '@/components/speaker-button';
-import { LoadingSpinner } from '@/components/loading-spinner';
 import { useSettings } from '@/contexts/settings-context';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -64,13 +49,13 @@ import confetti from 'canvas-confetti';
 type LearnItem = {
   id: string;
   type: 'vocab' | 'verb';
-  front: string;
-  back: string;
+  front: string; // The foreign/target word
+  back: string;  // The translation/definition
   data: any;
   isMastered?: boolean;
   stackId?: string;
+  subjectLanguage?: string;
 };
-
 
 // --- Utility: Shuffle ---
 function shuffleArray<T>(array: T[]): T[] {
@@ -82,52 +67,34 @@ function shuffleArray<T>(array: T[]): T[] {
   return newArray;
 }
 
-// --- Utility: LCS (Longest Common Subsequence) for Feedback ---
-type AnswerStatus = 'unanswered' | 'correct' | 'incorrect' | 'accepted' | 'omitted-correct';
+// --- Utility: Answer Feedback (Typing Mode) ---
+type AnswerStatus = 'unanswered' | 'correct' | 'incorrect' | 'accepted';
 
 const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: string, correctAnswer: string, status: AnswerStatus }) => {
   if (status === 'incorrect') {
-    const areWordsEqual = (userWordLower: string, correctWordLower: string) => {
-      const normalizedCorrect = correctWordLower.replace(/^\((.*)\)$/, '$1').toLowerCase();
-      return userWordLower.toLowerCase() === normalizedCorrect;
+    const areWordsEqual = (a: string, b: string) => {
+      const norm = (s: string) => s.replace(/^\(.*\)$/, '$1').toLowerCase();
+      return norm(a) === norm(b);
     };
 
     const lcs = (a: string[], b: string[]) => {
-      const m = a.length;
-      const n = b.length;
-      const dp = Array(m + 1).fill(0).map(() => Array(n + 1).fill(0));
+      const dp = Array(a.length + 1).fill(0).map(() => Array(b.length + 1).fill(0));
+      for (let i = 1; i <= a.length; i++)
+        for (let j = 1; j <= b.length; j++)
+          dp[i][j] = areWordsEqual(a[i - 1], b[j - 1]) ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1]);
 
-      for (let i = 1; i <= m; i++) {
-        for (let j = 1; j <= n; j++) {
-          if (areWordsEqual(a[i - 1], b[j - 1])) {
-            dp[i][j] = dp[i - 1][j - 1] + 1;
-          } else {
-            dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
-          }
-        }
-      }
-
-      let i = m;
-      let j = n;
+      let i = a.length, j = b.length;
       const diff: { type: 'correct' | 'extra' | 'missing', value: string }[] = [];
-
       while (i > 0 || j > 0) {
-        if (i > 0 && j > 0 && areWordsEqual(a[i - 1], b[j - 1])) {
-          diff.unshift({ type: 'correct', value: a[i - 1] });
-          i--; j--;
-        } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-          diff.unshift({ type: 'missing', value: b[j - 1] });
-          j--;
-        } else {
-          diff.unshift({ type: 'extra', value: a[i - 1] });
-          i--;
-        }
+        if (i > 0 && j > 0 && areWordsEqual(a[i - 1], b[j - 1])) { diff.unshift({ type: 'correct', value: a[i - 1] }); i--; j--; }
+        else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) { diff.unshift({ type: 'missing', value: b[j - 1] }); j--; }
+        else { diff.unshift({ type: 'extra', value: a[i - 1] }); i--; }
       }
       return diff;
     };
 
-    const userWords = userInput.trim().split(/\s+/).filter(w => w);
-    const correctWords = correctAnswer.trim().split(/\s+/).filter(w => w);
+    const userWords = userInput.trim().split(/\s+/).filter(Boolean);
+    const correctWords = correctAnswer.trim().split(/\s+/).filter(Boolean);
     const diff = lcs(userWords, correctWords);
 
     return (
@@ -135,9 +102,8 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
         <div className="flex flex-wrap justify-center gap-1 font-mono text-lg">
           {diff.map((part, i) => (
             <span key={i} className={cn(
-              part.type === 'extra' && "text-destructive line-through",
-              part.type === 'missing' && "border-b-2 border-destructive px-2 opacity-50",
-              part.type === 'correct' && "text-foreground"
+              part.type === 'extra' && "line-through opacity-50",
+              part.type === 'missing' && "border-b-2 border-foreground px-2 opacity-60",
             )}>
               {part.value}
             </span>
@@ -147,9 +113,48 @@ const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: strin
       </div>
     );
   }
-
   return <p className="text-3xl font-bold font-headline">{correctAnswer}</p>;
 };
+
+// --- Session Finished Screen ---
+function FinishedScreen({ stats, onRestart }: { stats: { correct: number; incorrect: number; maxStreak: number }, onRestart: () => void }) {
+  const total = stats.correct + stats.incorrect;
+  const pct = total > 0 ? Math.round((stats.correct / total) * 100) : 0;
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-8 px-4">
+      <div className="space-y-2">
+        <p className="text-7xl font-black">{pct}%</p>
+        <p className="text-xl text-muted-foreground font-medium">korrekte Antworten</p>
+      </div>
+      <div className="flex gap-6 text-center">
+        <div className="space-y-1">
+          <p className="text-3xl font-bold">{stats.correct}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Gewusst</p>
+        </div>
+        <div className="w-px bg-border" />
+        <div className="space-y-1">
+          <p className="text-3xl font-bold">{stats.incorrect}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Nicht gewusst</p>
+        </div>
+        <div className="w-px bg-border" />
+        <div className="space-y-1">
+          <p className="text-3xl font-bold">{stats.maxStreak}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Maximalstreak</p>
+        </div>
+      </div>
+      <div className="flex flex-col gap-3 w-full max-w-xs">
+        <Button className="h-14 text-lg font-bold" onClick={onRestart}>
+          Nochmal lernen
+        </Button>
+        <Button variant="outline" className="h-14 text-lg font-bold" onClick={() => window.location.href = '/dashboard'}>
+          Zurück zum Dashboard
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 
 // --- Main Component ---
 export default function LearnPage() {
@@ -169,9 +174,12 @@ export default function LearnPage() {
   const [isTypedMode, setIsTypedMode] = useState(false);
   const [userInput, setUserInput] = useState('');
   const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
-  const [direction, setDirection] = useState(0);
   const [history, setHistory] = useState<number[]>([]);
+  const [subjectId, setSubjectId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [subjectLanguage, setSubjectLanguage] = useState('en-US');
 
+  // Guard: warn on page leave during active session
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!isFinished && items.length > 0) {
@@ -179,14 +187,9 @@ export default function LearnPage() {
         e.returnValue = '';
       }
     };
-
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isFinished, items.length]);
-
-  const [subject, setSubject] = useState<Subject | null>(null);
-  const [subjectId, setSubjectId] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null);
 
   // Initialization
   useEffect(() => {
@@ -204,13 +207,21 @@ export default function LearnPage() {
       setSubjectId(storedSubjectId);
 
       try {
+        // Get subject language
         const subSnap = await getDoc(doc(firestore, 'users', user.uid, 'subjects', storedSubjectId));
-        if (subSnap.exists()) setSubject({ ...subSnap.data(), id: subSnap.id } as Subject);
+        if (subSnap.exists()) {
+          const subName = (subSnap.data().name || '').toLowerCase();
+          if (subName.includes('französisch')) setSubjectLanguage('fr-FR');
+          else if (subName.includes('spanisch')) setSubjectLanguage('es-ES');
+          else if (subName.includes('deutsch')) setSubjectLanguage('de-DE');
+          else if (subName.includes('italien')) setSubjectLanguage('it-IT');
+          else if (subName.includes('portugies')) setSubjectLanguage('pt-PT');
+          else setSubjectLanguage('en-US');
+        }
 
         const vocabIds: string[] = JSON.parse(vocabIdsJson);
         const allItems: LearnItem[] = [];
 
-        // Fetch stacks to get vocabulary
         const stacksRef = collection(firestore, 'users', user.uid, 'subjects', storedSubjectId, 'stacks');
         const stacksSnap = await getDocs(stacksRef);
 
@@ -220,14 +231,17 @@ export default function LearnPage() {
           vocabSnap.docs.forEach(d => {
             if (vocabIds.includes(d.id)) {
               const data = d.data() as VocabularyItem;
+              // Front = foreign word (or definition if direction reversed), Back = translation
+              const front = settings?.vocabQueryDirection ? data.definition : data.term;
+              const back = settings?.vocabQueryDirection ? data.term : data.definition;
               allItems.push({
                 id: d.id,
                 type: 'vocab',
-                front: settings?.vocabQueryDirection ? data.definition : data.term,
-                back: settings?.vocabQueryDirection ? data.term : data.definition,
+                front,
+                back,
                 data,
                 isMastered: data.isMastered,
-                stackId: stackDoc.id
+                stackId: stackDoc.id,
               });
             }
           });
@@ -235,16 +249,16 @@ export default function LearnPage() {
 
         setItems(shuffleArray(allItems));
 
-        // Session creation
+        // Create learning session record
         const sessRef = await addDoc(collection(firestore, 'users', user.uid, 'learningSessions'), {
           userId: user.uid,
           startTime: serverTimestamp(),
-          endTime: null
+          endTime: null,
         });
         setSessionId(sessRef.id);
 
       } catch (e) {
-        console.error("Init error:", e);
+        console.error("Learn page init error:", e);
       } finally {
         setIsLoading(false);
       }
@@ -252,60 +266,68 @@ export default function LearnPage() {
     init();
   }, [firestore, user, settings]);
 
-  // Handlers
+  // Focus input in typing mode
+  useEffect(() => {
+    if (isTypedMode && !isFlipped && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isTypedMode, currentIndex]);
+
+  // --- Handlers ---
   const handleAnswer = async (correct: boolean) => {
     const currentItem = items[currentIndex];
+    triggerHapticFeedback(correct ? 'light' : 'heavy');
 
-    // Update stats
     if (correct) {
       setSessionStats(prev => {
         const newStreak = prev.streak + 1;
+        // B&W confetti on streak milestones
         if (newStreak > 0 && newStreak % 5 === 0) {
           confetti({
             particleCount: 80,
             spread: 60,
             origin: { y: 0.7 },
-            colors: ['#10b981', '#3b82f6']
+            colors: ['#000000', '#ffffff', '#888888', '#333333', '#cccccc'],
           });
         }
         return {
           ...prev,
           correct: prev.correct + 1,
           streak: newStreak,
-          maxStreak: Math.max(prev.maxStreak, newStreak)
+          maxStreak: Math.max(prev.maxStreak, newStreak),
         };
       });
 
-      // Update Mastery
+      // Mark as mastered in Firestore
       if (firestore && user && subjectId && currentItem.stackId && !currentItem.isMastered) {
         const docRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', currentItem.stackId, 'vocabulary', currentItem.id);
         updateDoc(docRef, { isMastered: true }).catch(console.error);
       }
-      triggerHapticFeedback('light');
     } else {
       setSessionStats(prev => ({ ...prev, incorrect: prev.incorrect + 1, streak: 0 }));
-      triggerHapticFeedback('heavy');
     }
 
     if (currentIndex < items.length - 1) {
-      setDirection(1);
       setHistory(prev => [...prev, currentIndex]);
       setTimeout(() => {
         setCurrentIndex(prev => prev + 1);
         setIsFlipped(false);
         setAnswerStatus('unanswered');
         setUserInput('');
-        setDirection(0);
       }, 50);
     } else {
       setIsFinished(true);
       if (sessionId && firestore && user) {
         updateDoc(doc(firestore, 'users', user.uid, 'learningSessions', sessionId), {
           endTime: serverTimestamp(),
-          stats: sessionStats
+          stats: sessionStats,
         });
       }
-      confetti({ particleCount: 150, spread: 100 });
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        colors: ['#000000', '#ffffff', '#888888', '#555555'],
+      });
     }
   };
 
@@ -313,43 +335,103 @@ export default function LearnPage() {
     if (history.length > 0) {
       const prevIndex = history[history.length - 1];
       setHistory(prev => prev.slice(0, -1));
-      setDirection(-1);
       setTimeout(() => {
         setCurrentIndex(prevIndex);
         setIsFlipped(false);
         setAnswerStatus('unanswered');
         setUserInput('');
-        setDirection(0);
       }, 50);
     }
   };
 
-  const currentItem = items[currentIndex];
-  const progress = (currentIndex / items.length) * 100;
+  const handleTypingSubmit = () => {
+    if (answerStatus !== 'unanswered') {
+      handleAnswer(answerStatus === 'correct' || answerStatus === 'accepted');
+      return;
+    }
 
-  if (isLoading || !currentItem) {
+    const currentItem = items[currentIndex];
+    const normalized = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+    const isCorrect = normalized(userInput) === normalized(currentItem.back);
+    const isAccepted = !isCorrect && normalized(userInput).length > 0 &&
+      currentItem.back.toLowerCase().split(/[,;\/]/).map(s => s.trim()).some(variant =>
+        normalized(userInput) === normalized(variant)
+      );
+
+    setAnswerStatus(isCorrect ? 'correct' : isAccepted ? 'accepted' : 'incorrect');
+    setIsFlipped(true);
+  };
+
+  const handleRestart = () => {
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    setIsFinished(false);
+    setHistory([]);
+    setSessionStats({ correct: 0, incorrect: 0, streak: 0, maxStreak: 0 });
+    setAnswerStatus('unanswered');
+    setUserInput('');
+    setItems(prev => shuffleArray([...prev]));
+  };
+
+  const currentItem = items[currentIndex];
+  const progress = items.length > 0 ? (currentIndex / items.length) * 100 : 0;
+
+  // --- Loading / Empty State ---
+  if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <LoadingSpinner />
-        <p className="text-muted-foreground animate-pulse font-medium">Lade deine Vokabeln...</p>
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-6">
+          <div className="flex gap-2">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className="w-3 h-3 rounded-full bg-foreground animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </div>
+          <p className="text-sm font-semibold tracking-widest uppercase text-muted-foreground">
+            Lade Vokabeln…
+          </p>
+        </div>
       </div>
     );
   }
 
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 text-center">
+        <p className="text-2xl font-bold">Keine Vokabeln gefunden</p>
+        <p className="text-muted-foreground">Bitte wähle zunächst ein Fach mit Vokabeln zum Lernen.</p>
+        <Button onClick={() => router.push('/dashboard')}>Zum Dashboard</Button>
+      </div>
+    );
+  }
+
+  if (isFinished) {
+    return <FinishedScreen stats={sessionStats} onRestart={handleRestart} />;
+  }
+
+  // The foreign word is always `currentItem.front`
+  // The language hint for TTS: if vocabQueryDirection=true (definition first), front=definition (German) else front=foreign
+  const ttsLanguage = settings?.vocabQueryDirection ? 'de-DE' : subjectLanguage;
+
   return (
-    <div className="max-w-3xl mx-auto space-y-8 py-6 md:py-10 px-4">
+    <div className="max-w-2xl mx-auto space-y-6 py-6 md:py-10 px-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-secondary/20">
+            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-xl bg-secondary/50">
               <ChevronLeft className="h-6 w-6" />
             </Button>
           </AlertDialogTrigger>
-          <AlertDialogContent className="rounded-[2.5rem] border-none" aria-describedby="quit-dialog-description">
+          <AlertDialogContent className="rounded-2xl border-none" aria-describedby="quit-dialog-description">
             <AlertDialogHeader>
               <AlertDialogTitle>Lernen abbrechen?</AlertDialogTitle>
-              <AlertDialogDescription id="quit-dialog-description">Dein aktueller Fortschritt in dieser Sitzung geht verloren.</AlertDialogDescription>
+              <AlertDialogDescription id="quit-dialog-description">
+                Dein aktueller Fortschritt in dieser Sitzung geht verloren.
+              </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel className="rounded-xl">Bleiben</AlertDialogCancel>
@@ -358,16 +440,19 @@ export default function LearnPage() {
           </AlertDialogContent>
         </AlertDialog>
 
-        <div className="flex gap-4">
-          <div className="flex items-center gap-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 px-4 py-2 rounded-2xl font-bold">
+        <div className="flex gap-3">
+          {/* Streak counter */}
+          <div className="flex items-center gap-2 bg-secondary px-4 py-2 rounded-xl font-bold text-sm">
             <Zap className="h-4 w-4 fill-current" />
             <span>{sessionStats.streak}</span>
           </div>
+          {/* Typing mode toggle */}
           <Button
             variant={isTypedMode ? "default" : "ghost"}
             size="icon"
-            className="h-11 w-11 rounded-2xl"
-            onClick={() => setIsTypedMode(!isTypedMode)}
+            className="h-11 w-11 rounded-xl"
+            title="Tipp-Modus"
+            onClick={() => { setIsTypedMode(!isTypedMode); setIsFlipped(false); setAnswerStatus('unanswered'); setUserInput(''); }}
           >
             <Pencil className="h-5 w-5" />
           </Button>
@@ -376,122 +461,89 @@ export default function LearnPage() {
 
       {/* Progress */}
       <div className="space-y-2">
-        <Progress value={progress} className="h-3 rounded-full bg-secondary overflow-hidden" />
+        <Progress value={progress} className="h-2 rounded-full bg-secondary" />
         <p className="text-center text-xs font-bold text-muted-foreground uppercase tracking-wider">
           {currentIndex + 1} / {items.length}
         </p>
       </div>
 
-      {/* Card Stage */}
-      <div className="perspective-2000 min-h-[450px] relative w-full max-w-xl mx-auto">
+      {/* Card */}
+      <div className="relative w-full" style={{ perspective: '1200px' }}>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={currentIndex}
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: -20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="w-full h-full"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ type: "spring", stiffness: 350, damping: 28 }}
+            className="w-full"
           >
-            <div className="relative w-full h-[450px] preserve-3d">
+            <div className="relative w-full" style={{ height: '400px', transformStyle: 'preserve-3d' }}>
               <motion.div
-                className="w-full h-full relative preserve-3d"
+                className="w-full h-full relative"
+                style={{ transformStyle: 'preserve-3d' }}
                 initial={false}
                 animate={{ rotateY: isFlipped ? 180 : 0 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 260,
-                  damping: 20,
-                  mass: 1
-                }}
+                transition={{ type: "spring", stiffness: 280, damping: 22 }}
               >
-                {/* Front Side */}
+                {/* ===== FRONT SIDE ===== */}
                 <Card
-                  className="absolute inset-0 backface-hidden rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.15)] border-none flex flex-col items-center justify-center p-8 bg-white overflow-hidden transition-shadow hover:shadow-[0_48px_80px_-20px_rgba(0,0,0,0.2)]"
-                  onClick={() => !isTypedMode && setIsFlipped(true)}
+                  className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-white dark:bg-zinc-900 border border-border rounded-2xl shadow-xl overflow-hidden"
+                  style={{ backfaceVisibility: 'hidden' }}
                 >
-                  <div className="absolute top-10 left-10 flex items-center gap-3">
-                    <span className="text-[0.6rem] font-black uppercase tracking-[0.25em] text-black/40 bg-black/5 px-4 py-2 rounded-full">
-                      {currentItem.type === 'vocab' ? 'Vocabulary' : 'Verb'}
-                    </span>
-                  </div>
-
-                  <div className="absolute top-10 right-10 flex gap-3">
-                    {currentItem.data.phonetic && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/5 hover:bg-black/10 text-black/60" onClick={(e) => e.stopPropagation()}>
-                            <Info className="h-5 w-5" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="rounded-[2rem] p-6 shadow-2xl border-none bg-white/90 backdrop-blur-xl">
-                          <p className="font-mono text-base font-medium">{currentItem.data.phonetic}</p>
-                        </PopoverContent>
-                      </Popover>
-                    )}
+                  {/* Top-right: TTS (foreign word) + Hint */}
+                  <div className="absolute top-5 right-5 flex gap-2">
+                    <SpeakerButton
+                      text={currentItem.front}
+                      languageHint={ttsLanguage}
+                      ttsEnabled={settings?.ttsEnabled ?? true}
+                      autoplayEnabled={settings?.ttsAutoplay ?? false}
+                      className="h-10 w-10 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground border-none"
+                    />
                     {currentItem.data.notes && (
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-black/5 hover:bg-black/10 text-black/60" onClick={(e) => e.stopPropagation()}>
-                            <Lightbulb className="h-5 w-5" />
+                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg bg-secondary hover:bg-secondary/80" onClick={(e) => e.stopPropagation()}>
+                            <Lightbulb className="h-4 w-4" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="rounded-[2rem] p-6 shadow-2xl border-none bg-white/90 backdrop-blur-xl max-w-xs">
-                          <p className="text-base leading-relaxed text-black/80">{currentItem.data.notes}</p>
+                        <PopoverContent className="rounded-xl p-4 shadow-xl max-w-xs">
+                          <p className="text-sm leading-relaxed">{currentItem.data.notes}</p>
                         </PopoverContent>
                       </Popover>
                     )}
                   </div>
 
-                  <motion.h3
-                    layoutId={`term-${currentIndex}`}
-                    className="text-5xl md:text-6xl font-black font-headline tracking-tight text-black text-center px-4"
-                  >
-                    {currentItem.front}
-                  </motion.h3>
-
-                  <div className="absolute bottom-12 flex flex-col items-center gap-2 opacity-20 group-hover:opacity-40 transition-opacity">
-                    <div className="w-12 h-1.5 bg-black rounded-full animate-bounce" />
-                    <span className="text-[0.6rem] font-black uppercase tracking-widest">Klicken zum Wenden</span>
+                  {/* Main word */}
+                  <div className="flex flex-col items-center gap-3 text-center px-4">
+                    <h3 className="text-4xl md:text-5xl font-black font-headline tracking-tight leading-tight text-foreground">
+                      {currentItem.front}
+                    </h3>
+                    {/* Phonetics - always visible */}
+                    {currentItem.data.phonetic && (
+                      <p className="text-base font-mono text-muted-foreground tracking-wide">
+                        {currentItem.data.phonetic}
+                      </p>
+                    )}
                   </div>
                 </Card>
 
-                {/* Back Side */}
+                {/* ===== BACK SIDE ===== */}
                 <Card
-                  className="absolute inset-0 backface-hidden rounded-[3.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] border-none flex flex-col items-center justify-center p-8 bg-black text-white text-center"
-                  style={{ transform: 'rotateY(180deg)' }}
+                  className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-foreground text-background rounded-2xl shadow-xl overflow-hidden"
+                  style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
                 >
-                  <div className="absolute top-10 left-10 flex items-center gap-4">
-                    <span className="text-[0.6rem] font-black uppercase tracking-[0.25em] bg-white/20 text-white px-4 py-2 rounded-full">
-                      Definition
-                    </span>
-                    <SpeakerButton
-                      text={currentItem.back}
-                      languageHint={settings?.vocabQueryDirection ? 'de-DE' : 'en-US'}
-                      ttsEnabled={settings?.ttsEnabled ?? true}
-                      autoplayEnabled={settings?.ttsAutoplay ?? false}
-                      className="h-12 w-12 bg-white/10 hover:bg-white/20 text-white rounded-full border-none scale-110"
-                    />
-                  </div>
-
-                  <div className="space-y-6">
-                    <motion.h3
-                      layoutId={`def-${currentIndex}`}
-                      className="text-4xl md:text-5xl font-black font-headline tracking-tight leading-tight px-4"
-                    >
+                  <div className="flex flex-col items-center gap-4 text-center px-4">
+                    <h3 className="text-4xl md:text-5xl font-black font-headline tracking-tight leading-tight">
                       {currentItem.back}
-                    </motion.h3>
-                    {currentItem.data.phonetic && (
-                      <p className="text-2xl font-mono tracking-wider opacity-40 italic">{currentItem.data.phonetic}</p>
+                    </h3>
+                    {currentItem.data.relatedWord && (
+                      <div className="mt-2 px-5 py-2.5 rounded-xl bg-white/10 text-sm">
+                        <span className="opacity-60 text-xs uppercase tracking-widest font-bold">{currentItem.data.relatedWord.language}: </span>
+                        <span className="font-semibold">{currentItem.data.relatedWord.word}</span>
+                      </div>
                     )}
                   </div>
-
-                  {currentItem.data.relatedWord && (
-                    <div className="absolute bottom-12 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/5">
-                      <p className="text-[0.5rem] font-black uppercase tracking-[0.3em] text-white/40 mb-1">Ähnliches Wort ({currentItem.data.relatedWord.language})</p>
-                      <p className="text-xl font-bold tracking-tight">{currentItem.data.relatedWord.word}</p>
-                    </div>
-                  )}
                 </Card>
               </motion.div>
             </div>
@@ -499,50 +551,103 @@ export default function LearnPage() {
         </AnimatePresence>
       </div>
 
-      {/* Inputs / Actions */}
-      <div className="max-w-md mx-auto w-full">
-        {!isFlipped ? (
-          <Button
-            className="w-full h-20 rounded-[2rem] bg-black text-white hover:bg-black/90 text-xl font-black uppercase tracking-widest shadow-2xl"
-            onClick={() => setIsFlipped(true)}
-          >
-            Umdrehen
-          </Button>
+      {/* ===== ACTION AREA ===== */}
+      <div className="max-w-md mx-auto w-full space-y-3">
+        {isTypedMode ? (
+          /* --- TYPING MODE --- */
+          <div className="space-y-3">
+            {answerStatus === 'unanswered' ? (
+              <div className="flex gap-2">
+                <Input
+                  ref={inputRef}
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleTypingSubmit()}
+                  placeholder="Übersetzung eingeben…"
+                  className="h-14 text-lg rounded-xl px-4 flex-1"
+                  autoComplete="off"
+                />
+                <Button
+                  className="h-14 px-5 rounded-xl"
+                  onClick={handleTypingSubmit}
+                >
+                  <ArrowRight className="h-5 w-5" />
+                </Button>
+              </div>
+            ) : (
+              /* Show feedback after submit */
+              <div className="space-y-3">
+                <div className={cn(
+                  "rounded-xl p-5 text-center",
+                  (answerStatus === 'correct' || answerStatus === 'accepted') ? "bg-secondary" : "bg-secondary"
+                )}>
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
+                    {answerStatus === 'correct' ? '✓ Richtig!' : answerStatus === 'accepted' ? '✓ Akzeptiert' : '✗ Falsch'}
+                  </p>
+                  <AnswerFeedback userInput={userInput} correctAnswer={currentItem.back} status={answerStatus} />
+                </div>
+                <Button
+                  className="w-full h-14 text-lg font-bold rounded-xl"
+                  onClick={() => handleAnswer(answerStatus === 'correct' || answerStatus === 'accepted')}
+                >
+                  Weiter
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
+            )}
+          </div>
         ) : (
-          <div className="space-y-4">
-            <div className="flex justify-center gap-6">
-              <Button
-                variant="outline"
-                className="h-20 flex-1 rounded-[2rem] border-4 border-black text-black hover:bg-black hover:text-white transition-all active:scale-95 text-lg font-bold"
-                onClick={() => handleAnswer(false)}
-              >
-                <X className="mr-2 h-6 w-6" /> Wusste ich nicht
-              </Button>
-              <Button
-                className="h-20 flex-1 rounded-[2rem] bg-black text-white hover:bg-black/80 shadow-2xl active:scale-95 text-lg font-bold"
-                onClick={() => handleAnswer(true)}
-              >
-                <Check className="mr-2 h-6 w-6" /> Wusste ich
-              </Button>
-            </div>
-
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                className="w-full h-12 rounded-2xl text-muted-foreground hover:text-black font-bold"
-                onClick={handleGoBack}
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" /> Zurück zur vorherigen Karte
-              </Button>
+          /* --- FLIP MODE --- */
+          <div className="space-y-3">
+            {!isFlipped ? (
+              /* Flip button */
+              <>
+                <Button
+                  className="w-full h-16 text-xl font-black rounded-xl bg-foreground text-background hover:bg-foreground/90"
+                  onClick={() => setIsFlipped(true)}
+                >
+                  Umdrehen
+                </Button>
+                {/* Back button below flip (from 2nd card onwards) */}
+                {(currentIndex > 0 || history.length > 0) && (
+                  <Button
+                    variant="ghost"
+                    className="w-full h-11 rounded-xl text-muted-foreground hover:text-foreground font-semibold"
+                    onClick={handleGoBack}
+                  >
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Vorherige Karte
+                  </Button>
+                )}
+              </>
+            ) : (
+              /* Known / Unknown buttons */
+              <>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="h-16 flex-1 rounded-xl border-2 border-border text-foreground hover:bg-secondary active:scale-95 text-base font-bold transition-all"
+                    onClick={() => handleAnswer(false)}
+                  >
+                    <X className="mr-2 h-5 w-5" />
+                    Wusste ich nicht
+                  </Button>
+                  <Button
+                    className="h-16 flex-1 rounded-xl bg-foreground text-background hover:bg-foreground/80 active:scale-95 text-base font-bold transition-all"
+                    onClick={() => handleAnswer(true)}
+                  >
+                    <Check className="mr-2 h-5 w-5" />
+                    Wusste ich
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         )}
       </div>
 
       <style jsx global>{`
-        .perspective-1000 { perspective: 1000px; }
         .preserve-3d { transform-style: preserve-3d; }
-        .backface-hidden { backface-visibility: hidden; }
       `}</style>
     </div>
   );

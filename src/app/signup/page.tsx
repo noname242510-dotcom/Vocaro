@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect }from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { getFirestore, doc, setDoc, serverTimestamp } from 'firebase/firestore'; // <-- Add firestore imports
@@ -19,7 +19,7 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  
+
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -37,48 +37,66 @@ export default function SignUpPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const email = `${username.trim()}@vocaro.app`;
+
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) return;
+
+    const email = `${trimmedUsername}@vocaro.app`;
 
     try {
+      // Pre-check: does this username already exist in Firestore?
+      const { getFirestore, collection, query, where, getDocs } = await import('firebase/firestore');
+      const firestoreInstance = getFirestore();
+      const profilesRef = collection(firestoreInstance, 'publicProfiles');
+      const q = query(profilesRef, where('displayName_lowercase', '==', trimmedUsername.toLowerCase()));
+      const existing = await getDocs(q);
+
+      if (!existing.empty) {
+        toast({
+          variant: 'destructive',
+          title: 'Benutzername vergeben',
+          description: 'Dieser Benutzername ist bereits vergeben. Bitte wähle einen anderen.',
+        });
+        return;
+      }
+
       const auth = getAuth();
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
+
       if (userCredential.user) {
         const user = userCredential.user;
         await updateProfile(user, {
-          displayName: username.trim(),
+          displayName: trimmedUsername,
         });
-        
-        const firestore = getFirestore();
-        const publicProfileRef = doc(firestore, 'publicProfiles', user.uid);
-        
+
+        const publicProfileRef = doc(firestoreInstance, 'publicProfiles', user.uid);
+
         await setDoc(publicProfileRef, {
-            displayName: username.trim(),
-            displayName_lowercase: username.trim().toLowerCase(),
-            photoURL: user.photoURL || null,
-            createdAt: serverTimestamp(),
+          displayName: trimmedUsername,
+          displayName_lowercase: trimmedUsername.toLowerCase(),
+          photoURL: user.photoURL || null,
+          createdAt: serverTimestamp(),
         });
       }
-      
+
       router.push('/dashboard');
 
     } catch (error: any) {
-        let description = 'Ein unbekannter Fehler ist aufgetreten.';
-        switch (error.code) {
-            case 'auth/email-already-in-use':
-                description = 'Dieser Benutzername ist bereits vergeben.';
-                break;
-            case 'auth/invalid-email':
-                description = 'Der Benutzername ist ungültig. Bitte vermeide Sonderzeichen.';
-                break;
-            case 'auth/weak-password':
-                description = 'Das Passwort ist zu schwach. Es muss mindestens 6 Zeichen lang sein.';
-                break;
-            default:
-                description = 'Bitte versuche es später erneut.';
-                break;
-        }
+      let description = 'Ein unbekannter Fehler ist aufgetreten.';
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          description = 'Dieser Benutzername ist bereits vergeben.';
+          break;
+        case 'auth/invalid-email':
+          description = 'Der Benutzername ist ungültig. Bitte vermeide Sonderzeichen.';
+          break;
+        case 'auth/weak-password':
+          description = 'Das Passwort ist zu schwach. Es muss mindestens 6 Zeichen lang sein.';
+          break;
+        default:
+          description = 'Bitte versuche es später erneut.';
+          break;
+      }
       toast({
         variant: 'destructive',
         title: 'Registrierung fehlgeschlagen',
@@ -130,26 +148,26 @@ export default function SignUpPage() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="password">Passwort</Label>
-                   <div className="relative">
-                      <Input
-                          id="password"
-                          name="new-password"
-                          type={showPassword ? 'text' : 'password'}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
-                          className="rounded-full pr-10"
-                          autoComplete="new-password"
-                      />
-                      <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
-                          onClick={() => setShowPassword(!showPassword)}
-                      >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="new-password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="rounded-full pr-10"
+                      autoComplete="new-password"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
                   </div>
                 </div>
                 <Button type="submit" className="w-full">
