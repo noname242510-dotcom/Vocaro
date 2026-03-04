@@ -106,7 +106,7 @@ function DashboardLayoutContent({
 
       <div className="flex max-w-7xl mx-auto">
         {/* Desktop Sidebar */}
-        <aside className={cn("hidden flex-col w-64 sticky top-4 h-[calc(100vh-2rem)] border rounded-2xl p-6 overflow-y-auto", isImmersiveMode ? "md:hidden" : "md:flex")}>
+        <aside className={cn("hidden flex-col w-64 sticky self-start top-4 h-[calc(100vh-2rem)] border rounded-2xl p-6 overflow-y-auto", isImmersiveMode ? "md:hidden" : "md:flex")}>
           <nav className="space-y-6">
             <div>
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 px-4">Navigation</h3>

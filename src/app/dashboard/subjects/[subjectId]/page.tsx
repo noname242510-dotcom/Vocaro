@@ -309,15 +309,23 @@ export default function SubjectDetailPage() {
     setIsRunning(true);
 
     try {
+      const withRetry = async <T,>(fn: () => Promise<T>, retries = 2): Promise<T> => {
+        try { return await fn(); }
+        catch (e) {
+          if (retries > 0) return withRetry(fn, retries - 1);
+          throw e;
+        }
+      };
+
       // Process each image and collect all vocab
       const allGeneratedVocab: { term: string; definition: string; phonetic?: string; relatedWord?: any; notes?: string }[] = [];
 
       for (const imageDataUri of previewImages) {
-        const ocrResult = await suggestVocabularyFromImageContext({ imageDataUri });
+        const ocrResult = await withRetry(() => suggestVocabularyFromImageContext({ imageDataUri }));
         const extractedText = ocrResult.suggestedVocabulary.join('\n');
         if (!extractedText.trim()) continue;
 
-        const generationResult = await generateVocabularyFromExtractedText({ extractedText });
+        const generationResult = await withRetry(() => generateVocabularyFromExtractedText({ extractedText }));
         allGeneratedVocab.push(...generationResult.vocabulary);
       }
 

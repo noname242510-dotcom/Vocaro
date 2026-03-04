@@ -281,14 +281,13 @@ export default function LearnPage() {
     if (correct) {
       setSessionStats(prev => {
         const newStreak = prev.streak + 1;
-        // B&W confetti on streak milestones
+        // CSS flash effect on progress bar wrapper instead of confetti
         if (newStreak > 0 && newStreak % 5 === 0) {
-          confetti({
-            particleCount: 80,
-            spread: 60,
-            origin: { y: 0.7 },
-            colors: ['#000000', '#ffffff', '#888888', '#333333', '#cccccc'],
-          });
+          const progressEl = document.getElementById('streak-progress');
+          if (progressEl) {
+            progressEl.classList.add('flash-streak');
+            setTimeout(() => progressEl.classList.remove('flash-streak'), 1000);
+          }
         }
         return {
           ...prev,
@@ -460,8 +459,8 @@ export default function LearnPage() {
       </div>
 
       {/* Progress */}
-      <div className="space-y-2">
-        <Progress value={progress} className="h-2 rounded-full bg-secondary" />
+      <div className="space-y-2 relative" id="streak-progress">
+        <Progress value={progress} className="h-2 rounded-full bg-secondary transition-all" />
         <p className="text-center text-xs font-bold text-muted-foreground uppercase tracking-wider">
           {currentIndex + 1} / {items.length}
         </p>
@@ -498,6 +497,7 @@ export default function LearnPage() {
                       languageHint={ttsLanguage}
                       ttsEnabled={settings?.ttsEnabled ?? true}
                       autoplayEnabled={settings?.ttsAutoplay ?? false}
+                      autoplay={!isFlipped}
                       className="h-10 w-10 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground border-none"
                     />
                     {currentItem.data.notes && (
@@ -648,6 +648,23 @@ export default function LearnPage() {
 
       <style jsx global>{`
         .preserve-3d { transform-style: preserve-3d; }
+        .flash-streak {
+          animation: streakPulse 1s ease-out;
+        }
+        @keyframes streakPulse {
+          0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); filter: brightness(1) scale(1); }
+          50% { box-shadow: 0 0 20px 10px rgba(255, 255, 255, 0); filter: brightness(1.5) scale(1.02); }
+          100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); filter: brightness(1) scale(1); }
+        }
+        
+        .dark .flash-streak {
+          animation: streakPulseDark 1s ease-out;
+        }
+        @keyframes streakPulseDark {
+          0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2); filter: brightness(1) scale(1); }
+          50% { box-shadow: 0 0 20px 10px rgba(255, 255, 255, 0); filter: brightness(1.3) scale(1.02); }
+          100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); filter: brightness(1) scale(1); }
+        }
       `}</style>
     </div>
   );

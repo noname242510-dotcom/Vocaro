@@ -98,7 +98,7 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
       const loadVoices = () => {
         voicesRef.current = window.speechSynthesis.getVoices();
       };
-      
+
       loadVoices();
       window.speechSynthesis.onvoiceschanged = loadVoices;
 
@@ -112,6 +112,7 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
 
     const getLanguageCode = (hint?: string): string => {
       if (!hint) return 'en-US';
+      if (/^[a-z]{2}-[A-Z]{2}$/i.test(hint)) return hint;
       const lowerHint = hint.toLowerCase();
       const map: Record<string, string> = {
         'französisch': 'fr-FR', 'french': 'fr-FR',
@@ -127,17 +128,17 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
       }
       return 'en-US';
     };
-    
+
     const play = useCallback(() => {
       if (!ttsEnabled || typeof window === 'undefined' || !window.speechSynthesis || !text) return;
-      
+
       if (voicesRef.current.length === 0) {
         setTimeout(play, 150);
         return;
       }
 
       window.speechSynthesis.cancel();
-      
+
       const langCode = getLanguageCode(languageHint);
       const processedText = prepareTextForSpeech(text, langCode);
       const utterance = new SpeechSynthesisUtterance(processedText);
@@ -145,31 +146,31 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
 
       const voices = voicesRef.current;
       const persistedVoiceURI = localStorage.getItem('tts-voice-uri');
-      
+
       let selectedVoice: SpeechSynthesisVoice | null = null;
-      
+
       if (persistedVoiceURI) {
         selectedVoice = voices.find(v => v.voiceURI === persistedVoiceURI) || null;
       }
-      
+
       if (!selectedVoice) {
         const targetLang = langCode.split('-')[0].toLowerCase();
         const langVoices = voices.filter(v => v.lang.toLowerCase().startsWith(targetLang));
-        
-        selectedVoice = 
-            langVoices.find(v => v.name.includes('Google')) ||
-            langVoices.find(v => v.name.includes('Natural')) ||
-            langVoices.find(v => v.name.includes('Microsoft')) ||
-            langVoices.find(v => v.name.includes('Apple')) ||
-            langVoices[0] ||
-            null;
+
+        selectedVoice =
+          langVoices.find(v => v.name.includes('Google')) ||
+          langVoices.find(v => v.name.includes('Natural')) ||
+          langVoices.find(v => v.name.includes('Microsoft')) ||
+          langVoices.find(v => v.name.includes('Apple')) ||
+          langVoices[0] ||
+          null;
       }
 
       if (selectedVoice) {
         utterance.voice = selectedVoice;
       }
-      
-      utterance.rate = 0.85; 
+
+      utterance.rate = 0.85;
       utterance.pitch = 1.0;
       utterance.onstart = () => setIsPlaying(true);
       utterance.onend = () => setIsPlaying(false);
@@ -179,30 +180,30 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
         }
         setIsPlaying(false);
       };
-      
+
       window.speechSynthesis.speak(utterance);
     }, [text, languageHint, ttsEnabled]);
 
     useImperativeHandle(ref, () => ({ play }));
 
     useEffect(() => {
-        if (autoplayEnabled && autoplay && text && text !== lastTextRef.current) {
-            const timer = setTimeout(() => {
-                play();
-                lastTextRef.current = text;
-            }, 200);
-            
-            return () => clearTimeout(timer);
-        }
+      if (autoplayEnabled && autoplay && text && text !== lastTextRef.current) {
+        const timer = setTimeout(() => {
+          play();
+          lastTextRef.current = text;
+        }, 200);
+
+        return () => clearTimeout(timer);
+      }
     }, [autoplayEnabled, autoplay, text, play]);
 
     if (!ttsEnabled) {
-      return null; 
+      return null;
     }
 
     return (
       <div className={cn("relative h-10 w-10", className)}>
-         <Button
+        <Button
           variant="ghost"
           size="icon"
           className={cn("w-full h-full text-2xl")}
