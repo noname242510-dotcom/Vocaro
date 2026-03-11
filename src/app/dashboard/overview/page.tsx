@@ -345,7 +345,7 @@ export default function DashboardOverviewPage() {
                           <div className="w-1.5 h-1.5 rounded-full bg-destructive"></div>
                           {word.term}
                         </span>
-                        <span className="text-xs font-medium text-muted-foreground italic truncate max-w-[40%]">
+                        <span className="text-xs font-medium text-muted-foreground italic truncate max-w-[60%]">
                           {word.definition}
                         </span>
                       </div>

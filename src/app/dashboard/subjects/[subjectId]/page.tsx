@@ -890,18 +890,104 @@ export default function SubjectDetailPage() {
         <TabsContent value="vocabulary" className="space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Add New Stack Card */}
-            <button
-              onClick={() => openAddVocabDialog()}
-              className="group border-2 border-dashed border-muted-foreground/20 rounded-[2.5rem] p-10 flex flex-col items-center justify-center text-center gap-4 hover:border-primary/40 hover:bg-primary/5 transition-all min-h-[300px]"
-            >
-              <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all transform group-hover:scale-110">
-                <Plus className="h-8 w-8" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold font-headline mb-1">Neuer Stapel</h3>
-                <p className="text-sm text-muted-foreground font-medium">Füge manuell oder per KI Vokabeln hinzu</p>
-              </div>
-            </button>
+            <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
+              <DialogTrigger asChild>
+                <button
+                  onClick={() => openAddVocabDialog()}
+                  className="group border-2 border-dashed border-muted-foreground/20 rounded-[2.5rem] p-10 flex flex-col items-center justify-center text-center gap-4 hover:border-primary/40 hover:bg-primary/5 transition-all min-h-[300px]"
+                >
+                  <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all transform group-hover:scale-110">
+                    <Plus className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold font-headline mb-1">Neuer Stapel</h3>
+                    <p className="text-sm text-muted-foreground font-medium">Füge manuell oder per KI Vokabeln hinzu</p>
+                  </div>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-8">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold font-headline">Vokabeln hinzufügen</DialogTitle>
+                  <DialogDescription>
+                    Wähle eine Methode, um Vokabeln zu deinem Stapel hinzuzufügen.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <Tabs defaultValue="ai" className="w-full mt-6">
+                  <TabsList className="grid w-full grid-cols-2 bg-secondary/50 rounded-xl p-1">
+                    <TabsTrigger value="ai" className="rounded-lg font-bold">KI-Scan (Bild)</TabsTrigger>
+                    <TabsTrigger value="manual" className="rounded-lg font-bold">Manuell</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="ai" className="space-y-6 pt-6">
+                    <div className="space-y-4">
+                      <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Stapelname</Label>
+                      <Input
+                        placeholder="z.B. Lektion 1"
+                        value={newStackName}
+                        onChange={(e) => setNewStackName(e.target.value)}
+                        disabled={!!activeStackId}
+                        className="h-12 rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-4">
+                      <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Bilder hochladen (max. 4)</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        {previewImages.map((src, idx) => (
+                          <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border">
+                            <Image src={src} alt="Preview" fill className="object-cover" />
+                          </div>
+                        ))}
+                        {previewImages.length < 4 && (
+                          <label className="aspect-video rounded-xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all">
+                            <Upload className="h-6 w-6 text-muted-foreground" />
+                            <span className="text-xs mt-2 font-bold text-muted-foreground">Bild wählen</span>
+                            <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={handleExtractAndSaveVocabulary}
+                      disabled={previewImages.length === 0 || !newStackName || isRunning}
+                      className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/10"
+                    >
+                      {isRunning ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
+                      KI-Erkennung starten
+                    </Button>
+                  </TabsContent>
+
+                  <TabsContent value="manual" className="space-y-4 pt-6">
+                    <div className="grid gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Stapelname</Label>
+                        <Input
+                          placeholder="z.B. Lektion 1"
+                          value={newStackName}
+                          onChange={(e) => setNewStackName(e.target.value)}
+                          disabled={!!activeStackId}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Term</Label>
+                          <Input value={manualTerm} onChange={(e) => setManualTerm(e.target.value)} placeholder="Wort" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Definition</Label>
+                          <Input value={manualDefinition} onChange={(e) => setManualDefinition(e.target.value)} placeholder="Bedeutung" />
+                        </div>
+                      </div>
+                    </div>
+                    <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually || !manualTerm || !manualDefinition} className="w-full h-12 rounded-xl font-bold">
+                      Hinzufügen
+                    </Button>
+                  </TabsContent>
+                </Tabs>
+              </DialogContent>
+            </Dialog>
 
             {stacks?.map((stack) => {
               const results = filteredVocabulary[stack.id] || [];
@@ -920,24 +1006,100 @@ export default function SubjectDetailPage() {
                 />
               )
             })}
-              filteredVerbs.map((verb) => (
-            <VerbCard
-              key={verb.id}
-              verb={verb}
-              onEdit={handleEditVerb}
-              onDelete={handleDeleteVerb}
-              onSelectionChange={handleVerbSelectionChange}
-              onTenseSelectionChange={handleTenseSelectionChange}
-            />
-            ))
-            ) : (
-            <div className="text-center mt-20 text-muted-foreground">
-              <WholeWord className="mx-auto h-12 w-12 mb-4" />
-              <h3 className="text-lg font-semibold">Keine Verben gefunden</h3>
-              <p className="text-sm">Füge ein neues Verb hinzu, um zu beginnen.</p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="verbs" className="space-y-8">
+          <div className="flex justify-between items-center gap-4">
+            <h2 className="text-3xl font-black font-headline">Deine Verben</h2>
+
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                disabled={selectedVerbsCount === 0}
+                onClick={handleOpenTenseDialog}
+                className="h-12 rounded-xl border-2 font-bold px-6"
+              >
+                <Settings2 className="mr-2 h-4 w-4" /> Zeiten auswählen
+              </Button>
+
+              <Button onClick={handleAddNewVerb} className="h-12 rounded-xl font-bold px-8 shadow-lg shadow-primary/10">
+                <Plus className="mr-2 h-5 w-5" /> Verb hinzufügen
+              </Button>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredVerbs.length > 0 ? (
+              filteredVerbs.map((verb) => (
+                <VerbCard
+                  key={verb.id}
+                  verb={verb}
+                  onEdit={handleEditVerb}
+                  onDelete={handleDeleteVerb}
+                  onSelectionChange={handleVerbSelectionChange}
+                  onTenseSelectionChange={handleTenseSelectionChange}
+                />
+              ))
+            ) : (
+              <div className="col-span-full py-20 text-center space-y-4 bg-white rounded-[2.5rem] border-2 border-dashed border-muted-foreground/10">
+                <WholeWord className="mx-auto h-16 w-16 text-muted-foreground/20" />
+                <div>
+                  <h3 className="text-xl font-bold font-headline">Keine Verben gefunden</h3>
+                  <p className="text-muted-foreground">Füge dein erstes Verb hinzu, um mit dem Lernen zu beginnen.</p>
+                </div>
+              </div>
             )}
           </div>
+
+          <Dialog open={isTenseSelectionDialogOpen} onOpenChange={setIsTenseSelectionDialogOpen}>
+            <DialogContent className="rounded-[2.5rem] p-10 max-w-2xl">
+              <DialogHeader>
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <DialogTitle className="text-3xl font-bold font-headline">Zeiten auswählen</DialogTitle>
+                    <DialogDescription className="text-lg">Wähle Zeiten für {selectedVerbsCount} ausgewählte Verben.</DialogDescription>
+                  </div>
+                  <Button variant="outline" onClick={handleToggleAllTenses} className="rounded-xl border-2 font-bold">
+                    {allTempTensesSelected ? 'Keine' : 'Alle'}
+                  </Button>
+                </div>
+              </DialogHeader>
+              <ScrollArea className="max-h-[50vh] pr-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {Object.entries(
+                    sortedTensesForDialog.reduce((acc, tense) => {
+                      const group = Object.keys(tenseOrderConfig).find(key => tenseOrderConfig[key].includes(tense)) || 'Uncategorized';
+                      if (!acc[group]) acc[group] = [];
+                      acc[group].push(tense);
+                      return acc;
+                    }, {} as Record<string, string[]>)
+                  ).map(([groupName, tenses]) => (
+                    <div key={groupName} className="space-y-4">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-primary/40">{groupName}</h4>
+                      <div className="space-y-3">
+                        {tenses.map(tense => (
+                          <div key={tense} className="flex items-center gap-3">
+                            <Checkbox
+                              id={`global-tense-${tense}`}
+                              checked={tempSelectedTenses.has(tense)}
+                              onCheckedChange={(checked) => handleTempTenseSelection(tense, Boolean(checked))}
+                              className="w-5 h-5 rounded-md"
+                            />
+                            <Label htmlFor={`global-tense-${tense}`} className="text-base font-bold cursor-pointer">{tense}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+              <DialogFooter className="mt-8 pt-8 border-t gap-4">
+                <Button variant="outline" onClick={() => setIsTenseSelectionDialogOpen(false)} className="h-14 rounded-2xl border-2 font-bold text-lg flex-1">Abbrechen</Button>
+                <Button onClick={handleApplyGlobalTenseSelection} className="h-14 rounded-2xl font-bold text-lg flex-1 shadow-xl shadow-primary/10">Anwenden</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
 

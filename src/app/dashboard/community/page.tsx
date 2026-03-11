@@ -77,6 +77,7 @@ export default function CommunityPage() {
                                 <Bell className="h-6 w-6" />
                                 {requestCount > 0 && (
                                     <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-sm animate-in zoom-in">
+
                                         {requestCount}
                                     </span>
                                 )}
@@ -87,12 +88,13 @@ export default function CommunityPage() {
                                 <h4 className="font-semibold text-sm text-white">Freundschaftsanfragen</h4>
                             </div>
                             <div className="p-2 max-h-[400px] overflow-y-auto bg-white">
+
                                 <RequestsList key={`requests-${key}`} onFriendAction={refreshData} />
                             </div>
                         </PopoverContent>
-                    </Popover>
-                </div>
-            </div>
+                    </Popover >
+                </div >
+            </div >
 
             <Tabs defaultValue="groups" className="w-full">
                 <TabsContent value="groups" className="mt-0 outline-none space-y-12">
@@ -126,11 +128,12 @@ export default function CommunityPage() {
                             <CardDescription className="text-lg">Suche nach anderen Lernenden über ihren Namen.</CardDescription>
                         </CardHeader>
                         <CardContent className="p-10 pt-0">
+
                             <UserSearch onFriendAction={refreshData} />
                         </CardContent>
                     </Card>
                 </TabsContent>
-            </Tabs>
-        </div>
+            </Tabs >
+        </div >
     );
 }

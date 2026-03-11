@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
 import type { Friendship, PublicProfile } from '@/lib/types';
 import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -71,6 +72,7 @@ export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) 
       const allFriendships = [...(friendships1 || []), ...(friendships2 || [])];
       const friendIds = allFriendships.map(f => f.requesterId === user.uid ? f.recipientId : f.requesterId);
 
+
       if (friendIds.length === 0) {
         setFriends([]);
         setIsLoading(false);
@@ -95,6 +97,7 @@ export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) 
             });
           }
         }
+
 
         const enriched = profilesData.map(profile => {
           const friendship = allFriendships.find(f => f.requesterId === profile.id || f.recipientId === profile.id);
@@ -123,6 +126,7 @@ export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) 
       toast({
         title: 'Freund entfernt',
         description: `${friendToRemove.displayName} ist nicht mehr dein Freund.`,
+
       });
       setFriends(prev => prev.filter(f => f.id !== friendToRemove.id));
       onFriendAction();
@@ -138,6 +142,7 @@ export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) 
       setFriendToRemove(null);
     }
   };
+
 
   const getInitials = (name: string) => (name ? name.charAt(0).toUpperCase() : '');
 
@@ -193,6 +198,7 @@ export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) 
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
         </Card>
       ))}
 
@@ -211,8 +217,9 @@ export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) 
               Entfernen
             </AlertDialogAction>
           </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+
+        </AlertDialogContent >
+      </AlertDialog >
+    </div >
   );
 }

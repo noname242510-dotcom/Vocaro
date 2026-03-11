@@ -49,6 +49,7 @@ export function GroupsList({ key: _key }: { key: string }) {
             <Button onClick={() => setIsCreateOpen(true)} className="mt-8 rounded-2xl h-12 px-8">
               Gruppe erstellen
             </Button>
+
           </div>
         )}
 
@@ -81,6 +82,7 @@ export function GroupsList({ key: _key }: { key: string }) {
                   </div>
                   <div className="flex items-center gap-1 text-primary font-bold text-sm">
                     Beitreten <Plus className="h-4 w-4" />
+
                   </div>
                 </div>
               </Card>

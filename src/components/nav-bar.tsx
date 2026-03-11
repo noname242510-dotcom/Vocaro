@@ -130,7 +130,6 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
         </div>
     );
 }
-
 function Loader2({ className }: { className?: string }) {
     return (
         <svg

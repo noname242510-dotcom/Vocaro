@@ -26,7 +26,6 @@ export function SettingsMenu({ onSelect }: SettingsMenuProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentSection = searchParams.get('section') || 'profile';
-
   const handleSelect = (id: string) => {
     onSelect(id);
     const params = new URLSearchParams(searchParams);
@@ -55,4 +54,5 @@ export function SettingsMenu({ onSelect }: SettingsMenuProps) {
     </nav>
   );
 }
+
 

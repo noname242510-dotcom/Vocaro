@@ -658,6 +658,8 @@ export default function LearnPage() {
       </div>
 
       <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .flash-streak {
           animation: streakPulse 1s ease-out;
         }

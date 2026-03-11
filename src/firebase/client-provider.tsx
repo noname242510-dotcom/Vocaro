@@ -43,12 +43,6 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
         <div className="max-w-md p-8 text-center space-y-4">
           <h1 className="text-2xl font-bold text-destructive">Firebase Error</h1>
           <p className="">{error}</p>
-          <pre className="text-xs bg-muted p-4 rounded overflow-auto text-left">
-            Config: {JSON.stringify({
-              apiKey: !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-              projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-            }, null, 2)}
-          </pre>
         </div>
       </div>
     );

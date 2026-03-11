@@ -56,8 +56,8 @@ function DashboardLayoutContent({
     { href: '/dashboard', icon: Home, label: 'Home' },
     { href: '/dashboard/stacks', icon: LayoutDashboard, label: 'Flashcards' },
     { href: '/dashboard/community', icon: Users, label: 'Community' },
-    { href: '/dashboard/overview', icon: LayoutDashboard, label: 'Leaderboard' },
-    { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
+    { href: '/dashboard/overview', icon: LayoutDashboard, label: 'Statistiken' },
+    { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
   ];
 
   return (
@@ -117,7 +117,7 @@ function DashboardLayoutContent({
             )}
             <Button size="lg" className="w-full rounded-2xl h-14 font-bold gap-2 shadow-xl shadow-primary/10">
               <span className="text-xl">+</span>
-              Create Deck
+              Neues Set
             </Button>
           </div>
         </aside>
