@@ -121,7 +121,7 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
   return (
     <>
       <Card
-        className="group relative bg-white border-none shadow-xl shadow-primary/5 rounded-[2.5rem] p-10 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col min-h-[320px]"
+        className="group relative bg-card border-none shadow-xl shadow-primary/5 rounded-[2.5rem] p-10 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col min-h-[320px]"
         onClick={() => { }}
       >
         {/* Top Decorative Tag */}
@@ -171,7 +171,7 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
           <Button
             variant="outline"
             size="icon"
-            className="h-10 w-10 rounded-2xl bg-white border-2 hover:bg-white hover:border-primary hover:text-primary shadow-xl"
+            className="h-10 w-10 rounded-2xl bg-card border-2 hover:bg-card hover:border-primary hover:text-primary shadow-xl"
             onClick={(e) => {
               e.stopPropagation();
               setRenamedSubjectName(subject.name);
@@ -185,7 +185,7 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
               <Button
                 variant="outline"
                 size="icon"
-                className="h-10 w-10 rounded-2xl bg-white border-2 hover:bg-white hover:border-destructive hover:text-destructive shadow-xl"
+                className="h-10 w-10 rounded-2xl bg-card border-2 hover:bg-card hover:border-destructive hover:text-destructive shadow-xl"
                 onClick={(e) => e.stopPropagation()}
               >
                 <Trash2 className="h-4 w-4" />

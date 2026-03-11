@@ -216,7 +216,7 @@ export default function DashboardPage() {
 
       {/* Modern Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="group bg-white border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
+        <Card className="group bg-card border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
           <div className="flex flex-col h-full justify-between gap-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-blue-50 text-blue-500 rounded-2xl group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
@@ -231,7 +231,7 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        <Card className="group bg-white border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
+        <Card className="group bg-card border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
           <div className="flex flex-col h-full justify-between gap-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-orange-50 text-orange-500 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition-colors duration-300">
@@ -246,7 +246,7 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        <Card className="group bg-white border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
+        <Card className="group bg-card border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
           <div className="flex flex-col h-full justify-between gap-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-green-50 text-green-500 rounded-2xl group-hover:bg-green-500 group-hover:text-white transition-colors duration-300">
@@ -261,7 +261,7 @@ export default function DashboardPage() {
           </div>
         </Card>
 
-        <Card className="group bg-white border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
+        <Card className="group bg-card border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
           <div className="flex flex-col h-full justify-between gap-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-purple-50 text-purple-500 rounded-2xl group-hover:bg-purple-500 group-hover:text-white transition-colors duration-300">
@@ -281,14 +281,14 @@ export default function DashboardPage() {
       <section ref={subjectsRef} className="space-y-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-white p-2 rounded-lg border shadow-sm">
+            <div className="bg-card p-2 rounded-lg border shadow-sm">
               <BookOpen className="h-5 w-5" />
             </div>
             <h2 className="text-2xl font-bold font-headline tracking-tight uppercase tracking-widest text-muted-foreground text-xs">Deine Fächer</h2>
           </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="rounded-xl font-bold h-10 px-6 border-2 hover:bg-white shadow-sm">
+              <Button variant="outline" className="rounded-xl font-bold h-10 px-6 border-2 hover:bg-background shadow-sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Fach hinzufügen
               </Button>
@@ -323,7 +323,7 @@ export default function DashboardPage() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {isLoading && subjectsWithCounts.length === 0 ? (
             Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="min-h-[220px] p-10 flex flex-col justify-center items-center text-center rounded-[2rem] border-none bg-white shadow-xl shadow-primary/5">
+              <Card key={i} className="min-h-[220px] p-10 flex flex-col justify-center items-center text-center rounded-[2rem] border-none bg-card shadow-xl shadow-primary/5">
                 <Skeleton className="h-16 w-16 rounded-2xl mb-6 bg-muted/50" />
                 <Skeleton className="h-8 w-3/4 mb-4 bg-muted/50" />
                 <Skeleton className="h-5 w-1/2 bg-muted/50" />
@@ -343,7 +343,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <footer className="w-full text-center text-sm text-muted-foreground p-12 mt-20 border-t bg-white rounded-[3rem_3rem_0_0]">
+      <footer className="w-full text-center text-sm text-muted-foreground p-12 mt-20 border-t bg-card rounded-[3rem_3rem_0_0]">
         <p className="font-bold text-lg text-foreground">Vocaro</p>
         <p className="mt-2 text-sm opacity-70">
           Entwickelt für moderne Sprachlernende. <br className="md:hidden" />

@@ -125,7 +125,7 @@ function FinishedScreen({ stats, onRestart }: { stats: { correct: number; incorr
     <div className="flex flex-col items-center justify-center min-h-[85vh] text-center space-y-12 px-6 animate-in fade-in zoom-in duration-1000">
       <div className="relative">
         <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
-        <div className="relative bg-white shadow-2xl shadow-primary/10 rounded-[4rem] p-16 border-none">
+        <div className="relative bg-card shadow-2xl shadow-primary/10 rounded-[4rem] p-16 border-none">
           <p className="font-creative text-[10rem] font-black leading-none text-primary mb-4">{pct}<span className="text-4xl align-top mt-8 inline-block">%</span></p>
           <p className="text-2xl text-muted-foreground font-bold font-creative uppercase tracking-[0.3em]">Meisterhaft!</p>
         </div>
@@ -430,7 +430,7 @@ export default function LearnPage() {
       <div className="flex items-center justify-between">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-14 w-14 rounded-[1.5rem] bg-white shadow-xl shadow-primary/5 hover:bg-white hover:scale-105 transition-all">
+            <Button variant="ghost" size="icon" className="h-14 w-14 rounded-[1.5rem] bg-card shadow-xl shadow-primary/5 hover:bg-card hover:scale-105 transition-all">
               <ChevronLeft className="h-8 w-8" />
             </Button>
           </AlertDialogTrigger>
@@ -454,14 +454,14 @@ export default function LearnPage() {
             variant="ghost"
             size="icon"
             className={cn(
-              "h-14 w-14 rounded-[1.5rem] bg-white shadow-xl shadow-primary/5 hover:bg-white hover:scale-105 transition-all",
+              "h-14 w-14 rounded-[1.5rem] bg-card shadow-xl shadow-primary/5 hover:bg-card hover:scale-105 transition-all",
               isTypedMode && "text-primary border-2 border-primary/20"
             )}
             onClick={() => { setIsTypedMode(!isTypedMode); setIsFlipped(false); setAnswerStatus('unanswered'); setUserInput(''); }}
           >
             <Pencil className="h-6 w-6" />
           </Button>
-          <div className="flex items-center gap-3 bg-white px-8 rounded-[1.5rem] font-bold text-lg shadow-xl shadow-primary/5 border border-primary/5">
+          <div className="flex items-center gap-3 bg-card px-8 rounded-[1.5rem] font-bold text-lg shadow-xl shadow-primary/5 border border-primary/5">
             <Zap className="h-6 w-6 text-primary fill-primary" />
             <span className="font-creative text-2xl font-black">{sessionStats.streak}</span>
           </div>
@@ -505,7 +505,7 @@ export default function LearnPage() {
                 >
                   {/* ===== FRONT SIDE ===== */}
                   <div
-                    className="absolute inset-0 flex flex-col items-center justify-center p-12 bg-white rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden"
+                    className="absolute inset-0 flex flex-col items-center justify-center p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden"
                     style={{ backfaceVisibility: 'hidden' }}
                   >
                     <div className="absolute top-8 right-8 flex gap-3">
@@ -594,7 +594,7 @@ export default function LearnPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="bg-white rounded-[2.5rem] p-10 text-center shadow-xl shadow-primary/5 border-4 border-transparent">
+                <div className="bg-card rounded-[2.5rem] p-10 text-center shadow-xl shadow-primary/5 border-4 border-transparent">
                   <p className={cn(
                     "font-black text-xs uppercase tracking-[0.4em] mb-6",
                     (answerStatus === 'correct' || answerStatus === 'accepted') ? "text-primary" : "text-destructive"

@@ -62,10 +62,12 @@ function SimpleSubjectDisplay({ subject, ownerId }: { subject: Subject; ownerId:
 }
 
 
-export default function UserProfilePage() {
-    const params = useParams();
+import * as React from 'react';
+
+export default function UserProfilePage({ params }: { params: Promise<{ userId: string }> }) {
     const router = useRouter();
-    const userId = params.userId as string;
+    const resolvedParams = React.use(params);
+    const userId = resolvedParams.userId;
     const { firestore } = useFirebase();
 
     const publicProfileDocRef = useMemoFirebase(() => {
@@ -79,15 +81,15 @@ export default function UserProfilePage() {
         return collection(firestore, 'users', userId, 'subjects');
     }, [firestore, userId]);
     const { data: subjects, isLoading: areSubjectsLoading } = useCollection<Subject>(subjectsCollectionRef);
-    
+
     const getInitials = (name: string | null | undefined) => {
         return name ? name.charAt(0).toUpperCase() : 'U';
     };
-    
+
     if (isProfileLoading || areSubjectsLoading) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-muted-foreground" /></div>;
     }
-    
+
     if (!publicProfile) {
         return (
             <div className="text-center mt-20">
@@ -117,15 +119,15 @@ export default function UserProfilePage() {
 
             <h2 className="text-2xl font-semibold mb-4 font-headline">Fächer</h2>
             {subjects && subjects.length > 0 ? (
-                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {subjects.map(subject => (
-                        <SimpleSubjectDisplay 
-                            key={subject.id} 
-                            subject={subject} 
+                        <SimpleSubjectDisplay
+                            key={subject.id}
+                            subject={subject}
                             ownerId={userId}
                         />
                     ))}
-                 </div>
+                </div>
             ) : (
                 <div className="text-center py-10 border-2 border-dashed rounded-2xl">
                     <p className="text-muted-foreground">{publicProfile.displayName} hat noch keine Fächer erstellt.</p>

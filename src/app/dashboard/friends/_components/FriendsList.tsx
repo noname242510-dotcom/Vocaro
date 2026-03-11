@@ -159,7 +159,7 @@ export function FriendsList({ onFriendAction }: { onFriendAction: () => void }) 
       {friends.map((friend) => (
         <Card
           key={friend.id}
-          className="group relative bg-white border-none shadow-xl shadow-primary/5 rounded-3xl p-6 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col items-center text-center space-y-4"
+          className="group relative bg-card border-none shadow-xl shadow-primary/5 rounded-3xl p-6 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col items-center text-center space-y-4"
           onClick={() => router.push(`/dashboard/users/${friend.id}`)}
         >
           <div className="relative">

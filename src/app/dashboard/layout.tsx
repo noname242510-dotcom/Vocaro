@@ -68,7 +68,7 @@ function DashboardLayoutContent({
 
       {/* Sidebar - Desktop */}
       {!isImmersiveMode && (
-        <aside className="hidden md:flex flex-col w-72 bg-white border-r border-border h-screen sticky top-0">
+        <aside className="hidden md:flex flex-col w-72 bg-card border-r border-border h-screen sticky top-0">
           <div className="p-8 pb-4">
             <Link href="/dashboard" className="flex items-center gap-3">
               <div className="bg-primary p-2 rounded-xl">
@@ -127,7 +127,7 @@ function DashboardLayoutContent({
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Mobile Header */}
         {!isImmersiveMode && (
-          <header className="md:hidden flex items-center justify-between p-4 border-b bg-white">
+          <header className="md:hidden flex items-center justify-between p-4 border-b bg-card">
             <Logo className="text-xl" />
             <UserNav />
           </header>
@@ -135,7 +135,7 @@ function DashboardLayoutContent({
 
         <main className={cn(
           "flex-1 overflow-y-auto p-4 md:p-12",
-          !isImmersiveMode && "bg-[#F8F9FA]"
+          !isImmersiveMode && "bg-background"
         )}>
           {!isImmersiveMode && (
             <div className="max-w-7xl mx-auto flex justify-end mb-8 items-center gap-4">

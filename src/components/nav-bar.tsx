@@ -35,7 +35,7 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
     const isActive = (href: string) => pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-primary/5 pb-safe-area-inset-bottom md:hidden shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-primary/5 pb-safe-area-inset-bottom md:hidden shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
             <div className="flex items-center justify-around h-20 px-4">
                 {navItems.map((item) => {
                     if (item.isSheet) {
@@ -75,7 +75,7 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
                                                             key={subject.id}
                                                             href={`/dashboard/subjects/${subject.id}`}
                                                             onClick={() => setIsSheetOpen(false)}
-                                                            className="group flex items-center justify-between p-6 rounded-[2rem] bg-secondary/50 hover:bg-white hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 border border-transparent hover:border-primary/10"
+                                                            className="group flex items-center justify-between p-6 rounded-[2rem] bg-secondary/50 hover:bg-background hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 border border-transparent hover:border-primary/10"
                                                         >
                                                             <div className="flex items-center gap-5">
                                                                 <span className="text-4xl drop-shadow-sm">{subject.emoji}</span>
@@ -84,7 +84,7 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
                                                                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Verwalten & Lernen</span>
                                                                 </div>
                                                             </div>
-                                                            <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-white group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-sm">
+                                                            <div className="h-10 w-10 rounded-xl flex items-center justify-center bg-background group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 shadow-sm">
                                                                 <ChevronRight className="h-5 w-5" />
                                                             </div>
                                                         </Link>

@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ChevronDown, Pen, Trash2, Loader2, Plus, MoreHorizontal, Languages } from 'lucide-react';
+import { ChevronDown, Pen, Trash2, Loader2, Plus, MoreHorizontal, Languages, Book } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import {
@@ -133,7 +133,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
   return (
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="group/stack w-full h-fit self-start">
-        <Card className="rounded-[2.5rem] border-none bg-white shadow-xl shadow-primary/5 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10">
+        <Card className="rounded-[2.5rem] border-none bg-card shadow-xl shadow-primary/5 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10">
           <div className="p-8 flex items-center justify-between gap-6">
             <div className="flex items-center gap-6 flex-1 min-w-0">
               <Checkbox

@@ -8,30 +8,31 @@ import { SectionShell } from './section-shell';
 import { useSettings } from '@/contexts/settings-context';
 import type { UserSettings } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ModeToggle } from '@/components/mode-toggle';
 
 export function AppearanceSettings() {
   const { settings, updateSettings, isLoading } = useSettings();
 
   if (isLoading) {
     return (
-        <SectionShell title="Darstellung" description="Passe an, wie Vocaro aussieht und sich anfühlt.">
-            <Card>
-                <CardContent className="pt-6 space-y-6">
-                    <div className="flex items-center justify-between space-x-2">
-                        <Skeleton className="h-10 w-48" />
-                        <Skeleton className="h-10 w-44" />
-                    </div>
-                     <div className="flex items-center justify-between space-x-2">
-                        <Skeleton className="h-10 w-48" />
-                        <Skeleton className="h-6 w-11" />
-                    </div>
-                     <div className="flex items-center justify-between space-x-2">
-                        <Skeleton className="h-10 w-48" />
-                        <Skeleton className="h-6 w-11" />
-                    </div>
-                </CardContent>
-            </Card>
-        </SectionShell>
+      <SectionShell title="Darstellung" description="Passe an, wie Vocaro aussieht und sich anfühlt.">
+        <Card>
+          <CardContent className="pt-6 space-y-6">
+            <div className="flex items-center justify-between space-x-2">
+              <Skeleton className="h-10 w-48" />
+              <Skeleton className="h-10 w-44" />
+            </div>
+            <div className="flex items-center justify-between space-x-2">
+              <Skeleton className="h-10 w-48" />
+              <Skeleton className="h-6 w-11" />
+            </div>
+            <div className="flex items-center justify-between space-x-2">
+              <Skeleton className="h-10 w-48" />
+              <Skeleton className="h-6 w-11" />
+            </div>
+          </CardContent>
+        </Card>
+      </SectionShell>
     )
   }
 
@@ -42,11 +43,11 @@ export function AppearanceSettings() {
   const handleConfettiChange = (checked: boolean) => {
     updateSettings({ enableConfetti: checked });
   };
-  
+
   const handleHapticFeedbackChange = (checked: boolean) => {
     updateSettings({ hapticFeedback: checked });
   }
-  
+
   return (
     <SectionShell title="Darstellung" description="Passe an, wie Vocaro aussieht und sich anfühlt.">
       <Card>
@@ -71,6 +72,16 @@ export function AppearanceSettings() {
           </div>
 
           <div className="flex items-center justify-between space-x-2">
+            <Label htmlFor="dark-mode" className="flex flex-col space-y-1">
+              <span>Dark Mode</span>
+              <span className="font-normal leading-snug text-muted-foreground">
+                Wechsle zwischen hellem und dunklem Erscheinungsbild.
+              </span>
+            </Label>
+            <ModeToggle />
+          </div>
+
+          <div className="flex items-center justify-between space-x-2">
             <Label htmlFor="confetti-mode" className="flex flex-col space-y-1">
               <span>Konfetti bei Erfolg</span>
               <span className="font-normal leading-snug text-muted-foreground">
@@ -92,6 +103,6 @@ export function AppearanceSettings() {
 
         </CardContent>
       </Card>
-    </SectionShell>
+    </SectionShell >
   );
 }

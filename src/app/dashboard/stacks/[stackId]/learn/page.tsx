@@ -39,7 +39,7 @@ function shuffleArray<T>(array: T[]): T[] {
 export default function LearnPage() {
   const { firestore, user } = useFirebase();
   const router = useRouter();
-  
+
   const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
   const [initialVocab, setInitialVocab] = useState<VocabularyItem[]>([]);
   const [totalVocabCount, setTotalVocabCount] = useState(0);
@@ -54,7 +54,7 @@ export default function LearnPage() {
   const [isTermFirst, setIsTermFirst] = useState(true);
 
   useEffect(() => {
-    const termFirstSetting = localStorage.getItem('query-direction-flashcards') !== 'true';
+    const termFirstSetting = localStorage.getItem('query-direction-learn') !== 'true';
     setIsTermFirst(termFirstSetting);
 
     if (!firestore || !user) return;
@@ -70,7 +70,7 @@ export default function LearnPage() {
       }
 
       setSubjectId(storedSubjectId);
-      
+
       let vocabIds: string[] = [];
       try {
         vocabIds = JSON.parse(vocabIdsJson);
@@ -86,11 +86,11 @@ export default function LearnPage() {
         setIsLoading(false);
         return;
       }
-      
+
       try {
         const allVocab: VocabularyItem[] = [];
         const CHUNK_SIZE = 30; // Firestore 'in' query limit
-        
+
         const stacksCollectionRef = collection(firestore, 'users', user.uid, 'subjects', storedSubjectId, 'stacks');
         const stacksSnapshot = await getDocs(stacksCollectionRef);
 
@@ -98,7 +98,7 @@ export default function LearnPage() {
 
         for (const stackDoc of stacksSnapshot.docs) {
           const vocabCollectionRef = collection(stackDoc.ref, 'vocabulary');
-          
+
           for (let i = 0; i < vocabIds.length; i += CHUNK_SIZE) {
             const chunk = vocabIds.slice(i, i + CHUNK_SIZE);
             if (chunk.length > 0) {
@@ -111,8 +111,8 @@ export default function LearnPage() {
         const allSnapshots = await Promise.all(queryPromises);
         allSnapshots.forEach(snapshot => {
           snapshot.forEach((doc: any) => {
-             if (vocabIds.includes(doc.id)) {
-               allVocab.push({ ...doc.data(), id: doc.id } as VocabularyItem);
+            if (vocabIds.includes(doc.id)) {
+              allVocab.push({ ...doc.data(), id: doc.id } as VocabularyItem);
             }
           });
         });
@@ -140,7 +140,7 @@ export default function LearnPage() {
 
   }, [firestore, user]);
 
-  
+
   const correctAnswersCount = totalVocabCount > 0 ? totalVocabCount - vocabulary.length : 0;
   const progress = totalVocabCount > 0 ? (correctAnswersCount / totalVocabCount) * 100 : 0;
 
@@ -152,22 +152,22 @@ export default function LearnPage() {
     let remainingCards = [...vocabulary];
 
     if (!knewIt) {
-        if (!persistentlyIncorrectIds.has(currentCard.id)) {
-            setPersistentlyIncorrectIds(prev => new Set(prev).add(currentCard.id));
-        }
-        const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
-        remainingCards.push(cardToRepeat);
+      if (!persistentlyIncorrectIds.has(currentCard.id)) {
+        setPersistentlyIncorrectIds(prev => new Set(prev).add(currentCard.id));
+      }
+      const cardToRepeat = remainingCards.splice(currentIndex, 1)[0];
+      remainingCards.push(cardToRepeat);
     } else {
-        remainingCards.splice(currentIndex, 1);
+      remainingCards.splice(currentIndex, 1);
     }
 
     if (remainingCards.length === 0) {
-        setShowResults(true);
+      setShowResults(true);
     } else {
-        const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
-        setVocabulary(remainingCards);
-        setCurrentIndex(newIndex);
-        setTimeout(() => setIsFlipped(false), 0);
+      const newIndex = currentIndex >= remainingCards.length ? 0 : currentIndex;
+      setVocabulary(remainingCards);
+      setCurrentIndex(newIndex);
+      setTimeout(() => setIsFlipped(false), 0);
     }
   };
 
@@ -178,12 +178,12 @@ export default function LearnPage() {
     setShowResults(false);
     setPersistentlyIncorrectIds(new Set());
   };
-    
+
   const handleBackToSelection = () => {
     if (subjectId) {
-        router.push(`/dashboard/subjects/${subjectId}`);
+      router.push(`/dashboard/subjects/${subjectId}`);
     } else {
-        router.push('/dashboard');
+      router.push('/dashboard');
     }
   };
 
@@ -202,17 +202,17 @@ export default function LearnPage() {
 
   if (error) {
     return <div className="flex flex-col items-center justify-center h-screen text-center">
-        <p className="text-red-500">{error}</p>
-        <Button asChild variant="link"><Link href="/dashboard">Zurück zum Dashboard</Link></Button>
+      <p className="text-red-500">{error}</p>
+      <Button asChild variant="link"><Link href="/dashboard">Zurück zum Dashboard</Link></Button>
     </div>;
   }
-  
+
   const currentCard = vocabulary[currentIndex];
 
   if (!currentCard && !showResults) {
-     return <div className="flex flex-col items-center justify-center h-screen text-center">
-        <p>Keine Vokabeln für diese Sitzung geladen.</p>
-        <Button asChild variant="link"><Link href="/dashboard">Zurück zum Dashboard</Link></Button>
+    return <div className="flex flex-col items-center justify-center h-screen text-center">
+      <p>Keine Vokabeln für diese Sitzung geladen.</p>
+      <Button asChild variant="link"><Link href="/dashboard">Zurück zum Dashboard</Link></Button>
     </div>;
   }
 
@@ -224,21 +224,21 @@ export default function LearnPage() {
     const motivationMessage = getMotivationMessage(score);
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
-            <Confetti active={score >= 90} />
-            <h1 className="text-2xl font-semibold font-headline mb-4 max-w-md">{motivationMessage}</h1>
-            <p className="text-7xl font-bold mb-4">{score}%</p>
-            <div className="flex gap-8 text-lg mb-8">
-                <p><span className="font-bold">{correctCount}</span> Richtig</p>
-                <p><span className="font-bold">{incorrectCount}</span> Falsch</p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs sm:max-w-sm">
-                <Button onClick={resetSession} size="lg" className="w-full"><RotateCcw className="mr-2 h-4 w-4" /> Nochmal versuchen</Button>
-                <Button variant="outline" size="lg" className="w-full" onClick={handleBackToSelection}>
-                    Zur Vokabelauswahl
-                </Button>
-            </div>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
+        <Confetti active={score >= 90} />
+        <h1 className="text-2xl font-semibold font-headline mb-4 max-w-md">{motivationMessage}</h1>
+        <p className="text-7xl font-bold mb-4">{score}%</p>
+        <div className="flex gap-8 text-lg mb-8">
+          <p><span className="font-bold">{correctCount}</span> Richtig</p>
+          <p><span className="font-bold">{incorrectCount}</span> Falsch</p>
         </div>
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs sm:max-w-sm">
+          <Button onClick={resetSession} size="lg" className="w-full"><RotateCcw className="mr-2 h-4 w-4" /> Nochmal versuchen</Button>
+          <Button variant="outline" size="lg" className="w-full" onClick={handleBackToSelection}>
+            Zur Vokabelauswahl
+          </Button>
+        </div>
+      </div>
     );
   }
 
@@ -246,29 +246,29 @@ export default function LearnPage() {
     <div className="flex flex-col items-center">
       <div className="w-full max-w-2xl px-4 sm:px-0">
         <div className="flex items-center justify-start mb-2">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Abfrage beenden?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Möchtest du die aktuelle Lernsitzung wirklich beenden und zum Fach zurückkehren? Dein Fortschritt geht verloren.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleBackToSelection}>Beenden</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Abfrage beenden?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Möchtest du die aktuelle Lernsitzung wirklich beenden und zum Fach zurückkehren? Dein Fortschritt geht verloren.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                <AlertDialogAction onClick={handleBackToSelection}>Beenden</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
         <Progress value={progress} className="h-2 w-full mb-1" />
         <p className="text-sm text-muted-foreground text-center">
-            ({correctAnswersCount}/{totalVocabCount})
+          ({correctAnswersCount}/{totalVocabCount})
         </p>
       </div>
 
@@ -288,33 +288,32 @@ export default function LearnPage() {
           <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-6 rounded-2xl bg-card">
             <p className="text-4xl font-bold text-center">{isTermFirst ? currentCard.definition : currentCard.term}</p>
             {currentCard.notes && (
-                <div className="flex items-start gap-2 text-base text-center text-muted-foreground mt-4">
-                  <Lightbulb className="h-5 w-5 flex-shrink-0" />
-                  <p>{currentCard.notes}</p>
-                </div>
+              <div className="flex items-start gap-2 text-base text-center text-muted-foreground mt-4">
+                <Lightbulb className="h-5 w-5 flex-shrink-0" />
+                <p>{currentCard.notes}</p>
+              </div>
             )}
           </div>
         </Card>
       </div>
-      
-       <div className="mt-8 w-full max-w-2xl">
-          {!isFlipped ? (
-            <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
-          ) : (
-            <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
-                <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
-                <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                </Button>
-                <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(true)}>
-                <Check className="mr-2 h-4 w-4" /> Wusste ich
-                </Button>
-            </div>
-          )}
-       </div>
+
+      <div className="mt-8 w-full max-w-2xl">
+        {!isFlipped ? (
+          <Button size="lg" className="w-full" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+        ) : (
+          <div className={cn("flex gap-2 transition-opacity duration-300 w-full", !isFlipped && 'opacity-0 pointer-events-none')}>
+            <Button variant="outline" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(false)}>
+              <X className="mr-2 h-4 w-4" /> Wusste ich nicht
+            </Button>
+            <Button variant="default" size="default" className="flex-1 h-12 text-base" onClick={() => handleAnswer(true)}>
+              <Check className="mr-2 h-4 w-4" /> Wusste ich
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-    
 
-    
+

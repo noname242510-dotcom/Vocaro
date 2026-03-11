@@ -291,7 +291,7 @@ export default function DashboardOverviewPage() {
       </Card>
 
       {/* Activity Chart */}
-      <Card className="bg-white border-none shadow-xl shadow-primary/5 rounded-[2.5rem] p-10 space-y-8">
+      <Card className="bg-card border-none shadow-xl shadow-primary/5 rounded-[2.5rem] p-10 space-y-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Activity className="h-6 w-6 text-primary" />
@@ -310,10 +310,10 @@ export default function DashboardOverviewPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {subjectDetails.map((stat) => (
-            <Card key={stat.subject.id} className="group bg-white border-none shadow-xl shadow-primary/5 rounded-[2.5rem] hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col">
+            <Card key={stat.subject.id} className="group bg-card border-none shadow-xl shadow-primary/5 rounded-[2.5rem] hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col">
               <div className="p-8 border-b bg-secondary/10 flex items-center justify-between group-hover:bg-secondary/20 transition-colors">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-sm border group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 bg-card rounded-2xl flex items-center justify-center text-3xl shadow-sm border group-hover:scale-110 transition-transform">
                     {stat.subject.emoji}
                   </div>
                   <div>
@@ -340,14 +340,10 @@ export default function DashboardOverviewPage() {
                 {stat.errorWords.length > 0 ? (
                   <div className="grid gap-3">
                     {stat.errorWords.map((word) => (
-                      <div key={word.id} className="flex justify-between items-center text-sm p-4 rounded-2xl bg-muted/30 border border-transparent hover:border-border hover:bg-white hover:shadow-lg transition-all cursor-default">
-                        <span className="font-bold flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-destructive"></div>
-                          {word.term}
-                        </span>
-                        <span className="text-xs font-medium text-muted-foreground italic truncate max-w-[60%]">
-                          {word.definition}
-                        </span>
+                      <div key={word.id} className="p-4 bg-background rounded-2xl flex items-center justify-between group-hover:bg-primary/5 transition-colors">
+                        <span className="font-bold text-foreground truncate">{word.term}</span>
+                        <span className="text-sm font-medium text-muted-foreground mr-4 truncate max-w-[120px]">{word.definition}</span>
+                        <span className="text-xs font-black uppercase tracking-widest text-destructive/80 bg-destructive/10 px-3 py-1 rounded-full">Error</span>
                       </div>
                     ))}
                   </div>
@@ -364,7 +360,7 @@ export default function DashboardOverviewPage() {
       </section>
 
       {totalItemsCount === 0 && (
-        <Card className="p-20 text-center bg-white border-none shadow-xl rounded-[3rem]">
+        <Card className="p-20 text-center bg-card border-none shadow-xl rounded-[3rem]">
           <Target className="h-16 w-16 mx-auto mb-6 text-muted-foreground/30" />
           <h3 className="text-3xl font-bold font-headline mb-2">Noch keine Daten vorhanden</h3>
           <p className="text-xl text-muted-foreground max-w-sm mx-auto">

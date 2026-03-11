@@ -63,7 +63,7 @@ export default function AllStacksPage() {
             </header>
 
             {data.length === 0 ? (
-                <div className="bg-white rounded-[3rem] p-20 text-center shadow-xl shadow-primary/5 space-y-6">
+                <div className="bg-card rounded-[3rem] p-20 text-center shadow-xl shadow-primary/5 space-y-6">
                     <div className="w-24 h-24 bg-secondary/50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Layers className="h-12 w-12 text-muted-foreground/30" />
                     </div>
@@ -88,7 +88,7 @@ export default function AllStacksPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {stacks.map((stack) => (
                                     <Link key={stack.id} href={`/dashboard/subjects/${subject.id}`}>
-                                        <Card className="group relative overflow-hidden bg-white hover:bg-zinc-50 border-none rounded-[2.5rem] p-8 shadow-xl shadow-primary/5 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
+                                        <Card className="group relative overflow-hidden bg-card hover:bg-secondary/10 border-none rounded-[2.5rem] p-8 shadow-xl shadow-primary/5 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-primary/10">
                                             <div className="space-y-6">
                                                 <div className="flex items-start justify-between">
                                                     <div className="h-14 w-14 bg-primary/5 rounded-[1.2rem] flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all duration-500">

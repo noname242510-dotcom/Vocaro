@@ -789,7 +789,7 @@ export default function SubjectDetailPage() {
           </Link>
 
           <div className="flex items-center gap-6">
-            <div className="w-24 h-24 bg-white border shadow-xl shadow-primary/5 rounded-[2rem] flex items-center justify-center text-6xl">
+            <div className="w-24 h-24 bg-card border shadow-xl shadow-primary/5 rounded-[2rem] flex items-center justify-center text-6xl">
               {subject.emoji}
             </div>
             <div className="space-y-1">
@@ -881,7 +881,7 @@ export default function SubjectDetailPage() {
                 placeholder={activeTab === 'vocabulary' ? "Vokabeln suchen..." : "Verben suchen..."}
                 value={activeTab === 'vocabulary' ? vocabSearchQuery : verbSearchQuery}
                 onChange={(e) => activeTab === 'vocabulary' ? setVocabSearchQuery(e.target.value) : setVerbSearchQuery(e.target.value)}
-                className="h-14 w-64 md:w-80 pl-12 rounded-2xl border-none bg-white shadow-xl shadow-primary/5 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="h-14 w-64 md:w-80 pl-12 rounded-2xl border-none bg-card shadow-xl shadow-primary/5 focus-visible:ring-primary focus-visible:ring-offset-2"
               />
             </div>
           </div>
@@ -1042,7 +1042,7 @@ export default function SubjectDetailPage() {
                 />
               ))
             ) : (
-              <div className="col-span-full py-20 text-center space-y-4 bg-white rounded-[2.5rem] border-2 border-dashed border-muted-foreground/10">
+              <div className="col-span-full py-20 text-center space-y-4 bg-card rounded-[2.5rem] border-2 border-dashed border-muted-foreground/10">
                 <WholeWord className="mx-auto h-16 w-16 text-muted-foreground/20" />
                 <div>
                   <h3 className="text-xl font-bold font-headline">Keine Verben gefunden</h3>

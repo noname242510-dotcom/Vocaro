@@ -531,10 +531,12 @@ function DatabaseTab({ group }: { group: Group }) {
 
 // --- MAIN COMPONENT ---
 
-export default function GroupDetailPage() {
-    const params = useParams();
+import * as React from 'react';
+
+export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
     const router = useRouter();
-    const groupId = params.groupId as string;
+    const resolvedParams = React.use(params);
+    const groupId = resolvedParams.groupId;
     const { firestore, user } = useFirebase();
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
 

@@ -42,7 +42,7 @@ export function GroupsList({ key: _key }: { key: string }) {
         {isLoading && <div className="text-center py-20"><Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" /></div>}
 
         {!isLoading && (!groups || groups.length === 0) && (
-          <div className="text-center py-20 bg-white border border-dashed rounded-[2rem]">
+          <div className="text-center py-20 bg-card border border-dashed rounded-[2rem]">
             <Users className="mx-auto h-16 w-16 text-muted-foreground/30" />
             <h3 className="mt-6 text-2xl font-bold font-headline">Keine Gruppen gefunden</h3>
             <p className="mt-2 text-muted-foreground text-lg max-w-sm mx-auto">Du bist noch in keiner Gruppe. Erstelle eine neue und lerne gemeinsam!</p>
@@ -58,7 +58,7 @@ export function GroupsList({ key: _key }: { key: string }) {
             {groups.map((group) => (
               <Card
                 key={group.id}
-                className="group relative bg-white border-none shadow-xl shadow-primary/5 rounded-3xl p-8 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[280px]"
+                className="group relative bg-card border-none shadow-xl shadow-primary/5 rounded-3xl p-8 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[280px]"
                 onClick={() => router.push(`/dashboard/groups/${group.id}`)}
               >
                 <div className="absolute top-0 right-0 p-4">
