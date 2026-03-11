@@ -1,0 +1,773 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Vocaro application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "PublicProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PublicProfile",
+      "type": "object",
+      "description": "Represents the publicly visible information of a user.",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "The user's public display name."
+        },
+        "displayName_lowercase": {
+          "type": "string",
+          "description": "The user's public display name in lowercase for searching."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the user's profile picture."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the profile was created."
+        }
+      },
+      "required": [
+        "displayName",
+        "displayName_lowercase"
+      ]
+    },
+    "Friendship": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Friendship",
+      "type": "object",
+      "description": "Represents a friendship link between two users, including its status.",
+      "properties": {
+        "requesterId": {
+          "type": "string",
+          "description": "The user ID of the person who initiated the friendship request."
+        },
+        "recipientId": {
+          "type": "string",
+          "description": "The user ID of the person who received the friendship request."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the friendship request.",
+          "enum": [
+            "pending",
+            "accepted"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the friendship request was created."
+        }
+      },
+      "required": [
+        "requesterId",
+        "recipientId",
+        "status",
+        "createdAt"
+      ]
+    },
+    "Group": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Group",
+      "type": "object",
+      "description": "Represents a user-created group for collaborative learning.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "UID of the user who created the group."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "memberIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "memberCount": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "createdBy",
+        "createdAt",
+        "memberIds"
+      ]
+    },
+    "GroupInvitation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GroupInvitation",
+      "type": "object",
+      "description": "Represents an invitation for a user to join a group.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "groupId": {
+          "type": "string"
+        },
+        "groupName": {
+          "type": "string"
+        },
+        "inviterId": {
+          "type": "string"
+        },
+        "inviterName": {
+          "type": "string"
+        },
+        "recipientId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "groupId",
+        "groupName",
+        "inviterId",
+        "inviterName",
+        "recipientId",
+        "status",
+        "createdAt"
+      ]
+    },
+    "Subject": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Subject",
+      "type": "object",
+      "description": "Represents a subject (e.g., Spanish, Math) created by the user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the subject entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Subject)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the subject."
+        },
+        "emoji": {
+          "type": "string",
+          "description": "The emoji associated with the subject."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "emoji"
+      ]
+    },
+    "Stack": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Stack",
+      "type": "object",
+      "description": "Represents a stack of vocabulary words within a subject.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the stack entity."
+        },
+        "subjectId": {
+          "type": "string",
+          "description": "Reference to Subject. (Relationship: Subject 1:N Stack)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the vocabulary stack."
+        }
+      },
+      "required": [
+        "id",
+        "subjectId",
+        "name"
+      ]
+    },
+    "Vocabulary": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vocabulary",
+      "type": "object",
+      "description": "Represents a vocabulary word or phrase.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the vocabulary entity."
+        },
+        "stackId": {
+          "type": "string",
+          "description": "Reference to Stack. (Relationship: Stack 1:N Vocabulary)"
+        },
+        "word": {
+          "type": "string",
+          "description": "The vocabulary word or phrase."
+        },
+        "definition": {
+          "type": "string",
+          "description": "The definition of the vocabulary word or phrase."
+        },
+        "phonetic": {
+          "type": "string",
+          "description": "The phonetic transcription of the term."
+        },
+        "relatedWord": {
+          "type": "object",
+          "properties": {
+            "language": {
+              "type": "string"
+            },
+            "word": {
+              "type": "string"
+            }
+          }
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional contextual notes, examples, or hints for the term."
+        },
+        "aiNote": {
+          "type": "string",
+          "description": "An AI-generated tip or mnemonic for remembering the term."
+        },
+        "source": {
+          "type": "string",
+          "description": "The source of the vocabulary item, either 'ai' or 'manual'.",
+          "enum": [
+            "ai",
+            "manual"
+          ]
+        },
+        "isMastered": {
+          "type": "boolean",
+          "description": "True if the user has answered this vocabulary item correctly at least once."
+        }
+      },
+      "required": [
+        "id",
+        "stackId",
+        "word",
+        "definition"
+      ]
+    },
+    "Verb": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Verb",
+      "type": "object",
+      "description": "Represents a verb with its conjugations and translation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the verb entity."
+        },
+        "subjectId": {
+          "type": "string",
+          "description": "Reference to Subject. (Relationship: Subject 1:N Verb)"
+        },
+        "infinitive": {
+          "type": "string",
+          "description": "The infinitive form of the verb."
+        },
+        "language": {
+          "type": "string",
+          "description": "The language of the verb (e.g., 'French', 'English')."
+        },
+        "translation": {
+          "type": "string",
+          "description": "The German translation of the verb."
+        },
+        "forms": {
+          "type": "object",
+          "description": "An object containing all tenses and their conjugated forms."
+        },
+        "aiNote": {
+          "type": "string",
+          "description": "An AI-generated tip or mnemonic for remembering the verb."
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "ai",
+            "manual"
+          ]
+        },
+        "isMastered": {
+            "type": "boolean",
+            "description": "True if the user has mastered the verb, e.g., by answering its infinitive correctly."
+        }
+      },
+      "required": [
+        "id",
+        "subjectId",
+        "infinitive",
+        "language",
+        "translation",
+        "forms"
+      ]
+    },
+    "UserSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserSettings",
+      "type": "object",
+      "description": "Represents user-specific settings for the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user settings entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 UserSettings)"
+        },
+        "font": {
+          "type": "string",
+          "description": "The user's preferred font.",
+          "enum": [
+            "font-body",
+            "font-creative",
+            "font-code"
+          ]
+        },
+        "enableConfetti": {
+          "type": "boolean",
+          "description": "Whether to show confetti animation on high scores."
+        },
+        "hapticFeedback": {
+          "type": "boolean",
+          "description": "Whether to enable haptic feedback on supported devices."
+        },
+        "ttsEnabled": {
+          "type": "boolean",
+          "description": "Whether text-to-speech is enabled."
+        },
+        "ttsAutoplay": {
+          "type": "boolean",
+          "description": "Whether to autoplay text-to-speech."
+        },
+        "vocabQueryDirection": {
+          "type": "boolean",
+          "description": "Query direction for vocabulary flashcards (true: definition first)."
+        },
+        "vocabShowHints": {
+          "type": "boolean",
+          "description": "Whether to show hints on vocabulary flashcards."
+        },
+        "vocabOverviewDirection": {
+          "type": "string",
+          "enum": [
+            "term",
+            "definition"
+          ],
+          "description": "Which side to show first in vocabulary lists."
+        },
+        "verbQueryDirection": {
+          "type": "boolean",
+          "description": "Query direction for verb practice (true: definition first)."
+        },
+        "verbShowHints": {
+          "type": "boolean",
+          "description": "Whether to show hints during verb practice."
+        },
+        "darkMode": {
+          "type": "boolean",
+          "description": "Whether dark mode is enabled or not."
+        }
+      },
+      "required": [
+        "id",
+        "userId"
+      ]
+    },
+    "LearningSession": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LearningSession",
+      "type": "object",
+      "description": "Represents a learning session for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the learning session entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N LearningSession)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "The start time of the learning session.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "The end time of the learning session.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "startTime"
+      ]
+    },
+    "LearningSessionVocabulary": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LearningSessionVocabulary",
+      "type": "object",
+      "description": "Represents the vocabulary learned in a learning session.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the learning session vocabulary entity."
+        },
+        "learningSessionId": {
+          "type": "string",
+          "description": "Reference to LearningSession. (Relationship: LearningSession 1:N LearningSessionVocabulary)"
+        },
+        "vocabularyId": {
+          "type": "string",
+          "description": "Reference to Vocabulary. (Relationship: Vocabulary 1:N LearningSessionVocabulary)"
+        },
+        "correct": {
+          "type": "boolean",
+          "description": "Whether the user answered the vocabulary correctly."
+        }
+      },
+      "required": [
+        "id",
+        "learningSessionId",
+        "vocabularyId",
+        "correct"
+      ]
+    },
+    "LearningSessionVerbAnswer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LearningSessionVerbAnswer",
+      "type": "object",
+      "description": "Represents a user's answer for a verb practice item in a learning session.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier."
+        },
+        "learningSessionId": {
+          "type": "string",
+          "description": "Reference to LearningSession."
+        },
+        "practiceItemId": {
+          "type": "string",
+          "description": "The unique ID of the practiced item (e.g., verbId-tense-pronoun)."
+        },
+        "verbId": {
+          "type": "string",
+          "description": "Reference to the base Verb entity."
+        },
+        "correct": {
+          "type": "boolean",
+          "description": "Whether the user answered correctly."
+        }
+      },
+      "required": [
+        "id",
+        "learningSessionId",
+        "practiceItemId",
+        "verbId",
+        "correct"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/publicProfiles/{userId}",
+        "definition": {
+          "entityName": "PublicProfile",
+          "schema": {
+            "$ref": "#/backend/entities/PublicProfile"
+          },
+          "description": "Stores public user profile information that is safe to be read by any authenticated user, used for features like user search.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, same as their auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/friendships/{friendshipId}",
+        "definition": {
+          "entityName": "Friendship",
+          "schema": {
+            "$ref": "#/backend/entities/Friendship"
+          },
+          "description": "Stores friendship requests and statuses between users. The document ID is a composite of the two user IDs, sorted alphabetically and joined by an underscore.",
+          "params": [
+            {
+              "name": "friendshipId",
+              "description": "The composite unique identifier for the friendship."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/groups/{groupId}",
+        "definition": {
+          "entityName": "Group",
+          "schema": {
+            "$ref": "#/backend/entities/Group"
+          },
+          "description": "Stores group information. Member access is controlled by the memberIds array."
+        }
+      },
+      {
+        "path": "/groupInvitations/{invitationId}",
+        "definition": {
+          "entityName": "GroupInvitation",
+          "schema": {
+            "$ref": "#/backend/entities/GroupInvitation"
+          },
+          "description": "Stores pending invitations for users to join groups. The ID is a composite of groupId and recipientId."
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user data.  Top-level collection. User documents are created on user registration. All user data are nested under this collection.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/subjects/{subjectId}",
+        "definition": {
+          "entityName": "Subject",
+          "schema": {
+            "$ref": "#/backend/entities/Subject"
+          },
+          "description": "Stores subjects created by the user. Path-based ownership ensures only the user can access their subjects.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "subjectId",
+              "description": "The unique identifier for the subject."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/subjects/{subjectId}/stacks/{stackId}",
+        "definition": {
+          "entityName": "Stack",
+          "schema": {
+            "$ref": "#/backend/entities/Stack"
+          },
+          "description": "Stores vocabulary stacks within a subject. Path-based ownership ensures only the user can access their stacks.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "subjectId",
+              "description": "The unique identifier for the subject."
+            },
+            {
+              "name": "stackId",
+              "description": "The unique identifier for the stack."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/subjects/{subjectId}/stacks/{stackId}/vocabulary/{vocabularyId}",
+        "definition": {
+          "entityName": "Vocabulary",
+          "schema": {
+            "$ref": "#/backend/entities/Vocabulary"
+          },
+          "description": "Stores vocabulary words within a stack. Path-based ownership ensures only the user can access their vocabulary.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "subjectId",
+              "description": "The unique identifier for the subject."
+            },
+            {
+              "name": "stackId",
+              "description": "The unique identifier for the stack."
+            },
+            {
+              "name": "vocabularyId",
+              "description": "The unique identifier for the vocabulary."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/subjects/{subjectId}/verbs/{verbId}",
+        "definition": {
+          "entityName": "Verb",
+          "schema": {
+            "$ref": "#/backend/entities/Verb"
+          },
+          "description": "Stores verbs and their conjugations for a subject. Path-based ownership ensures only the user can access their verbs.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "subjectId",
+              "description": "The unique identifier for the subject."
+            },
+            {
+              "name": "verbId",
+              "description": "The unique identifier for the verb."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/settings/{settingsId}",
+        "definition": {
+          "entityName": "UserSettings",
+          "schema": {
+            "$ref": "#/backend/entities/UserSettings"
+          },
+          "description": "Stores user-specific settings.  Path-based ownership. Although only one settings document is anticipated, using a collection allows future multi-settings document use.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "settingsId",
+              "description": "The unique identifier for the user settings. There should be one settings document for each user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/learningSessions/{learningSessionId}",
+        "definition": {
+          "entityName": "LearningSession",
+          "schema": {
+            "$ref": "#/backend/entities/LearningSession"
+          },
+          "description": "Stores learning sessions for the user. Path-based ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "learningSessionId",
+              "description": "The unique identifier for the learning session."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/learningSessions/{learningSessionId}/vocabulary/{vocabularyId}",
+        "definition": {
+          "entityName": "LearningSessionVocabulary",
+          "schema": {
+            "$ref": "#/backend/entities/LearningSessionVocabulary"
+          },
+          "description": "Stores vocabulary learned in a learning session. Path-based ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "learningSessionId",
+              "description": "The unique identifier for the learning session."
+            },
+            {
+              "name": "vocabularyId",
+              "description": "The unique identifier for the vocabulary."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/learningSessions/{learningSessionId}/verbAnswers/{verbAnswerId}",
+        "definition": {
+          "entityName": "LearningSessionVerbAnswer",
+          "schema": {
+            "$ref": "#/backend/entities/LearningSessionVerbAnswer"
+          },
+          "description": "Stores verb answers for a specific learning session. Path-based ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The user's ID."
+            },
+            {
+              "name": "learningSessionId",
+              "description": "The learning session's ID."
+            },
+            {
+              "name": "verbAnswerId",
+              "description": "The answer's ID."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the Vocaro application's core features, including user authentication, subject/vocabulary management, learning mode, and settings customization, while adhering to the principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), QAPs (Queries are not Filters), and Invariants. The structure leverages path-based ownership and denormalization to ensure secure and scalable data access.\n\n*   **Authorization Independence:** Achieved through path-based ownership for user-specific data.  For example, subjects, stacks, vocabulary, verbs, learning sessions, and user settings are all stored under the `/users/{userId}` path, eliminating the need for `get()` calls in security rules to verify ownership. No collection relies on parent attributes for authorization.  All security rules can be based on `request.auth.uid` and the document path.\n\n*   **Clarity of Intent:** The hierarchical structure clearly represents the relationships between users and their data (subjects, stacks, vocabulary).  Naming conventions are consistent (e.g., `userId`, `subjectId`, `stackId`).\n\n*   **DBAC (Database-Based Access Control):**  Authorization relies solely on `request.auth.uid` and the document path. There are no custom claims required.\n\n*   **QAPs (Queries are not Filters):** Path-based ownership (`/users/{userId}/subjects/{subjectId}`) enables secure `list` operations, as rules can enforce that only the authenticated user can access their own subjects, stacks, and vocabulary.\n\n*   **Invariants:** The structure supports data integrity by enforcing ownership via path structure. Timestamps can be added to entities if needed (e.g., creation/modification timestamps). Denormalization is used to maintain authorization context without relying on `get()` calls.\n\n**Specific Design Choices and Justifications:**\n\n*   `/users/{userId}`: Root collection for all user-specific data, ensuring clear ownership and simplifies security rules.\n*   `/users/{userId}/subjects/{subjectId}`: Stores subjects created by the user.\n*   `/users/{userId}/subjects/{subjectId}/stacks/{stackId}`: Stores vocabulary stacks within each subject.\n*   `/users/{userId}/subjects/{subjectId}/verbs/{verbId}`: Stores verbs and their conjugations for a subject.\n*   `/users/{userId}/subjects/{subjectId}/stacks/{stackId}/vocabulary/{vocabularyId}`: Stores individual vocabulary items within a stack.\n*   `/users/{userId}/settings/{settingsId}`: Stores user-specific settings. While only one settings document is expected per user, using a collection allows for easier future expansion if multiple settings documents are needed.\n*   `/users/{userId}/learningSessions/{learningSessionId}`: Stores learning sessions for the user.\n*   `/users/{userId}/learningSessions/{learningSessionId}/vocabulary/{vocabularyId}`: Stores vocabulary learned in a learning session.\n*   `/users/{userId}/learningSessions/{learningSessionId}/verbAnswers/{verbAnswerId}`: Stores answers for practiced verb forms within a learning session."
+  }
+}
