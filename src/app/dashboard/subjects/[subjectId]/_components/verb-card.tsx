@@ -159,7 +159,7 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange, onTenseSel
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} asChild>
-      <Card className="rounded-[2.5rem] border-none bg-white shadow-xl shadow-primary/5 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10">
+      <Card className="rounded-[2.5rem] border-none bg-card shadow-xl shadow-primary/5 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10">
         <div className="p-8 flex items-center justify-between gap-6">
           <div className="flex items-center gap-6 flex-1 min-w-0">
             <Checkbox
@@ -223,7 +223,7 @@ export function VerbCard({ verb, onEdit, onDelete, onSelectionChange, onTenseSel
                         </div>
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-2 hover:bg-white hover:shadow-lg transition-all">
+                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-2 hover:bg-secondary hover:shadow-lg transition-all">
                               <Info className="h-4 w-4" />
                             </Button>
                           </PopoverTrigger>

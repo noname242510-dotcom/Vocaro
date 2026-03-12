@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, BookOpen, Zap, Users, Settings, ChevronRight } from 'lucide-react';
+import { Home, BookOpen, Users, Settings, BarChart2, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sheet';
 import { Subject } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Loader2 } from 'lucide-react';
 
 interface NavBarProps {
     subjects: Subject[] | null;
@@ -27,29 +28,33 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
 
     const navItems = [
         { href: '/dashboard', icon: Home, label: 'Home' },
-        { id: 'subjects', icon: BookOpen, label: 'Fächer', isSheet: true },
         { href: '/dashboard/community', icon: Users, label: 'Community' },
-        { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
+        { id: 'subjects', icon: BookOpen, label: 'Sprachen', isSheet: true },
+        { href: '/dashboard/overview', icon: BarChart2, label: 'Statistiken' },
+        { href: '/dashboard/settings', icon: Settings, label: 'Einst.' },
     ];
 
     const isActive = (href: string) => pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
 
     return (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-primary/5 pb-safe-area-inset-bottom md:hidden shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
-            <div className="flex items-center justify-around h-20 px-4">
+            <div className="flex items-center justify-around h-20 px-2">
                 {navItems.map((item) => {
                     if (item.isSheet) {
+                        const isSubjectActive = pathname.startsWith('/dashboard/subjects');
                         return (
                             <Sheet key={item.id} open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                                 <SheetTrigger asChild>
                                     <button
                                         className={cn(
                                             "flex flex-col items-center justify-center flex-1 transition-all duration-300 transform active:scale-90",
-                                            "text-muted-foreground hover:text-primary"
+                                            isSubjectActive ? "text-primary scale-110" : "text-muted-foreground hover:text-primary"
                                         )}
                                     >
-                                        <item.icon className="h-6 w-6" />
-                                        <span className="text-[10px] mt-1.5 font-black uppercase tracking-widest opacity-60 leading-none">{item.label}</span>
+                                        <item.icon className={cn("h-6 w-6", isSubjectActive && "fill-current drop-shadow-[0_0_10px_rgba(0,0,0,0.1)]")} />
+                                        <span className={cn("text-[10px] mt-1.5 font-black uppercase tracking-widest leading-none",
+                                            isSubjectActive ? "opacity-100" : "opacity-60"
+                                        )}>{item.label}</span>
                                     </button>
                                 </SheetTrigger>
                                 <SheetContent side="bottom" className="rounded-t-[3rem] h-[75vh] p-0 border-none shadow-2xl">
@@ -57,7 +62,7 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
                                         <SheetHeader className="mb-8">
                                             <SheetTitle className="text-4xl font-black font-creative flex items-center gap-4">
                                                 <div className="h-12 w-12 bg-primary rounded-2xl flex items-center justify-center">
-                                                    <BookOpen className="h-6 w-6 text-white" />
+                                                    <BookOpen className="h-6 w-6 text-primary-foreground" />
                                                 </div>
                                                 Deine Fächer
                                             </SheetTitle>
@@ -129,28 +134,4 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
             </div>
         </div>
     );
-}
-function Loader2({ className }: { className?: string }) {
-    return (
-        <svg
-            className={cn("animate-spin", className)}
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-        >
-            <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-            ></circle>
-            <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-        </svg>
-    )
 }

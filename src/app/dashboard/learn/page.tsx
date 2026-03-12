@@ -425,7 +425,7 @@ export default function LearnPage() {
   const ttsLanguage = settings?.vocabQueryDirection ? 'de-DE' : subjectLanguage;
 
   return (
-    <div className="max-w-4xl mx-auto min-h-[90vh] flex flex-col justify-between py-12 px-6">
+    <div className="max-w-4xl mx-auto h-screen flex flex-col justify-between py-8 px-6 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between">
         <AlertDialog>
@@ -461,10 +461,6 @@ export default function LearnPage() {
           >
             <Pencil className="h-6 w-6" />
           </Button>
-          <div className="flex items-center gap-3 bg-card px-8 rounded-[1.5rem] font-bold text-lg shadow-xl shadow-primary/5 border border-primary/5">
-            <Zap className="h-6 w-6 text-primary fill-primary" />
-            <span className="font-creative text-2xl font-black">{sessionStats.streak}</span>
-          </div>
         </div>
       </div>
 
@@ -496,7 +492,7 @@ export default function LearnPage() {
               transition={{ type: "spring", stiffness: 260, damping: 25 }}
               className="w-full h-full"
             >
-              <div className="relative w-full aspect-[4/3] md:aspect-[3/2]" style={{ transformStyle: 'preserve-3d' }}>
+              <div className="relative w-full aspect-video md:aspect-[2/1]" style={{ transformStyle: 'preserve-3d' }}>
                 <motion.div
                   className="w-full h-full relative"
                   style={{ transformStyle: 'preserve-3d' }}
@@ -532,8 +528,14 @@ export default function LearnPage() {
                       )}
                     </div>
 
-                    <div className="text-center space-y-6">
-                      <h3 className="font-creative text-5xl md:text-7xl font-black tracking-tight text-foreground leading-[1.1]">
+                    <div className="text-center space-y-4">
+                      <h3 className={cn(
+                        "font-creative font-black tracking-tight text-foreground leading-[1.1]",
+                        currentItem.front.length <= 10 ? "text-5xl md:text-6xl" :
+                          currentItem.front.length <= 20 ? "text-3xl md:text-4xl" :
+                            currentItem.front.length <= 40 ? "text-2xl md:text-3xl" :
+                              "text-xl md:text-2xl"
+                      )}>
                         {currentItem.front}
                       </h3>
                       {currentItem.data.phonetic && (
@@ -551,8 +553,14 @@ export default function LearnPage() {
                     className="absolute inset-0 flex flex-col items-center justify-center p-12 bg-primary text-white rounded-[3rem] shadow-2xl shadow-primary/20 border-none overflow-hidden"
                     style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
                   >
-                    <div className="text-center space-y-8">
-                      <h3 className="font-creative text-5xl md:text-7xl font-black tracking-tight leading-[1.1]">
+                    <div className="text-center space-y-6">
+                      <h3 className={cn(
+                        "font-creative font-black tracking-tight leading-[1.1]",
+                        currentItem.back.length <= 10 ? "text-5xl md:text-6xl" :
+                          currentItem.back.length <= 20 ? "text-3xl md:text-4xl" :
+                            currentItem.back.length <= 40 ? "text-2xl md:text-3xl" :
+                              "text-xl md:text-2xl"
+                      )}>
                         {currentItem.back}
                       </h3>
                       {currentItem.data.relatedWord && (

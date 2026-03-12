@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, Settings, Sun, Moon, LayoutDashboard, Users } from 'lucide-react';
+import { Home, Settings, Sun, Moon, LayoutDashboard, Users, BookOpen, BarChart2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
@@ -17,6 +17,7 @@ import type { Subject } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { TaskProvider } from '@/contexts/task-context';
 import { SettingsProvider, useSettings } from '@/contexts/settings-context';
+import { SubjectsCacheProvider } from '@/contexts/subjects-cache-context';
 import { NavBar } from '@/components/nav-bar';
 import { UserNav } from '@/components/user-nav';
 
@@ -54,9 +55,9 @@ function DashboardLayoutContent({
 
   const navItems = [
     { href: '/dashboard', icon: Home, label: 'Home' },
-    { href: '/dashboard/stacks', icon: LayoutDashboard, label: 'Flashcards' },
     { href: '/dashboard/community', icon: Users, label: 'Community' },
-    { href: '/dashboard/overview', icon: LayoutDashboard, label: 'Statistiken' },
+    { href: '/dashboard/stacks', icon: BookOpen, label: 'Sprachen' },
+    { href: '/dashboard/overview', icon: BarChart2, label: 'Statistiken' },
     { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
   ];
 
@@ -103,22 +104,19 @@ function DashboardLayoutContent({
             })}
           </nav>
 
+          {/* Dark Mode Toggle */}
           <div className="p-6">
             {mounted && !areSettingsLoading && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={toggleTheme}
-                className="w-full justify-start rounded-xl h-10 px-4 mb-4 text-muted-foreground"
+                className="w-full justify-start rounded-xl h-10 px-4 text-muted-foreground"
               >
                 {settings?.darkMode ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
                 {settings?.darkMode ? 'Light Mode' : 'Dark Mode'}
               </Button>
             )}
-            <Button size="lg" className="w-full rounded-2xl h-14 font-bold gap-2 shadow-xl shadow-primary/10">
-              <span className="text-xl">+</span>
-              Neues Set
-            </Button>
           </div>
         </aside>
       )}
@@ -167,7 +165,9 @@ export default function DashboardLayout({
   return (
     <TaskProvider>
       <SettingsProvider>
-        <DashboardLayoutContent>{children}</DashboardLayoutContent>
+        <SubjectsCacheProvider>
+          <DashboardLayoutContent>{children}</DashboardLayoutContent>
+        </SubjectsCacheProvider>
       </SettingsProvider>
     </TaskProvider>
   );

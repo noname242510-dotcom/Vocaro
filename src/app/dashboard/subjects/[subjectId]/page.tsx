@@ -117,10 +117,13 @@ export default function SubjectDetailPage() {
   const [manualNotes, setManualNotes] = useState('');
   const [isAddingManually, setIsAddingManually] = useState(false);
   const [isAddVocabDialogOpen, setIsAddVocabDialogOpen] = useState(false);
+  const [isAddVerbDirectDialogOpen, setIsAddVerbDirectDialogOpen] = useState(false);
   const [isDeleteVocabDialogOpen, setIsDeleteVocabDialogOpen] = useState(false);
   const [editingVocab, setEditingVocab] = useState<VocabularyItem | null>(null);
   const [isVocabDialogOpen, setIsVocabDialogOpen] = useState(false);
   const [vocabSearchQuery, setVocabSearchQuery] = useState('');
+  const [manualRelatedWordLanguage, setManualRelatedWordLanguage] = useState('');
+  const [manualRelatedWord, setManualRelatedWord] = useState('');
 
   // Subject state
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -415,6 +418,9 @@ export default function SubjectDetailPage() {
         term: manualTerm,
         definition: manualDefinition,
         phonetic: manualPhonetic,
+        relatedWord: (manualRelatedWordLanguage || manualRelatedWord)
+          ? { language: manualRelatedWordLanguage, word: manualRelatedWord }
+          : null,
         notes: manualNotes,
         createdAt: serverTimestamp(),
         source: 'manual',
@@ -425,6 +431,8 @@ export default function SubjectDetailPage() {
       setManualDefinition('');
       setManualPhonetic('');
       setManualNotes('');
+      setManualRelatedWordLanguage('');
+      setManualRelatedWord('');
 
       if (closeOnFinish) {
         resetAndCloseAddVocabDialog();
@@ -887,23 +895,17 @@ export default function SubjectDetailPage() {
           </div>
         </div>
 
-        <TabsContent value="vocabulary" className="space-y-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Add New Stack Card */}
+        <TabsContent value="vocabulary" className="space-y-8">
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3 flex-wrap">
             <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
               <DialogTrigger asChild>
-                <button
+                <Button
                   onClick={() => openAddVocabDialog()}
-                  className="group border-2 border-dashed border-muted-foreground/20 rounded-[2.5rem] p-10 flex flex-col items-center justify-center text-center gap-4 hover:border-primary/40 hover:bg-primary/5 transition-all min-h-[300px]"
+                  className="h-12 rounded-2xl font-bold px-6 shadow-md shadow-primary/20"
                 >
-                  <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all transform group-hover:scale-110">
-                    <Plus className="h-8 w-8" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold font-headline mb-1">Neuer Stapel</h3>
-                    <p className="text-sm text-muted-foreground font-medium">Füge manuell oder per KI Vokabeln hinzu</p>
-                  </div>
-                </button>
+                  <Plus className="mr-2 h-5 w-5" /> Neue Vokabeln
+                </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-8">
                 <DialogHeader>
@@ -972,13 +974,28 @@ export default function SubjectDetailPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Term</Label>
+                          <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Fremdwort</Label>
                           <Input value={manualTerm} onChange={(e) => setManualTerm(e.target.value)} placeholder="Wort" />
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Definition</Label>
+                          <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Übersetzung</Label>
                           <Input value={manualDefinition} onChange={(e) => setManualDefinition(e.target.value)} placeholder="Bedeutung" />
                         </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Lautschrift (optional)</Label>
+                        <Input value={manualPhonetic} onChange={(e) => setManualPhonetic(e.target.value)} placeholder="z.B. /ˈhɛloʊ/" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Ähnliches Wort in anderer Sprache (optional)</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <Input value={manualRelatedWordLanguage} onChange={(e) => setManualRelatedWordLanguage(e.target.value)} placeholder="Sprache (z.B. Deutsch)" />
+                          <Input value={manualRelatedWord} onChange={(e) => setManualRelatedWord(e.target.value)} placeholder="Ähnliches Wort" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Hinweise / Tipps (optional)</Label>
+                        <Textarea value={manualNotes} onChange={(e) => setManualNotes(e.target.value)} placeholder="Merkregel, Kontext, Verwendung..." className="rounded-xl resize-none" rows={2} />
                       </div>
                     </div>
                     <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually || !manualTerm || !manualDefinition} className="w-full h-12 rounded-xl font-bold">
@@ -989,6 +1006,17 @@ export default function SubjectDetailPage() {
               </DialogContent>
             </Dialog>
 
+            <Button
+              variant="outline"
+              className="h-12 rounded-2xl font-bold px-6 border-2"
+              onClick={() => { setActiveTab('verbs'); handleAddNewVerb(); }}
+            >
+              <Plus className="mr-2 h-5 w-5" /> Neue Verben
+            </Button>
+          </div>
+
+          {/* Stacks - vertical list */}
+          <div className="space-y-6">
             {stacks?.map((stack) => {
               const results = filteredVocabulary[stack.id] || [];
               if (vocabSearchQuery && results.length === 0) return null;
@@ -1105,7 +1133,7 @@ export default function SubjectDetailPage() {
 
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
+      <div className="fixed bottom-24 md:bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
         <div className="p-2 flex items-center justify-between gap-2 glass-effect rounded-full">
           {activeTab === 'vocabulary' && (
             <>
@@ -1142,15 +1170,17 @@ export default function SubjectDetailPage() {
         subjectId={subjectId}
         existingVerb={editingVerb}
       />
-      {editingVocab && (
-        <VocabDialog
-          isOpen={isVocabDialogOpen}
-          onOpenChange={setIsVocabDialogOpen}
-          vocabItem={editingVocab}
-          subjectId={subjectId}
-          onSave={handleSaveVocab}
-        />
-      )}
-    </div>
+      {
+        editingVocab && (
+          <VocabDialog
+            isOpen={isVocabDialogOpen}
+            onOpenChange={setIsVocabDialogOpen}
+            vocabItem={editingVocab}
+            subjectId={subjectId}
+            onSave={handleSaveVocab}
+          />
+        )
+      }
+    </div >
   );
 }
