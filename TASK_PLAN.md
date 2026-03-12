@@ -50,7 +50,7 @@
 - [x] Mobilen Header (Logo + UserNav) entfernt.
 
 ## 9. Qualitätsprüfung
-- [ ] Alle Punkte aus dem Anforderungsdokument im Localhost überprüft.
-- [ ] Sichergestellt, dass keine neuen Fehler eingeführt wurden.
-- [ ] Dark Mode auf allen überarbeiteten Seiten verifiziert.
-- [ ] Alle Checkboxen hier abgehakt.
+- [x] Alle Punkte aus dem Anforderungsdokument im Localhost überprüft.
+- [x] Sichergestellt, dass keine neuen Fehler eingeführt wurden.
+- [x] Dark Mode auf allen überarbeiteten Seiten verifiziert.
+- [x] Alle Checkboxen hier abgehakt.
