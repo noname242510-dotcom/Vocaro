@@ -11,8 +11,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { NavBar } from '@/components/nav-bar';
 import { UserNav } from '@/components/user-nav';
 import { SettingsProvider } from '@/contexts/settings-context';
-import { SubjectsCacheProvider } from '@/contexts/subjects-cache-context';
-import { useSubjectsCache } from '@/contexts/subjects-cache-context';
+import { SubjectsCacheProvider, useSubjectsCache } from '@/contexts/subjects-cache-context';
 import { TaskProvider } from '@/contexts/task-context';
 import { TaskProgressToast } from '@/components/task-progress-toast';
 import { GlobalVerbResultListener } from '@/components/global-verb-result-listener';
@@ -25,8 +24,10 @@ const navItems = [
   { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
 ];
 
+// Inner component that can safely use the context
 function NavContent() {
   const pathname = usePathname();
+  // This hook is now safe to call here
   const { subjects, isLoading } = useSubjectsCache();
 
   return (
@@ -64,49 +65,53 @@ function NavContent() {
   );
 }
 
-
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+// Inner layout component that consumes contexts
+function DashboardClientLayout({ children }: { children: ReactNode }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const isMobile = useIsMobile();
+  // This hook is now safe to call here
   const { subjects, isLoading: isLoadingSubjects } = useSubjectsCache();
 
   if (isMobile) {
     return (
-      <SettingsProvider>
-        <SubjectsCacheProvider>
-          <div className="pb-32">
-            <main>{children}</main>
-            <NavBar subjects={subjects} isLoadingSubjects={isLoadingSubjects} />
-          </div>
-        </SubjectsCacheProvider>
-      </SettingsProvider>
+      <div className="pb-32">
+        <main>{children}</main>
+        <NavBar subjects={subjects} isLoadingSubjects={isLoadingSubjects} />
+      </div>
     );
   }
 
   return (
+    <div className="flex min-h-screen">
+      <aside
+        className={cn(
+          'fixed left-0 top-0 h-full bg-card border-r transition-all duration-300 z-20',
+          isExpanded ? 'w-64' : 'w-20'
+        )}
+      >
+        <NavContent />
+      </aside>
+      <div className={cn("flex-1 flex flex-col min-h-screen", isExpanded ? 'md:ml-64' : 'md:ml-20')}>
+        <header className="sticky top-0 z-10 h-20 flex items-center justify-end px-8 bg-background/80 backdrop-blur-sm border-b">
+           <UserNav />
+        </header>
+        <main className="flex-1 p-8 md:p-12 pb-28 md:pb-12 bg-secondary/30">
+          {children}
+        </main>
+        <TaskProgressToast />
+        <GlobalVerbResultListener />
+      </div>
+    </div>
+  );
+}
+
+// The exported layout now only wraps providers
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  return (
     <TaskProvider>
       <SettingsProvider>
         <SubjectsCacheProvider>
-          <div className="flex min-h-screen">
-            <aside
-              className={cn(
-                'fixed left-0 top-0 h-full bg-card border-r transition-all duration-300 z-20',
-                isExpanded ? 'w-64' : 'w-20'
-              )}
-            >
-              <NavContent />
-            </aside>
-            <div className={cn("flex-1 flex flex-col min-h-screen", isExpanded ? 'md:ml-64' : 'md:ml-20')}>
-              <header className="sticky top-0 z-10 h-20 flex items-center justify-end px-8 bg-background/80 backdrop-blur-sm border-b">
-                 <UserNav />
-              </header>
-              <main className="flex-1 p-8 md:p-12 pb-28 md:pb-12 bg-secondary/30">
-                {children}
-              </main>
-              <TaskProgressToast />
-              <GlobalVerbResultListener />
-            </div>
-          </div>
+          <DashboardClientLayout>{children}</DashboardClientLayout>
         </SubjectsCacheProvider>
       </SettingsProvider>
     </TaskProvider>
