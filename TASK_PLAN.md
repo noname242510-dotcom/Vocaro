@@ -16,12 +16,12 @@
 - [x] Hover-Effekt für Desktop mit Löschen/Umbenennen-Buttons implementiert.
 
 ## 3. Community-Seite (`/dashboard/community/*`)
-- [ ] Tabs zu Unterseiten refaktorisiert: `/dashboard/community` (jetzt Gruppen), `/dashboard/community/freunde`, `/dashboard/community/entdecken`.
-- [ ] "Übersicht" zu "Gruppen" umbenannt.
-- [ ] Beschreibende Texte und "New"-Badge aus Gruppen-Kacheln entfernt.
-- [ ] "Beitreten"-Button durch Pfeil-Icon ersetzt.
-- [ ] "See All Friends"-Button zu "Neue Gruppe erstellen" geändert.
-- [ ] "Social Feed"-UI und -Logik entfernt.
+- [x] Tabs zu Unterseiten refaktorisiert: `/dashboard/community` (jetzt Gruppen), `/dashboard/community/freunde`, `/dashboard/community/entdecken`.
+- [x] "Übersicht" zu "Gruppen" umbenannt.
+- [x] Beschreibende Texte und "New"-Badge aus Gruppen-Kacheln entfernt.
+- [x] "Beitreten"-Button durch Pfeil-Icon ersetzt.
+- [x] "See All Friends"-Button zu "Neue Gruppe erstellen" geändert.
+- [x] "Social Feed"-UI und -Logik entfernt.
 
 ## 4. Fächer-Seite (`/dashboard/stacks/page.tsx`)
 - [ ] Route von `/stacks` zu `/dashboard/facher` umbenannt.

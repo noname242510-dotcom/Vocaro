@@ -8,7 +8,7 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Group } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Plus, Loader2 } from 'lucide-react';
+import { Users, Plus, Loader2, ArrowRight } from 'lucide-react';
 import { CreateGroupDialog } from './CreateGroupDialog';
 
 export function GroupsList({ key: _key }: { key: string }) {
@@ -29,12 +29,9 @@ export function GroupsList({ key: _key }: { key: string }) {
   return (
     <>
       <div className="space-y-8">
-        <div className="flex justify-between items-center">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Deine Gruppen
-          </h3>
-          <Button variant="link" className="text-primary font-semibold underline" onClick={() => setIsCreateOpen(true)}>
+        <div className="flex justify-end items-center">
+          <Button variant="link" className="text-primary font-semibold" onClick={() => setIsCreateOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
             Neue Gruppe erstellen
           </Button>
         </div>
@@ -58,32 +55,23 @@ export function GroupsList({ key: _key }: { key: string }) {
             {groups.map((group) => (
               <Card
                 key={group.id}
-                className="group relative bg-card border-none shadow-xl shadow-primary/5 rounded-3xl p-8 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col min-h-[280px]"
+                className="group relative bg-card border-none shadow-xl shadow-primary/5 rounded-3xl p-8 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col justify-between min-h-[220px]"
                 onClick={() => router.push(`/dashboard/groups/${group.id}`)}
               >
-                <div className="absolute top-0 right-0 p-4">
-                  <div className="bg-secondary px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">New</div>
-                </div>
-
-                <div className="flex-1 space-y-4">
+                <div className="space-y-2">
                   <div className="w-12 h-12 bg-primary/5 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors duration-300">
                     <Users className="h-6 w-6" />
                   </div>
-
-                  <div className="space-y-2">
-                    <h3 className="text-2xl font-bold font-headline tracking-tight group-hover:text-primary transition-colors">{group.name}</h3>
-                    <p className="text-muted-foreground text-sm line-clamp-2">Lerne gemeinsam mit anderen Mitgliedern in dieser spezialisierten Gruppe.</p>
-                  </div>
+                  <h3 className="text-2xl font-bold font-headline tracking-tight group-hover:text-primary transition-colors">{group.name}</h3>
                 </div>
 
-                <div className="pt-8 border-t flex items-center justify-between">
+                <div className="flex items-center justify-between pt-4">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-muted-foreground">{group.memberCount ?? 0} Mitglieder</span>
                   </div>
-                  <div className="flex items-center gap-1 text-primary font-bold text-sm">
-                    Ansehen <Plus className="h-4 w-4" />
-
-                  </div>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-secondary/30 group-hover:bg-primary group-hover:text-white transition-all">
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </Card>
             ))}
