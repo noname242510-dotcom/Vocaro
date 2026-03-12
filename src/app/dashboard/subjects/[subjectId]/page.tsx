@@ -846,7 +846,7 @@ export default function SubjectDetailPage() {
           <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="h-14 w-14 rounded-2xl border-2 border-destructive/20 text-destructive hover:bg-destructive/5 hover:border-destructive shadow-xl shadow-destructive/5">
-                <Trash2 className="h-5 w-5" />
+                <Trash2 className="h-6 w-6" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent className="rounded-[2.5rem] p-10">
@@ -896,125 +896,116 @@ export default function SubjectDetailPage() {
         </div>
 
         <TabsContent value="vocabulary" className="space-y-8">
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3 flex-wrap">
-            <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  onClick={() => openAddVocabDialog()}
-                  className="h-12 rounded-2xl font-bold px-6 shadow-md shadow-primary/20"
-                >
-                  <Plus className="mr-2 h-5 w-5" /> Neue Vokabeln
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-8">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold font-headline">Vokabeln hinzufügen</DialogTitle>
-                  <DialogDescription>
-                    Wähle eine Methode, um Vokabeln zu deinem Stapel hinzuzufügen.
-                  </DialogDescription>
-                </DialogHeader>
+          <div className="flex justify-between items-center gap-4">
+              <h2 className="text-3xl font-black font-headline">Deine Vokabel-Stapel</h2>
+              <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
+                  <DialogTrigger asChild>
+                      <Button
+                          onClick={() => openAddVocabDialog()}
+                          className="h-12 rounded-2xl font-bold px-6 shadow-md shadow-primary/20"
+                      >
+                          <Plus className="mr-2 h-5 w-5" /> Vokabeln hinzufügen
+                      </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-8">
+                      <DialogHeader>
+                          <DialogTitle className="text-2xl font-bold font-headline">Vokabeln hinzufügen</DialogTitle>
+                          <DialogDescription>
+                              Wähle eine Methode, um Vokabeln zu deinem Stapel hinzuzufügen.
+                          </DialogDescription>
+                      </DialogHeader>
 
-                <Tabs defaultValue="ai" className="w-full mt-6">
-                  <TabsList className="grid w-full grid-cols-2 bg-secondary/50 rounded-xl p-1">
-                    <TabsTrigger value="ai" className="rounded-lg font-bold">KI-Scan (Bild)</TabsTrigger>
-                    <TabsTrigger value="manual" className="rounded-lg font-bold">Manuell</TabsTrigger>
-                  </TabsList>
+                      <Tabs defaultValue="ai" className="w-full mt-6">
+                          <TabsList className="grid w-full grid-cols-2 bg-secondary/50 rounded-xl p-1">
+                              <TabsTrigger value="ai" className="rounded-lg font-bold">KI-Scan (Bild)</TabsTrigger>
+                              <TabsTrigger value="manual" className="rounded-lg font-bold">Manuell</TabsTrigger>
+                          </TabsList>
 
-                  <TabsContent value="ai" className="space-y-6 pt-6">
-                    <div className="space-y-4">
-                      <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Stapelname</Label>
-                      <Input
-                        placeholder="z.B. Lektion 1"
-                        value={newStackName}
-                        onChange={(e) => setNewStackName(e.target.value)}
-                        disabled={!!activeStackId}
-                        className="h-12 rounded-xl"
-                      />
-                    </div>
+                          <TabsContent value="ai" className="space-y-6 pt-6">
+                              <div className="space-y-4">
+                                  <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Stapelname</Label>
+                                  <Input
+                                      placeholder="z.B. Lektion 1"
+                                      value={newStackName}
+                                      onChange={(e) => setNewStackName(e.target.value)}
+                                      disabled={!!activeStackId}
+                                      className="h-12 rounded-xl"
+                                  />
+                              </div>
 
-                    <div className="space-y-4">
-                      <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Bilder hochladen (max. 4)</Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        {previewImages.map((src, idx) => (
-                          <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border">
-                            <Image src={src} alt="Preview" fill className="object-cover" />
-                          </div>
-                        ))}
-                        {previewImages.length < 4 && (
-                          <label className="aspect-video rounded-xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all">
-                            <Upload className="h-6 w-6 text-muted-foreground" />
-                            <span className="text-xs mt-2 font-bold text-muted-foreground">Bild wählen</span>
-                            <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
-                          </label>
-                        )}
-                      </div>
-                    </div>
+                              <div className="space-y-4">
+                                  <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Bilder hochladen (max. 4)</Label>
+                                  <div className="grid grid-cols-2 gap-4">
+                                      {previewImages.map((src, idx) => (
+                                          <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border">
+                                              <Image src={src} alt="Preview" fill className="object-cover" />
+                                          </div>
+                                      ))}
+                                      {previewImages.length < 4 && (
+                                          <label className="aspect-video rounded-xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all">
+                                              <Upload className="h-6 w-6 text-muted-foreground" />
+                                              <span className="text-xs mt-2 font-bold text-muted-foreground">Bild wählen</span>
+                                              <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
+                                          </label>
+                                      )}
+                                  </div>
+                              </div>
 
-                    <Button
-                      onClick={handleExtractAndSaveVocabulary}
-                      disabled={previewImages.length === 0 || !newStackName || isRunning}
-                      className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/10"
-                    >
-                      {isRunning ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
-                      KI-Erkennung starten
-                    </Button>
-                  </TabsContent>
+                              <Button
+                                  onClick={handleExtractAndSaveVocabulary}
+                                  disabled={previewImages.length === 0 || !newStackName || isRunning}
+                                  className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/10"
+                              >
+                                  {isRunning ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
+                                  KI-Erkennung starten
+                              </Button>
+                          </TabsContent>
 
-                  <TabsContent value="manual" className="space-y-4 pt-6">
-                    <div className="grid gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Stapelname</Label>
-                        <Input
-                          placeholder="z.B. Lektion 1"
-                          value={newStackName}
-                          onChange={(e) => setNewStackName(e.target.value)}
-                          disabled={!!activeStackId}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Fremdwort</Label>
-                          <Input value={manualTerm} onChange={(e) => setManualTerm(e.target.value)} placeholder="Wort" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Übersetzung</Label>
-                          <Input value={manualDefinition} onChange={(e) => setManualDefinition(e.target.value)} placeholder="Bedeutung" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Lautschrift (optional)</Label>
-                        <Input value={manualPhonetic} onChange={(e) => setManualPhonetic(e.target.value)} placeholder="z.B. /ˈhɛloʊ/" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Ähnliches Wort in anderer Sprache (optional)</Label>
-                        <div className="grid grid-cols-2 gap-3">
-                          <Input value={manualRelatedWordLanguage} onChange={(e) => setManualRelatedWordLanguage(e.target.value)} placeholder="Sprache (z.B. Deutsch)" />
-                          <Input value={manualRelatedWord} onChange={(e) => setManualRelatedWord(e.target.value)} placeholder="Ähnliches Wort" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Hinweise / Tipps (optional)</Label>
-                        <Textarea value={manualNotes} onChange={(e) => setManualNotes(e.target.value)} placeholder="Merkregel, Kontext, Verwendung..." className="rounded-xl resize-none" rows={2} />
-                      </div>
-                    </div>
-                    <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually || !manualTerm || !manualDefinition} className="w-full h-12 rounded-xl font-bold">
-                      Hinzufügen
-                    </Button>
-                  </TabsContent>
-                </Tabs>
-              </DialogContent>
-            </Dialog>
-
-            <Button
-              variant="outline"
-              className="h-12 rounded-2xl font-bold px-6 border-2"
-              onClick={() => { setActiveTab('verbs'); handleAddNewVerb(); }}
-            >
-              <Plus className="mr-2 h-5 w-5" /> Neue Verben
-            </Button>
+                          <TabsContent value="manual" className="space-y-4 pt-6">
+                              <div className="grid gap-4">
+                                  <div className="space-y-2">
+                                      <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Stapelname</Label>
+                                      <Input
+                                          placeholder="z.B. Lektion 1"
+                                          value={newStackName}
+                                          onChange={(e) => setNewStackName(e.target.value)}
+                                          disabled={!!activeStackId}
+                                      />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                      <div className="space-y-2">
+                                          <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Fremdwort</Label>
+                                          <Input value={manualTerm} onChange={(e) => setManualTerm(e.target.value)} placeholder="Wort" />
+                                      </div>
+                                      <div className="space-y-2">
+                                          <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Übersetzung</Label>
+                                          <Input value={manualDefinition} onChange={(e) => setManualDefinition(e.target.value)} placeholder="Bedeutung" />
+                                      </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Lautschrift (optional)</Label>
+                                      <Input value={manualPhonetic} onChange={(e) => setManualPhonetic(e.target.value)} placeholder="z.B. /ˈhɛloʊ/" />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Ähnliches Wort in anderer Sprache (optional)</Label>
+                                      <div className="grid grid-cols-2 gap-3">
+                                          <Input value={manualRelatedWordLanguage} onChange={(e) => setManualRelatedWordLanguage(e.target.value)} placeholder="Sprache (z.B. Deutsch)" />
+                                          <Input value={manualRelatedWord} onChange={(e) => setManualRelatedWord(e.target.value)} placeholder="Ähnliches Wort" />
+                                      </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Hinweise / Tipps (optional)</Label>
+                                      <Textarea value={manualNotes} onChange={(e) => setManualNotes(e.target.value)} placeholder="Merkregel, Kontext, Verwendung..." className="rounded-xl resize-none" rows={2} />
+                                  </div>
+                              </div>
+                              <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually || !manualTerm || !manualDefinition} className="w-full h-12 rounded-xl font-bold">
+                                  Hinzufügen
+                              </Button>
+                          </TabsContent>
+                      </Tabs>
+                  </DialogContent>
+              </Dialog>
           </div>
-
           {/* Stacks - vertical list */}
           <div className="space-y-6">
             {stacks?.map((stack) => {
@@ -1029,8 +1020,8 @@ export default function SubjectDetailPage() {
                   onEditVocab={handleEditVocab}
                   onSelectionChange={handleSelectionChange}
                   subjectId={subjectId}
-                  onForceUpdate={forceUpdate}
-                  onRefetchVocab={fetchAllVocab}
+                  onDelete={forceUpdate}
+                  onRename={forceUpdate}
                 />
               )
             })}
@@ -1057,7 +1048,7 @@ export default function SubjectDetailPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-6">
             {filteredVerbs.length > 0 ? (
               filteredVerbs.map((verb) => (
                 <VerbCard

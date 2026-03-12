@@ -37,11 +37,11 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
     const isActive = (href: string) => pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-primary/5 pb-safe-area-inset-bottom md:hidden shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
-            <div className="flex items-center justify-around h-20 px-2">
+        <div className="fixed bottom-4 left-4 right-4 z-50 h-24 rounded-[3rem] bg-background/80 backdrop-blur-xl border border-primary/10 p-2 md:hidden shadow-2xl shadow-primary/10">
+            <div className="flex items-center justify-around h-full">
                 {navItems.map((item) => {
                     if (item.isSheet) {
-                        const isSubjectActive = pathname.startsWith('/dashboard/subjects');
+                        const isSubjectActive = pathname.startsWith('/dashboard/subjects') || pathname.startsWith('/dashboard/facher');
                         return (
                             <Sheet key={item.id} open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                                 <SheetTrigger asChild>
@@ -130,4 +130,8 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
                             </span>
                         </Link>
                     );
-                
+                })}
+            </div>
+        </div>
+    );
+}

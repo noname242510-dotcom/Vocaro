@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     return (
       <SettingsProvider>
         <SubjectsCacheProvider>
-          <div className="pb-24">
+          <div className="pb-32">
             <main>{children}</main>
             <NavBar subjects={subjects} isLoadingSubjects={isLoadingSubjects} />
           </div>

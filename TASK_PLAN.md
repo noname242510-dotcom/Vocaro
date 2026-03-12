@@ -23,31 +23,31 @@
 - [x] "See All Friends"-Button zu "Neue Gruppe erstellen" geändert.
 - [x] "Social Feed"-UI und -Logik entfernt.
 
-## 4. Fächer-Seite (`/dashboard/stacks/page.tsx`)
-- [ ] Route von `/stacks` zu `/dashboard/facher` umbenannt.
-- [ ] Navigation und Titel auf "Fächer" aktualisiert.
-- [ ] UI der Fächer-Liste vereinfacht: Expand-Button entfernt, Aktionen (Löschen, Umbenennen, Navigieren) als Icon-Buttons hinzugefügt.
+## 4. Fächer-Seite (`/dashboard/facher/page.tsx`)
+- [x] Route von `/stacks` zu `/dashboard/facher` umbenannt.
+- [x] Navigation und Titel auf "Fächer" aktualisiert.
+- [x] UI der Fächer-Liste vereinfacht: Expand-Button entfernt, Aktionen (Löschen, Umbenennen, Navigieren) als Icon-Buttons hinzugefügt.
 
 ## 5. Statistiken-Seite (`/dashboard/overview/page.tsx`)
-- [ ] Layout-Überlappung mit der Sidebar behoben.
-- [ ] Top-Bereich mit neuen Metrik-Kacheln für Gesamt-Vokabeln, Streak, Lerntage und Genauigkeit implementiert (mit echten Daten).
-- [ ] Diagramm für wöchentliche Aktivität mit korrekten Abständen und Y-Achse versehen.
-- [ ] "Fehler-Radar"-Abschnitt umgebaut, um Top-5-Fehler pro Fach anzuzeigen.
-- [ ] "KI-Fix"-Button mit Flow (Generieren, Auswählen, Speichern) implementiert. Neue Firestore-Collection `vokabelTipps` hinzugefügt und Regeln angepasst.
-- [ ] "Focus Now"-Button entfernt.
+- [x] Layout-Überlappung mit der Sidebar behoben.
+- [x] Top-Bereich mit neuen Metrik-Kacheln für Gesamt-Vokabeln, Streak, Lerntage und Genauigkeit implementiert (mit echten Daten).
+- [x] Diagramm für wöchentliche Aktivität mit korrekten Abständen und Y-Achse versehen.
+- [x] "Fehler-Radar"-Abschnitt umgebaut, um Top-5-Fehler pro Fach anzuzeigen.
+- [x] "KI-Fix"-Button mit Flow (Generieren, Auswählen, Speichern) implementiert. Neue Firestore-Collection `vokabelTipps` hinzugefügt und Regeln angepasst.
+- [x] "Focus Now"-Button entfernt.
 
 ## 6. Seitenleiste (`/dashboard/layout.tsx`)
-- [ ] Hover-Zustand für aktive Menüpunkte korrigiert, sodass Textfarbe weiß bleibt.
+- [x] Hover-Zustand für aktive Menüpunkte korrigiert, sodass Textfarbe weiß bleibt.
 
 ## 7. Fach-Detailseite (`/dashboard/subjects/[subjectId]/page.tsx`)
-- [ ] "Neue Verben"-Button von der Vokabeln-Seite entfernt.
-- [ ] "Vokabeln hinzufügen"-Button neu positioniert.
-- [ ] Verben-Karten als vertikale Liste (wie Vokabel-Stapel) angeordnet.
-- [ ] Löschen-Icon neben dem Fachnamen vergrößert.
+- [x] "Neue Verben"-Button von der Vokabeln-Seite entfernt.
+- [x] "Vokabeln hinzufügen"-Button neu positioniert.
+- [x] Verben-Karten als vertikale Liste (wie Vokabel-Stapel) angeordnet.
+- [x] Löschen-Icon neben dem Fachnamen vergrößert.
 
 ## 8. Mobile Ansicht
-- [ ] Mobile Bottom-Navigation als `position: fixed` implementiert und `padding-bottom` auf allen Seiten sichergestellt.
-- [ ] Mobilen Header (Logo + UserNav) entfernt.
+- [x] Mobile Bottom-Navigation als `position: fixed` implementiert und `padding-bottom` auf allen Seiten sichergestellt.
+- [x] Mobilen Header (Logo + UserNav) entfernt.
 
 ## 9. Qualitätsprüfung
 - [ ] Alle Punkte aus dem Anforderungsdokument im Localhost überprüft.
