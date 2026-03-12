@@ -24,10 +24,8 @@ const navItems = [
   { href: '/dashboard/settings', icon: Settings, label: 'Einstellungen' },
 ];
 
-// Inner component that can safely use the context
 function NavContent() {
   const pathname = usePathname();
-  // This hook is now safe to call here
   const { subjects, isLoading } = useSubjectsCache();
 
   return (
@@ -65,18 +63,18 @@ function NavContent() {
   );
 }
 
-// Inner layout component that consumes contexts
 function DashboardClientLayout({ children }: { children: ReactNode }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const isMobile = useIsMobile();
-  // This hook is now safe to call here
   const { subjects, isLoading: isLoadingSubjects } = useSubjectsCache();
+  const pathname = usePathname();
+  const isLearnPage = pathname.startsWith('/dashboard/learn');
 
   if (isMobile) {
     return (
       <div className="pb-32">
         <main>{children}</main>
-        <NavBar subjects={subjects} isLoadingSubjects={isLoadingSubjects} />
+        {!isLearnPage && <NavBar subjects={subjects} isLoadingSubjects={isLoadingSubjects} />}
       </div>
     );
   }
@@ -86,16 +84,19 @@ function DashboardClientLayout({ children }: { children: ReactNode }) {
       <aside
         className={cn(
           'fixed left-0 top-0 h-full bg-card border-r transition-all duration-300 z-20',
-          isExpanded ? 'w-64' : 'w-20'
+          isExpanded ? 'w-64' : 'w-20',
+          isLearnPage && 'w-0 -translate-x-full'
         )}
       >
         <NavContent />
       </aside>
-      <div className={cn("flex-1 flex flex-col min-h-screen", isExpanded ? 'md:ml-64' : 'md:ml-20')}>
-        <header className="sticky top-0 z-10 h-20 flex items-center justify-end px-8 bg-background/80 backdrop-blur-sm border-b">
+      <div className={cn("flex-1 flex flex-col min-h-screen transition-[margin-left]", 
+        isLearnPage ? 'md:ml-0' : (isExpanded ? 'md:ml-64' : 'md:ml-20')
+      )}>
+        <header className={cn("sticky top-0 z-10 h-20 flex items-center justify-end px-8 bg-background/80 backdrop-blur-sm border-b", isLearnPage && 'hidden')}>
            <UserNav />
         </header>
-        <main className="flex-1 p-8 md:p-12 pb-28 md:pb-12 bg-secondary/30">
+        <main className={cn("flex-1 p-8 md:p-12 pb-28 md:pb-12 bg-secondary/30", isLearnPage && 'p-0 md:p-0 bg-background')}>
           {children}
         </main>
         <TaskProgressToast />
@@ -105,7 +106,6 @@ function DashboardClientLayout({ children }: { children: ReactNode }) {
   );
 }
 
-// The exported layout now only wraps providers
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <TaskProvider>

@@ -8,10 +8,11 @@ import { SectionShell } from './section-shell';
 import { useSettings } from '@/contexts/settings-context';
 import type { UserSettings } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ModeToggle } from '@/components/mode-toggle';
+import { useTheme } from 'next-themes';
 
 export function AppearanceSettings() {
   const { settings, updateSettings, isLoading } = useSettings();
+  const { setTheme } = useTheme();
 
   if (isLoading) {
     return (
@@ -64,21 +65,30 @@ export function AppearanceSettings() {
                 <SelectValue placeholder="Schriftart auswählen" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="font-body" className="font-body">PT Sans (Standard)</SelectItem>
-                <SelectItem value="font-creative" className="font-creative">Merriweather (Kreativ)</SelectItem>
-                <SelectItem value="font-code" className="font-code">Inconsolata (Code)</SelectItem>
+                <SelectItem value="font-body" className="font-body">Standard</SelectItem>
+                <SelectItem value="font-creative" className="font-creative">Kreativ</SelectItem>
+                <SelectItem value="font-code" className="font-code">Monospace</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="flex items-center justify-between space-x-2">
             <Label htmlFor="dark-mode" className="flex flex-col space-y-1">
-              <span>Dunkelmodus</span>
+              <span>Erscheinungsbild</span>
               <span className="font-normal leading-snug text-muted-foreground">
-                Wechsle zwischen hellem und dunklem Erscheinungsbild.
+                Wechsle zwischen hellem und dunklem Theme.
               </span>
             </Label>
-            <ModeToggle />
+            <Select defaultValue={settings?.darkMode ? 'dark' : 'light'} onValueChange={(theme) => setTheme(theme)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Theme auswählen" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">Hell</SelectItem>
+                <SelectItem value="dark">Dunkel</SelectItem>
+                <SelectItem value="system">System</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-center justify-between space-x-2">
