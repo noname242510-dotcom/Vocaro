@@ -65,13 +65,6 @@ function shuffleArray<T>(array: T[]): T[] {
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect' | 'accepted';
 
-const AnswerFeedback = ({ userInput, correctAnswer, status }: { userInput: string, correctAnswer: string, status: AnswerStatus }) => {
-  if (status === 'incorrect') {
-    return <p className="text-3xl font-bold font-headline">{correctAnswer}</p>;
-  }
-  return <p className="text-3xl font-bold font-headline">{correctAnswer}</p>;
-};
-
 function FinishedScreen({ stats, onRestart }: { stats: { correct: number; incorrect: number; mastered: number; initial: number }, onRestart: () => void }) {
   const pct = stats.initial > 0 ? Math.round((stats.mastered / stats.initial) * 100) : 0;
 
@@ -80,7 +73,7 @@ function FinishedScreen({ stats, onRestart }: { stats: { correct: number; incorr
       <div className="relative">
         <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
         <div className="relative bg-card shadow-2xl shadow-primary/10 rounded-full p-16 border-none w-80 h-80 flex flex-col justify-center">
-          <p className="font-headline text-8xl font-black leading-none text-primary">{pct}<span className="text-4xl align-top">%</span></p>
+          <p className="font-headline text-8xl font-black leading-none text-foreground">{pct}<span className="text-4xl align-top">%</span></p>
           <p className="text-sm font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-2">Gemeistert</p>
         </div>
       </div>
@@ -114,22 +107,22 @@ export default function LearnPage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const { triggerHapticFeedback } = useHapticFeedback();
-  const [initialItemCount, setInitialItemCount] = useState(0);
-
+  
   const [items, setItems] = useState<LearnItem[]>([]);
+  const [initialItemCount, setInitialItemCount] = useState(0);
+  const [masteredCount, setMasteredCount] = useState(0);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [sessionStats, setSessionStats] = useState({ correct: 0, incorrect: 0, mastered: 0, initial: 0 });
+  
+  const [sessionStats, setSessionStats] = useState({ correct: 0, incorrect: 0 });
   const [isFinished, setIsFinished] = useState(false);
-  const [isTypedMode, setIsTypedMode] = useState(false);
-  const [userInput, setUserInput] = useState('');
-  const [answerStatus, setAnswerStatus] = useState<AnswerStatus>('unanswered');
   const [history, setHistory] = useState<LearnItem[][]>([]);
+  
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [subjectLanguage, setSubjectLanguage] = useState('en-US');
-  const [cardAnimation, setCardAnimation] = useState<'correct' | 'incorrect' | null>(null);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -194,7 +187,6 @@ export default function LearnPage() {
         const shuffledItems = shuffleArray(allItems);
         setItems(shuffledItems);
         setInitialItemCount(shuffledItems.length);
-        setSessionStats(prev => ({...prev, initial: shuffledItems.length}));
 
         const sessRef = await addDoc(collection(firestore, 'users', user.uid, 'learningSessions'), {
           userId: user.uid,
@@ -211,28 +203,19 @@ export default function LearnPage() {
     init();
   }, [firestore, user]);
 
-  useEffect(() => {
-    if (isTypedMode && !isFlipped && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [isTypedMode, currentIndex, items]);
-
   const goToNextCard = () => {
     if (items.length > 0) {
       setCurrentIndex(currentIndex % items.length);
       setIsFlipped(false);
-      setAnswerStatus('unanswered');
-      setUserInput('');
-      setCardAnimation(null);
     } else {
       setIsFinished(true);
       if (sessionId && firestore && user) {
         updateDoc(doc(firestore, 'users', user.uid, 'learningSessions', sessionId), {
           endTime: serverTimestamp(),
-          stats: sessionStats,
+          stats: { ...sessionStats, mastered: masteredCount, initial: initialItemCount },
         });
       }
-      const pct = sessionStats.initial > 0 ? (sessionStats.mastered / sessionStats.initial) * 100 : 0;
+      const pct = initialItemCount > 0 ? (masteredCount / initialItemCount) * 100 : 0;
       if (pct >= 90 && settings?.enableConfetti) {
         confetti({
             particleCount: 150,
@@ -250,30 +233,29 @@ export default function LearnPage() {
     triggerHapticFeedback(correct ? 'light' : 'heavy');
 
     if (correct) {
-      setSessionStats(prev => ({ ...prev, correct: prev.correct + 1, mastered: prev.mastered + 1 }));
-      setCardAnimation('correct');
-      if (firestore && user && subjectId && currentItem.stackId && !currentItem.isMastered) {
-        const docRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', currentItem.stackId, 'vocabulary', currentItem.id);
-        updateDoc(docRef, { isMastered: true }).catch(console.error);
+      setSessionStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+      if (!currentItem.isMastered) {
+        setMasteredCount(prev => prev + 1);
+        if (firestore && user && subjectId && currentItem.stackId) {
+          const docRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', currentItem.stackId, 'vocabulary', currentItem.id);
+          updateDoc(docRef, { isMastered: true }).catch(console.error);
+        }
       }
-      setTimeout(() => {
-        setItems(prevItems => prevItems.filter(item => item.id !== currentItem.id));
-        goToNextCard();
-      }, 500);
-
+      setItems(prevItems => prevItems.filter(item => item.id !== currentItem.id));
     } else {
-      setSessionStats(prev => ({ ...prev, incorrect: prev.incorrect + 1}));
-      setCardAnimation('incorrect');
-      setTimeout(() => {
-        setItems(prevItems => {
-          const newItems = [...prevItems];
-          const itemToMove = newItems.splice(currentIndex, 1)[0];
-          newItems.push(itemToMove);
-          return newItems;
-        });
-        goToNextCard();
-      }, 500);
+      setSessionStats(prev => ({ ...prev, incorrect: prev.incorrect + 1 }));
+      setItems(prevItems => {
+        const newItems = [...prevItems];
+        const itemToMove = newItems.splice(currentIndex, 1)[0];
+        newItems.push(itemToMove);
+        return newItems;
+      });
     }
+    
+    // This needs to be in a timeout to allow the state to update before moving to the next card
+    setTimeout(() => {
+        goToNextCard();
+    }, 0);
   };
 
   const handleGoBack = () => {
@@ -281,41 +263,19 @@ export default function LearnPage() {
       const previousItemsState = history[history.length - 1];
       setHistory(prev => prev.slice(0, -1));
       setItems(previousItemsState);
+      
       const previousItem = previousItemsState[currentIndex-1] || previousItemsState[previousItemsState.length-1];
       const newIndex = previousItemsState.findIndex(i => i.id === previousItem.id);
-      setCurrentIndex(newIndex);
+      setCurrentIndex(newIndex >= 0 ? newIndex : 0);
       setIsFlipped(false);
-      setAnswerStatus('unanswered');
-      setUserInput('');
     }
-  };
-
-  const handleTypingSubmit = () => {
-    if (answerStatus !== 'unanswered') {
-      handleAnswer(answerStatus === 'correct' || answerStatus === 'accepted');
-      return;
-    }
-    const currentItem = items[currentIndex];
-    const frontIsForeign = !settings?.vocabQueryDirection;
-    const expectedAnswer = frontIsForeign ? currentItem.definition : currentItem.term;
-    const normalized = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
-    const isCorrect = normalized(userInput) === normalized(expectedAnswer);
-
-    setAnswerStatus(isCorrect ? 'correct' : 'incorrect');
-    setIsFlipped(true);
   };
 
   const handleRestart = () => {
-    // This logic needs to re-fetch the initial set of vocab
-    setIsFinished(false);
-    setIsLoading(true);
-    // Re-trigger the init effect by clearing session storage and reloading, or re-fetching inside this function
-    sessionStorage.removeItem('learn-session-vocab');
-    sessionStorage.removeItem('learn-session-subject');
-    window.location.reload(); // Simple way to restart
+    window.location.reload();
   };
 
-  const progress = initialItemCount > 0 ? (sessionStats.mastered / initialItemCount) * 100 : 0;
+  const progress = initialItemCount > 0 ? (masteredCount / initialItemCount) * 100 : 0;
   
   const currentItem = !isLoading && !isFinished ? items[currentIndex] : null;
 
@@ -337,7 +297,7 @@ export default function LearnPage() {
   }
 
   if (isFinished) {
-    return <FinishedScreen stats={sessionStats} onRestart={handleRestart} />;
+    return <FinishedScreen stats={{...sessionStats, mastered: masteredCount, initial: initialItemCount}} onRestart={handleRestart} />;
   }
 
   const frontIsForeign = !settings?.vocabQueryDirection;
@@ -351,23 +311,22 @@ export default function LearnPage() {
           <AlertDialogContent className="rounded-full p-10"><AlertDialogHeader><AlertDialogTitle className="text-3xl font-black font-headline">Lernen unterbrechen?</AlertDialogTitle><AlertDialogDescription className="text-lg mt-4 font-medium">Dein Fokus geht verloren. Du kannst aber später genau hier weitermachen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-4 mt-8"><AlertDialogCancel className="h-14 rounded-full font-bold border-2">Bleiben</AlertDialogCancel><AlertDialogAction className="h-14 rounded-full font-bold bg-destructive hover:bg-destructive/90" onClick={() => router.push('/dashboard')}>Unterbrechen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
         </AlertDialog>
         <div className="flex-1 space-y-1.5">
-          <p className="text-center font-black text-xs uppercase tracking-widest text-muted-foreground/70">{sessionStats.mastered} / {initialItemCount}</p>
+          <p className="text-center font-black text-xs uppercase tracking-widest text-muted-foreground/70">{masteredCount} / {initialItemCount}</p>
           <Progress value={progress} className="h-2"/>
         </div>
-        <Button variant="ghost" size="icon" className={cn("h-14 w-14 rounded-full", isTypedMode && "text-primary bg-secondary")} onClick={() => { setIsTypedMode(!isTypedMode); setIsFlipped(false); setAnswerStatus('unanswered'); setUserInput(''); }}><Pencil className="h-6 w-6" /></Button>
+        <div className="h-14 w-14"></div>
       </div>
 
       <div className="flex-1 flex flex-col justify-center items-center w-full max-w-2xl mx-auto" style={{ perspective: '2000px' }}>
-          <AnimatePresence>
+        <AnimatePresence>
           {currentItem && (
             <motion.div
               key={currentItem.id}
               className="w-full"
-              initial={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
-              animate={cardAnimation === 'correct' ? { opacity: 0, y: -200, scale: 0.5, rotate: 15 } : cardAnimation === 'incorrect' ? { opacity: 0, y: 200, scale: 0.9, zIndex: -1 } : {}}
+              initial={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 30 }}
             >
-              <div className="relative w-full aspect-[4/3] max-h-[50vh]" style={{ transformStyle: 'preserve-3d' }}>
+              <div className="relative w-full aspect-[4/2.5] max-h-[60vh]" style={{ transformStyle: 'preserve-3d' }}>
                 <motion.div
                   className="w-full h-full relative"
                   style={{ transformStyle: 'preserve-3d' }}
@@ -403,24 +362,33 @@ export default function LearnPage() {
       </div>
 
       <div className="max-w-2xl mx-auto w-full pt-4">
-        {isTypedMode ? (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {answerStatus === 'unanswered' ? (
-              <div className="flex gap-4"><Input ref={inputRef} value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleTypingSubmit()} placeholder="Übersetzung eingeben..." className="h-20 text-2xl font-bold rounded-full px-10 flex-1 border-4 focus:border-primary shadow-xl shadow-primary/5 transition-all" autoComplete="off" /><Button className="h-20 w-20 rounded-full shadow-xl shadow-primary/20 hover:scale-105 transition-all" onClick={handleTypingSubmit}><ArrowRight className="h-8 w-8" /></Button></div>
-            ) : (
-              <div className="space-y-4"><div className="bg-card rounded-full p-10 text-center shadow-xl shadow-primary/5 border-4"><p className={cn("font-black text-xs uppercase tracking-widest mb-6", (answerStatus === 'correct' || answerStatus === 'accepted') ? "text-primary" : "text-destructive")}>{answerStatus === 'correct' ? '✓ Richtig!' : answerStatus === 'accepted' ? '✓ Akzeptiert' : '✗ Falsch'}</p><AnswerFeedback userInput={userInput} correctAnswer={frontIsForeign ? currentItem.definition : currentItem.term} status={answerStatus} /></div><Button className="w-full h-20 text-2xl font-black rounded-full shadow-xl shadow-primary/20" onClick={() => handleAnswer(answerStatus === 'correct' || answerStatus === 'accepted')}>Nächste Karte<ArrowRight className="ml-4 h-8 w-8" /></Button></div>
-            )}
-          </div>
-        ) : (
-          <div className="w-full min-h-[144px]">
+        <div className="w-full min-h-[144px]">
             {!isFlipped ? (
-              <div className="flex flex-col gap-4 animate-in fade-in duration-300"><Button className="w-full h-24 text-3xl font-black rounded-full bg-primary shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all" onClick={() => setIsFlipped(true)}>Umdrehen</Button>{(history.length > 0) && (<Button variant="ghost" className="h-12 rounded-full font-bold text-muted-foreground/60 hover:text-foreground hover:bg-transparent" onClick={handleGoBack}><ChevronLeft className="mr-2 h-5 w-5" />Karte zurück</Button>)}</div>
+              <div className="flex flex-col gap-4 animate-in fade-in duration-300">
+                <Button className="w-full h-24 text-3xl font-black rounded-full bg-primary shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all" onClick={() => setIsFlipped(true)}>Umdrehen</Button>
+                {history.length > 0 && (
+                  <Button variant="ghost" className="h-12 rounded-full font-bold text-muted-foreground/60 hover:text-foreground hover:bg-transparent" onClick={handleGoBack}>
+                    <ChevronLeft className="mr-2 h-5 w-5" />Karte zurück
+                  </Button>
+                )}
+              </div>
             ) : (
-              <div className="flex gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500"><Button variant="outline" className="h-24 flex-1 rounded-full border-4 text-2xl font-black hover:bg-destructive/5 hover:border-destructive hover:text-destructive active:scale-95 transition-all" onClick={() => handleAnswer(false)}><X className="mr-4 h-8 w-8" />Nicht gewusst</Button><Button className="h-24 flex-1 rounded-full bg-primary shadow-2xl shadow-primary/30 text-2xl font-black active:scale-95 transition-all" onClick={() => handleAnswer(true)}><Check className="mr-4 h-8 w-8" />Gewusst</Button></div>
+              <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="flex gap-6">
+                      <Button variant="outline" className="h-24 flex-1 rounded-full border-4 text-2xl font-black hover:bg-destructive/5 hover:border-destructive hover:text-destructive active:scale-95 transition-all" onClick={() => handleAnswer(false)}><X className="mr-4 h-8 w-8" />Nicht gewusst</Button>
+                      <Button className="h-24 flex-1 rounded-full bg-primary shadow-2xl shadow-primary/30 text-2xl font-black active:scale-95 transition-all" onClick={() => handleAnswer(true)}><Check className="mr-4 h-8 w-8" />Gewusst</Button>
+                  </div>
+                   {history.length > 0 && (
+                      <Button variant="ghost" className="h-12 rounded-full font-bold text-muted-foreground/60 hover:text-foreground hover:bg-transparent" onClick={handleGoBack}>
+                        <ChevronLeft className="mr-2 h-5 w-5" />Karte zurück
+                      </Button>
+                    )}
+              </div>
             )}
           </div>
-        )}
       </div>
     </div>
   );
 }
+
+    

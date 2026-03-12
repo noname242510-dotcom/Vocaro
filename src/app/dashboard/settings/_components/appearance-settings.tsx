@@ -12,7 +12,7 @@ import { useTheme } from 'next-themes';
 
 export function AppearanceSettings() {
   const { settings, updateSettings, isLoading } = useSettings();
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   if (isLoading) {
     return (
@@ -79,7 +79,7 @@ export function AppearanceSettings() {
                 Wechsle zwischen hellem und dunklem Theme.
               </span>
             </Label>
-            <Select defaultValue={settings?.darkMode ? 'dark' : 'light'} onValueChange={(theme) => setTheme(theme)}>
+            <Select value={theme} onValueChange={(value) => setTheme(value)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Theme auswählen" />
               </SelectTrigger>
@@ -116,3 +116,5 @@ export function AppearanceSettings() {
     </SectionShell >
   );
 }
+
+    

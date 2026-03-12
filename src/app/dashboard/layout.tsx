@@ -85,7 +85,7 @@ function DashboardClientLayout({ children }: { children: ReactNode }) {
         className={cn(
           'fixed left-0 top-0 h-full bg-card border-r transition-all duration-300 z-20',
           isExpanded ? 'w-64' : 'w-20',
-          isLearnPage && 'w-0 -translate-x-full'
+          isLearnPage && 'w-0 -translate-x-full opacity-0'
         )}
       >
         <NavContent />
@@ -117,3 +117,5 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     </TaskProvider>
   );
 }
+
+    
