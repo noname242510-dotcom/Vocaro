@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { Edit, Trash2, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import type { Subject } from '@/lib/types';
 import {
   AlertDialog,
@@ -38,12 +38,12 @@ export interface SubjectWithCounts extends Subject {
 
 interface SubjectCardProps {
   subject: SubjectWithCounts;
-  onAction: () => void;
 }
 
-export function SubjectCard({ subject, onAction }: SubjectCardProps) {
+export function SubjectCard({ subject }: SubjectCardProps) {
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
@@ -72,7 +72,6 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
       try {
         const batch = writeBatch(firestore);
 
-        // Delete subcollections
         const stacksRef = collection(subjectDocRef, 'stacks');
         const stacksSnapshot = await getDocs(stacksRef);
         for (const stackDoc of stacksSnapshot.docs) {
@@ -89,7 +88,6 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
 
         await batch.commit();
         toast({ title: "Erfolg", description: `Fach "${subject.name}" wurde gelöscht.` });
-        // No longer need to call onAction, Firestore real-time updates handle it.
       } catch (error) {
         console.error("Error deleting subject:", error);
         toast({ variant: 'destructive', title: "Fehler", description: "Das Fach konnte nicht gelöscht werden." });
@@ -109,7 +107,6 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
           emoji: newEmoji,
         });
         toast({ title: "Erfolg", description: "Fach umbenannt." });
-        // No longer need to call onAction, Firestore real-time updates handle it.
       } catch (error) {
         toast({ variant: 'destructive', title: "Fehler", description: "Das Fach konnte nicht umbenannt werden." });
       } finally {
@@ -118,19 +115,16 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
     }
   };
 
+  const handleCardClick = () => {
+    router.push(`/dashboard/subjects/${subject.id}`);
+  };
+
   return (
     <>
       <Card
-        className="group relative bg-card border-none shadow-xl shadow-primary/5 rounded-[2.5rem] p-10 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col min-h-[320px]"
-        onClick={() => { }}
+        className="group relative bg-card border-none shadow-xl shadow-primary/5 rounded-[2.5rem] p-10 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 cursor-pointer overflow-hidden flex flex-col min-h-[280px]"
+        onClick={handleCardClick}
       >
-        {/* Top Decorative Tag */}
-        <div className="absolute top-0 right-0 p-6">
-          <div className="bg-secondary/50 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-            Active
-          </div>
-        </div>
-
         {/* Info Area */}
         <div className="flex-1 space-y-6">
           <div className="w-16 h-16 bg-secondary/30 rounded-3xl flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-500 ease-out">
@@ -141,33 +135,26 @@ export function SubjectCard({ subject, onAction }: SubjectCardProps) {
             <h3 className="text-3xl font-bold font-headline tracking-tighter group-hover:text-primary transition-colors duration-300">
               {subject.name}
             </h3>
-            <p className="text-muted-foreground font-medium leading-relaxed">
-              Meistere dein {subject.name}-Vokabular mit täglichen Übungen und KI-gestütztem Lernen.
-            </p>
           </div>
         </div>
 
-        {/* Stats and Action */}
+        {/* Stats */}
         <div className="pt-10 mt-6 border-t flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex flex-col">
               <span className="text-sm font-black font-headline tracking-tight">{subject.vocabCount}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground opacity-60">Cards</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground opacity-60">Vokabeln</span>
             </div>
             <div className="w-px h-8 bg-border/50"></div>
             <div className="flex flex-col">
               <span className="text-sm font-black font-headline tracking-tight">{subject.verbCount}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground opacity-60">Verbs</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground opacity-60">Verben</span>
             </div>
           </div>
-
-          <Link href={`/dashboard/subjects/${subject.id}`} className="group/btn flex items-center gap-2 text-primary font-black text-xs uppercase tracking-widest border-b-2 border-primary/20 pb-0.5 hover:border-primary transition-all">
-            Lernen <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
-          </Link>
         </div>
 
-        {/* Edit/Delete Overlay (Floating) */}
-        <div className="absolute top-6 left-6 flex flex-col items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-[-10px] group-hover:translate-x-0">
+        {/* Edit/Delete Overlay */}
+        <div className="absolute top-6 right-6 flex flex-col items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-[10px] group-hover:translate-x-0">
           <Button
             variant="outline"
             size="icon"

@@ -11,9 +11,9 @@
 - [x] Liste der geänderten Texte (mental notiert): "Lernen", "Lern-Statistiken", "Fächer", "Einstellungen", "Abbrechen", "Speichern", etc. auf fast allen Seiten.
 
 ## 2. Home-Seite (`/dashboard/page.tsx`, `_components/subject-card.tsx`)
-- [ ] Beschreibende Texte und "Active"-Badge aus den Fach-Kacheln entfernt.
-- [ ] Label "Cards" zu "Vokabeln" geändert.
-- [ ] Hover-Effekt für Desktop mit Löschen/Umbenennen-Buttons implementiert.
+- [x] Beschreibende Texte und "Active"-Badge aus den Fach-Kacheln entfernt.
+- [x] Label "Cards" zu "Vokabeln" geändert.
+- [x] Hover-Effekt für Desktop mit Löschen/Umbenennen-Buttons implementiert.
 
 ## 3. Community-Seite (`/dashboard/community/*`)
 - [ ] Tabs zu Unterseiten refaktorisiert: `/dashboard/community` (jetzt Gruppen), `/dashboard/community/freunde`, `/dashboard/community/entdecken`.

@@ -47,7 +47,6 @@ export default function DashboardPage() {
 
   const [subjectsWithCounts, setSubjectsWithCounts] = useState<SubjectWithCounts[]>([]);
   const [isCounting, setIsCounting] = useState(true);
-  const [updateToken, setUpdateToken] = useState(0);
 
   // Live metrics state
   const [streak, setStreak] = useState<number | null>(null);
@@ -86,7 +85,7 @@ export default function DashboardPage() {
       setIsCounting(false);
     };
     fetchCounts();
-  }, [subjects, areSubjectsLoading, firestore, user, updateToken]);
+  }, [subjects, areSubjectsLoading, firestore, user]);
 
   // Compute live metrics: streak, mastery, daily avg
   useEffect(() => {
@@ -168,8 +167,6 @@ export default function DashboardPage() {
 
     fetchMetrics();
   }, [firestore, user]);
-
-  const forceRefetch = () => setUpdateToken(t => t + 1);
 
   const getEmojiForSubject = (name: string) => {
     const n = name.toLowerCase();
@@ -335,7 +332,6 @@ export default function DashboardPage() {
                 <SubjectCard
                   key={subject.id}
                   subject={subject}
-                  onAction={forceRefetch}
                 />
               ))}
             </>
