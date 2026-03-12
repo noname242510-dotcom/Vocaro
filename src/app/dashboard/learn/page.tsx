@@ -65,15 +65,26 @@ function shuffleArray<T>(array: T[]): T[] {
 
 type AnswerStatus = 'unanswered' | 'correct' | 'incorrect' | 'accepted';
 
-function FinishedScreen({ stats, onRestart }: { stats: { correct: number; incorrect: number; mastered: number; initial: number }, onRestart: () => void }) {
+function FinishedScreen({ stats, onRestart, settings }: { stats: { correct: number; incorrect: number; mastered: number; initial: number }, onRestart: () => void, settings: any }) {
   const pct = stats.initial > 0 ? Math.round((stats.mastered / stats.initial) * 100) : 0;
+
+  useEffect(() => {
+     if (pct >= 90 && settings?.enableConfetti) {
+        confetti({
+            particleCount: 150,
+            spread: 100,
+            origin: { y: 0.6 },
+            colors: document.documentElement.classList.contains('dark') ? ['#ffffff'] : ['#000000'],
+        });
+      }
+  }, [pct, settings]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center space-y-12 px-6 animate-in fade-in zoom-in duration-1000">
       <div className="relative">
         <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
         <div className="relative bg-card shadow-2xl shadow-primary/10 rounded-full p-16 border-none w-80 h-80 flex flex-col justify-center">
-          <p className="font-headline text-8xl font-black leading-none text-foreground">{pct}<span className="text-4xl align-top">%</span></p>
+          <p className="font-headline text-8xl font-black leading-none text-primary">{pct}<span className="text-4xl align-top">%</span></p>
           <p className="text-sm font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-2">Gemeistert</p>
         </div>
       </div>
@@ -215,7 +226,7 @@ export default function LearnPage() {
           stats: { ...sessionStats, mastered: masteredCount, initial: initialItemCount },
         });
       }
-      const pct = initialItemCount > 0 ? (masteredCount / initialItemCount) * 100 : 0;
+      const pct = sessionStats.initial > 0 ? (sessionStats.mastered / sessionStats.initial) * 100 : 0;
       if (pct >= 90 && settings?.enableConfetti) {
         confetti({
             particleCount: 150,
@@ -272,7 +283,13 @@ export default function LearnPage() {
   };
 
   const handleRestart = () => {
-    window.location.reload();
+    // This logic needs to re-fetch the initial set of vocab
+    setIsFinished(false);
+    setIsLoading(true);
+    // Re-trigger the init effect by clearing session storage and reloading, or re-fetching inside this function
+    sessionStorage.removeItem('learn-session-vocab');
+    sessionStorage.removeItem('learn-session-subject');
+    window.location.reload(); // Simple way to restart
   };
 
   const progress = initialItemCount > 0 ? (masteredCount / initialItemCount) * 100 : 0;
@@ -297,7 +314,7 @@ export default function LearnPage() {
   }
 
   if (isFinished) {
-    return <FinishedScreen stats={{...sessionStats, mastered: masteredCount, initial: initialItemCount}} onRestart={handleRestart} />;
+    return <FinishedScreen stats={sessionStats} onRestart={handleRestart} />;
   }
 
   const frontIsForeign = !settings?.vocabQueryDirection;
@@ -308,7 +325,7 @@ export default function LearnPage() {
       <div className="flex items-center gap-4 w-full">
         <AlertDialog>
           <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-14 w-14 rounded-full"><ChevronLeft className="h-8 w-8" /></Button></AlertDialogTrigger>
-          <AlertDialogContent className="rounded-full p-10"><AlertDialogHeader><AlertDialogTitle className="text-3xl font-black font-headline">Lernen unterbrechen?</AlertDialogTitle><AlertDialogDescription className="text-lg mt-4 font-medium">Dein Fokus geht verloren. Du kannst aber später genau hier weitermachen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-4 mt-8"><AlertDialogCancel className="h-14 rounded-full font-bold border-2">Bleiben</AlertDialogCancel><AlertDialogAction className="h-14 rounded-full font-bold bg-destructive hover:bg-destructive/90" onClick={() => router.push('/dashboard')}>Unterbrechen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+          <AlertDialogContent className="rounded-[3rem] p-10"><AlertDialogHeader><AlertDialogTitle className="text-3xl font-black font-headline">Lernen unterbrechen?</AlertDialogTitle><AlertDialogDescription className="text-lg mt-4 font-medium">Dein Fokus geht verloren. Du kannst aber später genau hier weitermachen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-4 mt-8"><AlertDialogCancel className="h-14 rounded-full font-bold border-2">Bleiben</AlertDialogCancel><AlertDialogAction className="h-14 rounded-full font-bold bg-destructive hover:bg-destructive/90" onClick={() => router.push('/dashboard')}>Unterbrechen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
         </AlertDialog>
         <div className="flex-1 space-y-1.5">
           <p className="text-center font-black text-xs uppercase tracking-widest text-muted-foreground/70">{masteredCount} / {initialItemCount}</p>
@@ -334,7 +351,7 @@ export default function LearnPage() {
                   transition={{ type: "spring", stiffness: 250, damping: 30 }}
                 >
                   {/* FRONT */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-full shadow-2xl shadow-primary/10 border-none overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
                     <div className="absolute top-8 right-8 flex gap-3">
                      { (termSide === 'front' && !isFlipped) && <SpeakerButton text={currentItem.term} languageHint={subjectLanguage} ttsEnabled={settings?.ttsEnabled ?? true} autoplayEnabled={settings?.ttsAutoplay ?? false} autoplay={!isFlipped} className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all" /> }
                       {currentItem.data.notes && <Popover><PopoverTrigger asChild><Button variant="ghost" size="icon" className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 transition-all"><Lightbulb className="h-6 w-6" /></Button></PopoverTrigger><PopoverContent className="rounded-full p-6 shadow-2xl border-none max-w-xs"><p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Notiz / Hilfe</p><p className="text-lg font-medium leading-relaxed">{currentItem.data.notes}</p></PopoverContent></Popover>}
@@ -345,7 +362,7 @@ export default function LearnPage() {
                     </div>
                   </div>
                   {/* BACK */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-full shadow-2xl shadow-primary/10 border-none overflow-hidden" style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden" style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}>
                      <div className="absolute top-8 right-8 flex gap-3">
                        { (termSide === 'back' && isFlipped) && <SpeakerButton text={currentItem.term} languageHint={subjectLanguage} ttsEnabled={settings?.ttsEnabled ?? true} autoplayEnabled={settings?.ttsAutoplay ?? false} autoplay={isFlipped} className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all" /> }
                      </div>
