@@ -247,6 +247,17 @@ service cloud.firestore {
     }
 
     /**
+     * @description Manages learning tips for vocabulary and verbs, owned by the user.
+     * @path /users/{userId}/vokabelTipps/{tippId}
+     */
+    match /users/{userId}/vokabelTipps/{tippId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      allow read, write: if isOwner(userId);
+    }
+
+    /**
      * @description Manages learning sessions for the user. Only the authenticated user can create, read, update, or delete their learning sessions.
      * @path /users/{userId}/learningSessions/{learningSessionId}
      * @allow (create) - Authenticated user creates a learning session under their user ID.

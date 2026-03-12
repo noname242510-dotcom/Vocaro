@@ -54,6 +54,17 @@ export type Verb = {
   source?: 'ai' | 'manual';
 };
 
+export type VokabelTipp = {
+    id: string;
+    userId: string;
+    vokabelId: string; // The ID of the vocabulary item or verb practice item
+    fremdwort: string;
+    uebersetzung: string;
+    generierteTipps: string[];
+    gespeicherterTipp: string | null;
+    erstelltAm: any; // server timestamp
+};
+
 export type GenerateVerbFormsOutput = Omit<Verb, 'id' | 'subjectId' | 'language'>;
 
 export type UserSettings = {
