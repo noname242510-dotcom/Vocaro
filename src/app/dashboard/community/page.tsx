@@ -44,7 +44,7 @@ export default function CommunityPage() {
             <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b pb-8">
                 <div className="space-y-2">
                     <h1 className="text-5xl font-bold font-creative tracking-tight text-foreground">Community</h1>
-                    <p className="text-xl text-muted-foreground">Connect and grow with fellow learners worldwide.</p>
+                    <p className="text-xl text-muted-foreground">Vernetze dich und wachse mit anderen Lernenden.</p>
                 </div>
 
                 <div className="flex items-center gap-6">
@@ -54,7 +54,7 @@ export default function CommunityPage() {
                                 value="groups"
                                 className="bg-transparent border-none p-0 pb-4 rounded-none text-lg font-semibold data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary transition-all font-headline"
                             >
-                                Übersicht
+                                Gruppen
                             </TabsTrigger>
                             <TabsTrigger
                                 value="friends"

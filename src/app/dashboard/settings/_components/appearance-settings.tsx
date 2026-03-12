@@ -73,7 +73,7 @@ export function AppearanceSettings() {
 
           <div className="flex items-center justify-between space-x-2">
             <Label htmlFor="dark-mode" className="flex flex-col space-y-1">
-              <span>Dark Mode</span>
+              <span>Dunkelmodus</span>
               <span className="font-normal leading-snug text-muted-foreground">
                 Wechsle zwischen hellem und dunklem Erscheinungsbild.
               </span>

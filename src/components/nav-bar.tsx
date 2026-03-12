@@ -29,7 +29,7 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
     const navItems = [
         { href: '/dashboard', icon: Home, label: 'Home' },
         { href: '/dashboard/community', icon: Users, label: 'Community' },
-        { id: 'subjects', icon: BookOpen, label: 'Sprachen', isSheet: true },
+        { id: 'subjects', icon: BookOpen, label: 'Fächer', isSheet: true },
         { href: '/dashboard/overview', icon: BarChart2, label: 'Statistiken' },
         { href: '/dashboard/settings', icon: Settings, label: 'Einst.' },
     ];
@@ -130,8 +130,4 @@ export function NavBar({ subjects, isLoadingSubjects }: NavBarProps) {
                             </span>
                         </Link>
                     );
-                })}
-            </div>
-        </div>
-    );
-}
+                

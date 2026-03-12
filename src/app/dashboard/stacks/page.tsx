@@ -73,7 +73,7 @@ export default function SubjectsOverviewPage() {
         <div className="space-y-12 pb-28 md:pb-12 animate-in fade-in duration-700">
             {/* Page Header */}
             <header className="space-y-2 pb-4 border-b">
-                <h1 className="text-5xl font-bold font-creative tracking-tight text-foreground">Sprachen</h1>
+                <h1 className="text-5xl font-bold font-creative tracking-tight text-foreground">Fächer</h1>
                 <p className="text-xl text-muted-foreground">
                     {data.length > 0
                         ? `${data.length} ${data.length === 1 ? 'Fach' : 'Fächer'} · ${data.reduce((acc, d) => acc + d.stacks.length, 0)} Stapel`

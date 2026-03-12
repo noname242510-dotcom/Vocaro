@@ -32,10 +32,10 @@ export function GroupsList({ key: _key }: { key: string }) {
         <div className="flex justify-between items-center">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Social Feed
+            Deine Gruppen
           </h3>
           <Button variant="link" className="text-primary font-semibold underline" onClick={() => setIsCreateOpen(true)}>
-            See all friends
+            Neue Gruppe erstellen
           </Button>
         </div>
 
@@ -81,7 +81,7 @@ export function GroupsList({ key: _key }: { key: string }) {
                     <span className="text-sm font-bold text-muted-foreground">{group.memberCount ?? 0} Mitglieder</span>
                   </div>
                   <div className="flex items-center gap-1 text-primary font-bold text-sm">
-                    Beitreten <Plus className="h-4 w-4" />
+                    Ansehen <Plus className="h-4 w-4" />
 
                   </div>
                 </div>

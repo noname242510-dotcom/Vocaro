@@ -1,14 +1,14 @@
 # Aufgabenplan
 
 ## 0. Vorbereitung
-- [ ] Alle relevanten Seiten und Komponenten analysiert
-- [ ] Firebase-Collections (`backend.json`) und Sicherheitsregeln (`firestore.rules`) analysiert
-- [ ] Navigationskomponenten (Desktop-Sidebar in `layout.tsx`, Mobile-Navbar in `nav-bar.tsx`) identifiziert
-- [ ] UI-Komponenten (Buttons, Cards, etc.) und Design-System (`globals.css`, `tailwind.config.ts`) analysiert
+- [x] Alle relevanten Seiten und Komponenten analysiert
+- [x] Firebase-Collections (`backend.json`) und Sicherheitsregeln (`firestore.rules`) analysiert
+- [x] Navigationskomponenten (Desktop-Sidebar in `layout.tsx`, Mobile-Navbar in `nav-bar.tsx`) identifiziert
+- [x] UI-Komponenten (Buttons, Cards, etc.) und Design-System (`globals.css`, `tailwind.config.ts`) analysiert
 
 ## 1. Allgemeines – Sprache
-- [ ] Alle UI-Texte auf Deutsch umgestellt.
-- [ ] Liste der geänderten Texte (mental notiert): "Lernen", "Lern-Statistiken", "Fächer", "Einstellungen", "Abbrechen", "Speichern", etc. auf fast allen Seiten.
+- [x] Alle UI-Texte auf Deutsch umgestellt.
+- [x] Liste der geänderten Texte (mental notiert): "Lernen", "Lern-Statistiken", "Fächer", "Einstellungen", "Abbrechen", "Speichern", etc. auf fast allen Seiten.
 
 ## 2. Home-Seite (`/dashboard/page.tsx`, `_components/subject-card.tsx`)
 - [ ] Beschreibende Texte und "Active"-Badge aus den Fach-Kacheln entfernt.
