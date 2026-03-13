@@ -9,16 +9,26 @@ import { useSettings } from '@/contexts/settings-context';
 import type { UserSettings } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
 export function AppearanceSettings() {
   const { settings, updateSettings, isLoading } = useSettings();
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
-  if (isLoading) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (isLoading || !mounted) {
     return (
       <SectionShell title="Darstellung" description="Passe an, wie Vocaro aussieht und sich anfühlt.">
         <Card>
           <CardContent className="pt-6 space-y-6">
+            <div className="flex items-center justify-between space-x-2">
+              <Skeleton className="h-10 w-48" />
+              <Skeleton className="h-10 w-44" />
+            </div>
             <div className="flex items-center justify-between space-x-2">
               <Skeleton className="h-10 w-48" />
               <Skeleton className="h-10 w-44" />
@@ -79,7 +89,7 @@ export function AppearanceSettings() {
                 Wechsle zwischen hellem und dunklem Theme.
               </span>
             </Label>
-            <Select value={theme} onValueChange={(value) => setTheme(value)}>
+            <Select value={theme} onValueChange={setTheme}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Theme auswählen" />
               </SelectTrigger>
@@ -95,7 +105,7 @@ export function AppearanceSettings() {
             <Label htmlFor="confetti-mode" className="flex flex-col space-y-1">
               <span>Konfetti bei Erfolg</span>
               <span className="font-normal leading-snug text-muted-foreground">
-                Zeigt eine Animation bei ≥90% richtigen Antworten.
+                Zeigt eine Animation bei ≥80% richtigen Antworten.
               </span>
             </Label>
             <Switch id="confetti-mode" checked={settings?.enableConfetti} onCheckedChange={handleConfettiChange} />

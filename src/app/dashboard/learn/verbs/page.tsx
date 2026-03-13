@@ -739,7 +739,7 @@ export default function VerbPracticePage() {
     };
 
     if (showSpinner) {
-        return <LoadingSpinner />;
+        return <LoadingSpinner fullPage />;
     }
 
     if (isLoading) {
@@ -764,10 +764,10 @@ export default function VerbPracticePage() {
     
     if (showResults) {
         const incorrectCount = incorrectlyAnsweredIds.size;
-        const correctCount = totalItemCount - incorrectCount;
+        const correctCount = totalItemCount > 0 ? totalItemCount - incorrectCount : 0;
         const finalScore = totalItemCount > 0 ? Math.round((correctCount / totalItemCount) * 100) : 0;
         
-        if(finalScore >= 90 && settings?.enableConfetti) {
+        if(finalScore >= 80 && settings?.enableConfetti) {
              confetti({
                 particleCount: 150,
                 spread: 100,
@@ -821,8 +821,6 @@ export default function VerbPracticePage() {
     };
     
     const frontIsGerman = isGermanFirst;
-    const frontFlag = frontIsGerman ? '🇩🇪' : subject?.emoji || '🌐';
-    const backFlag = frontIsGerman ? subject?.emoji || '🌐' : '🇩🇪';
     const textToSpeak = frontIsGerman ? currentCard.back : currentCard.front;
     const autoplayFront = (settings?.ttsAutoplay ?? true) && !isFlipped && !frontIsGerman;
     const autoplayBack = (settings?.ttsAutoplay ?? true) && isFlipped && frontIsGerman;
@@ -973,3 +971,5 @@ export default function VerbPracticePage() {
         </div>
     );
 }
+
+    
