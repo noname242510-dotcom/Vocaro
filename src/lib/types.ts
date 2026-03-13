@@ -79,7 +79,6 @@ export type UserSettings = {
   vocabOverviewDirection: 'term' | 'definition';
   verbQueryDirection: boolean; // true: definition first
   verbShowHints: boolean;
-  darkMode: boolean;
 };
 
 export type LearningSessionVocabulary = {

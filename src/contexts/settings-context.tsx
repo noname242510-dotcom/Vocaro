@@ -20,7 +20,6 @@ const defaultSettings: Omit<UserSettings, 'id'> = {
     vocabOverviewDirection: 'term',
     verbQueryDirection: false, // false: foreign -> german
     verbShowHints: true,
-    darkMode: false,
 };
 
 interface SettingsContextType {
@@ -70,12 +69,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       // Font
       document.body.classList.remove('font-body', 'font-creative', 'font-code');
       document.body.classList.add(settings.font);
-      // Dark Mode
-      if (settings.darkMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
     }
   }, [settings]);
 

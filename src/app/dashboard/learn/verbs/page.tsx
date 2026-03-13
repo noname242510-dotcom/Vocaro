@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -6,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Card } from '@/components/ui/card';
 import { ArrowLeft, Check, RotateCcw, X, Lightbulb, Pencil, ChevronLeft, Smile, Frown, Meh } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Verb, VerbTense, Subject } from '@/lib/types';
@@ -21,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Confetti } from '@/components/confetti';
+import confetti from 'canvas-confetti';
 import { Input } from '@/components/ui/input';
 import { useHapticFeedback } from '@/hooks/use-haptic-feedback';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -257,7 +255,6 @@ export default function VerbPracticePage() {
     const [incorrectlyAnsweredIds, setIncorrectlyAnsweredIds] = useState<Set<string>>(new Set());
     const [answeredIds, setAnsweredIds] = useState<Map<string, AnswerStatus>>(new Map());
     const [showResults, setShowResults] = useState(false);
-    const [showConfetti, setShowConfetti] = useState(false);
     const [animationResetToken, setAnimationResetToken] = useState(0);
     const [exitAnimation, setExitAnimation] = useState<'correct' | 'incorrect' | null>(null);
     
@@ -299,13 +296,6 @@ export default function VerbPracticePage() {
 
         sessionStorage.removeItem(SESSION_STATE_KEY);
 
-        const incorrectCount = incorrectlyAnsweredIds.size;
-        const correctCount = totalItemCount - incorrectCount;
-        const finalScore = totalItemCount > 0 ? Math.round((correctCount / totalItemCount) * 100) : 0;
-        
-        if (finalScore >= 90 && settings?.enableConfetti) {
-            setShowConfetti(true);
-        }
         setShowResults(true);
     };
 
@@ -718,7 +708,6 @@ export default function VerbPracticePage() {
         setCurrentIndex(0);
         setIsFlipped(false);
         setShowResults(false);
-        setShowConfetti(false);
         setIncorrectlyAnsweredIds(new Set());
         setAnsweredIds(new Map());
         setHistory([]);
@@ -749,14 +738,6 @@ export default function VerbPracticePage() {
         setIsFlipped(false);
     };
 
-    const getMotivationMessage = (score: number) => {
-        if (score >= 90) return "Exzellente Leistung. Halte das Niveau.";
-        if (score >= 70) return "Gut gemacht. Ein paar Lücken gibt es noch, die du schließen kannst.";
-        if (score >= 50) return "Halb geschafft – konzentriere dich beim nächsten Durchgang auf die Fehler.";
-        if (score >= 30) return "Kein Grund zur Sorge. Lerne gezielt die Fehler, dann kommst du schnell voran.";
-        return "Das Fundament fehlt noch – wiederhole regelmäßig, um Fortschritt zu sehen.";
-    };
-
     if (showSpinner) {
         return <LoadingSpinner />;
     }
@@ -785,21 +766,43 @@ export default function VerbPracticePage() {
         const incorrectCount = incorrectlyAnsweredIds.size;
         const correctCount = totalItemCount - incorrectCount;
         const finalScore = totalItemCount > 0 ? Math.round((correctCount / totalItemCount) * 100) : 0;
-        const motivationMessage = getMotivationMessage(finalScore);
+        
+        if(finalScore >= 90 && settings?.enableConfetti) {
+             confetti({
+                particleCount: 150,
+                spread: 100,
+                origin: { y: 0.6 },
+                colors: document.documentElement.classList.contains('dark') ? ['#ffffff'] : ['#000000'],
+            });
+        }
         
         return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
-                <Confetti active={showConfetti} />
-                <h1 className="text-2xl font-semibold font-headline mb-4 max-w-md">{motivationMessage}</h1>
-                <p className="text-7xl font-bold mb-4">{finalScore}%</p>
-                <div className="flex gap-8 text-lg mb-8">
-                    <p><span className="font-bold">{correctCount}</span> Richtig</p>
-                    <p><span className="font-bold">{incorrectCount}</span> Falsch</p>
+             <div className="flex flex-col items-center justify-center min-h-screen text-center space-y-12 px-6 animate-in fade-in zoom-in duration-1000">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
+                    <div className="relative bg-card shadow-2xl shadow-primary/10 rounded-full p-16 border-none w-80 h-80 flex flex-col justify-center">
+                    <p className="font-headline text-8xl font-black leading-none text-primary">{finalScore}<span className="text-4xl align-top">%</span></p>
+                    <p className="text-sm font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-2">Gemeistert</p>
+                    </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs sm:max-w-sm">
-                    <Button onClick={resetSession} size="lg" className="w-full"><RotateCcw className="mr-2 h-4 w-4" /> Nochmal versuchen</Button>
-                    <Button variant="outline" size="lg" className="w-full" onClick={handleBackToSubject}>
-                        Zur Verbübersicht
+
+                <div className="grid grid-cols-2 gap-8 max-w-md w-full">
+                    <div className="space-y-2">
+                    <p className="text-5xl font-black font-headline text-foreground">{correctCount}</p>
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Richtige Antworten</p>
+                    </div>
+                    <div className="space-y-2">
+                    <p className="text-5xl font-black font-headline text-destructive">{incorrectCount}</p>
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Falsche Antworten</p>
+                    </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-6 w-full max-w-xl">
+                    <Button className="h-20 flex-1 text-xl font-black rounded-full shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all" onClick={resetSession}>
+                        Nochmal lernen
+                    </Button>
+                    <Button variant="outline" className="h-20 flex-1 text-xl font-black rounded-full border-4 shadow-lg hover:scale-[1.02] transition-all" onClick={handleBackToSubject}>
+                        Zurück zum Fach
                     </Button>
                 </div>
             </div>
@@ -825,212 +828,146 @@ export default function VerbPracticePage() {
     const autoplayBack = (settings?.ttsAutoplay ?? true) && isFlipped && frontIsGerman;
 
     return (
-        <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-9rem)] -mx-4 sm:mx-auto sm:w-full sm:max-w-4xl">
-            <div className="w-full px-4 sm:px-0 mx-auto">
-                <div className="flex items-center justify-between mb-2">
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <ArrowLeft className="h-5 w-5" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Übung beenden?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Möchtest du die aktuelle Übung wirklich beenden und zum Fach zurückkehren? Dein Fortschritt geht verloren.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleBackToSubject}>Beenden</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                    <Button variant={isTypedMode ? 'default' : 'ghost'} size="icon" onClick={toggleInputMode}>
-                        <Pencil className="h-5 w-5" />
-                    </Button>
+        <div className="h-screen flex flex-col justify-between py-6 px-4 overflow-hidden">
+             <div className="flex items-center gap-4 w-full max-w-2xl mx-auto">
+                <AlertDialog>
+                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-14 w-14 rounded-full"><ChevronLeft className="h-8 w-8" /></Button></AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-[3rem] p-10"><AlertDialogHeader><AlertDialogTitle className="text-3xl font-black font-headline">Lernen unterbrechen?</AlertDialogTitle><AlertDialogDescription className="text-lg mt-4 font-medium">Dein Fokus geht verloren. Du kannst aber später genau hier weitermachen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-4 mt-8"><AlertDialogCancel className="h-14 rounded-full font-bold border-2">Bleiben</AlertDialogCancel><AlertDialogAction className="h-14 rounded-full font-bold bg-destructive hover:bg-destructive/90" onClick={handleBackToSubject}>Unterbrechen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                </AlertDialog>
+                 <div className="flex-1 space-y-1.5">
+                    <p className="text-center font-black text-xs uppercase tracking-widest text-muted-foreground/70">{correctAnswersCount} / {totalItemCount}</p>
+                    <Progress value={progress} className="h-2"/>
                 </div>
-                <Progress value={progress} className="h-2 w-full" />
-                <p className="text-sm text-muted-foreground text-center mt-1">
-                    ({correctAnswersCount}/{totalItemCount})
-                </p>
+                <Button variant={isTypedMode ? 'secondary' : 'ghost'} size="icon" className="h-14 w-14 rounded-full" onClick={toggleInputMode}>
+                    <Pencil className="h-6 w-6" />
+                </Button>
             </div>
-
-            <div className={cn(
-                "w-full mx-auto flex-grow flex flex-col sm:justify-center gap-2 sm:gap-4 px-4 sm:px-0",
-                isTypedMode ? "justify-end" : "justify-center"
-            )}>
+            
+            <div
+                key={`${currentCard.id}-${animationResetToken}`}
+                className={cn("w-full max-w-2xl mx-auto flex-grow flex flex-col justify-center", 
+                    exitAnimation === 'correct' && 'animate-fly-out-correct',
+                    exitAnimation === 'incorrect' && 'animate-fly-out-incorrect'
+                )}
+            >
                 <div
-                    key={`${currentCard.id}-${animationResetToken}`}
-                    className={cn(
-                        "relative w-full min-h-[20rem] flex flex-col items-center justify-center p-2 md:p-4 rounded-2xl glass-effect border",
-                        exitAnimation === 'correct' && 'animate-fly-out-correct',
-                        exitAnimation === 'incorrect' && 'animate-fly-out-incorrect'
-                    )}
+                    className="relative w-full aspect-[4/2.5] max-h-[60vh] rounded-[3rem] bg-card shadow-2xl shadow-primary/10 border-none [perspective:2000px]"
                 >
-                    <div className={cn("absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-100", exitAnimation === 'correct' && 'opacity-0')}>
-                        <div className="absolute top-4 left-4 text-3xl [perspective:1000px]">
-                            <div className={cn("relative transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                                <div className="[backface-visibility:hidden]">
-                                    <span>{frontFlag}</span>
-                                </div>
-                                <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                                    <span>{backFlag}</span>
-                                </div>
+                     <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateX(180deg)]")}>
+                        {/* Front Side */}
+                        <div className="absolute w-full h-full [backface-visibility:hidden] flex flex-col items-center justify-center p-8 md:p-12 text-center overflow-hidden rounded-[3rem]">
+                             <div className="absolute top-8 right-8">
+                                {!isFlipped && settings?.ttsEnabled && !frontIsGerman && (
+                                    <SpeakerButton
+                                        text={textToSpeak}
+                                        languageHint={languageHint}
+                                        autoplay={autoplayFront}
+                                        ttsEnabled={settings?.ttsEnabled}
+                                        autoplayEnabled={settings?.ttsAutoplay}
+                                        className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all"
+                                    />
+                                )}
                             </div>
+                            <p className="font-bold text-4xl md:text-5xl text-center break-words">{currentCard.front}</p>
                         </div>
-                        
-                        {settings?.ttsEnabled && (
-                            <div className="absolute top-4 right-4 h-10 w-10 [perspective:1000px]">
-                                <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                                    <div className={cn("absolute inset-0 [backface-visibility:hidden]", frontIsGerman && "opacity-0")}>
-                                        <SpeakerButton
-                                          ref={speakerRef}
-                                          text={textToSpeak}
-                                          languageHint={languageHint}
-                                          autoplay={autoplayFront}
-                                          ttsEnabled={settings?.ttsEnabled ?? false}
-                                          autoplayEnabled={settings?.ttsAutoplay ?? true}
-                                        />
-                                    </div>
-                                    <div className={cn("absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)]", !frontIsGerman && "opacity-0")}>
-                                        <SpeakerButton
-                                          ref={speakerRef}
-                                          text={textToSpeak}
-                                          languageHint={languageHint}
-                                          autoplay={autoplayBack}
-                                          ttsEnabled={settings?.ttsEnabled ?? false}
-                                          autoplayEnabled={settings?.ttsAutoplay ?? true}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="absolute bottom-4 right-4 h-10 w-10 [perspective:1000px]">
-                            <div className={cn("relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d]", isFlipped && "[transform:rotateY(180deg)]")}>
-                                <div className="[backface-visibility:hidden] w-full h-full flex items-center justify-center"></div>
-                                <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex items-center justify-center">
-                                   {shouldShowHints && currentCard.isConjugation && (
-                                        <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
-                                            <PopoverTrigger asChild>
-                                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); }}>
+                        {/* Back Side */}
+                        <div className="absolute w-full h-full [backface-visibility:hidden] [transform:rotateX(180deg)] flex flex-col items-center justify-center p-8 md:p-12 text-center overflow-hidden rounded-[3rem]">
+                             <div className="absolute top-8 right-8 flex gap-3">
+                                {isFlipped && settings?.ttsEnabled && frontIsGerman && (
+                                    <SpeakerButton
+                                        text={textToSpeak}
+                                        languageHint={languageHint}
+                                        autoplay={autoplayBack}
+                                        ttsEnabled={settings.ttsEnabled}
+                                        autoplayEnabled={settings.ttsAutoplay}
+                                        className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all"
+                                    />
+                                )}
+                                {shouldShowHints && currentCard.isConjugation && (
+                                     <Popover open={isHintPopoverOpen} onOpenChange={setIsHintPopoverOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-14 w-14 rounded-full bg-secondary" onClick={(e) => e.stopPropagation()}>
                                                 <Lightbulb className="h-6 w-6" />
                                             </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto max-w-xs sm:max-w-sm" side="top">
-                                                <div className="flex items-start gap-2">
-                                                    <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
-                                                    <div className="text-sm">
-                                                        <p className="font-semibold">{currentCard.verbInfinitive}</p>
-                                                        <p className="text-muted-foreground">{currentCard.hint}</p>
-                                                    </div>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto max-w-xs sm:max-w-sm" side="top">
+                                            <div className="flex items-start gap-2">
+                                                <Lightbulb className="h-4 w-4 mt-1 flex-shrink-0" />
+                                                <div className="text-sm">
+                                                    <p className="font-semibold">{currentCard.verbInfinitive}</p>
+                                                    <p className="text-muted-foreground">{currentCard.hint}</p>
                                                 </div>
-                                            </PopoverContent>
-                                        </Popover>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                         <div className="grid grid-cols-1 [grid-template-areas:_'center'] justify-center items-center [perspective:1000px] w-full px-4 sm:px-8 md:px-12">
-                            <div className={cn(
-                                "col-start-1 row-start-1 [grid-area:center] transition-transform duration-700 [transform-style:preserve-3d]",
-                                isFlipped && "[transform:rotateY(180deg)]"
-                            )}>
-                                <div className="[backface-visibility:hidden] flex flex-col items-center justify-center">
-                                    <p className="font-bold text-3xl md:text-4xl text-center break-words">{currentCard.front}</p>
-                                </div>
-                               <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] flex flex-col items-center justify-center">
-                                    {isTypedMode && answerStatus !== 'unanswered' ? (
-                                        <div className="flex flex-col items-center justify-center text-center">
-                                            <AnswerFeedback userInput={userInput} correctAnswer={currentCard.back} status={answerStatus} />
-                                            <div className="mt-4">
-                                                <FeedbackIcon status={answerStatus} />
                                             </div>
-                                        </div>
-                                    ) : (
-                                        <p className="font-bold text-3xl md:text-4xl text-center break-words">{currentCard.back}</p>
-                                    )}
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
+                            </div>
+                           
+                            {isTypedMode && answerStatus !== 'unanswered' ? (
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <AnswerFeedback userInput={userInput} correctAnswer={currentCard.back} status={answerStatus} />
+                                    <div className="mt-4">
+                                        <FeedbackIcon status={answerStatus} />
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <p className="font-bold text-4xl md:text-5xl text-center break-words">{currentCard.back}</p>
+                            )}
+
+                             {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
+                                <div className="absolute bottom-4 text-center opacity-75 transition-opacity duration-300">
+                                    <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
+                                        Ich hab's gewusst
+                                    </Button>
+                                </div>
+                            )}
                         </div>
-                        
-                        {isTypedMode && answerStatus === 'incorrect' && isFlipped && (
-                            <div className="absolute bottom-4 text-center opacity-75 transition-opacity duration-300">
-                                <Button variant="link" className="text-muted-foreground" onClick={handleMarkAsCorrect}>
-                                    Ich hab's gewusst
-                                </Button>
-                            </div>
-                        )}
                     </div>
                 </div>
+            </div>
 
-                <div className="w-full max-w-2xl mx-auto sm:mt-2">
-                    <div className="h-12 mb-2 sm:mb-4">
-                        <div
-                            className={cn(
-                                'flex justify-center items-center transition-all duration-300',
-                                (isFlipped || exitAnimation) && 'opacity-0 scale-90 hidden'
-                            )}
-                        >
+            <div className="max-w-2xl mx-auto w-full pt-4">
+                <div className="w-full min-h-[144px]">
+                    {!isFlipped ? (
+                        <div className="flex flex-col gap-4 animate-in fade-in duration-300">
                             {isTypedMode ? (
-                                <div className="flex gap-2 w-full">
-                                <Input
-                                    ref={inputRef}
-                                    placeholder="Antwort tippen..."
-                                    value={userInput}
-                                    onChange={(e) => setUserInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
-                                    className="text-center text-lg md:text-xl h-12 rounded-full"
-                                    autoFocus
-                                />
-                                <Button size="lg" onClick={handleCheckAnswer}>Überprüfen</Button>
+                                 <div className="flex gap-4 w-full">
+                                    <Input
+                                        ref={inputRef}
+                                        placeholder="Antwort tippen..."
+                                        value={userInput}
+                                        onChange={(e) => setUserInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && handleCheckAnswer()}
+                                        className="text-center text-xl h-24 rounded-full"
+                                        autoFocus
+                                    />
                                 </div>
                             ) : (
-                                <Button size="lg" className="w-full h-12" onClick={handleFlipCard}>Umdrehen</Button>
+                                <Button className="w-full h-24 text-3xl font-black rounded-full bg-primary shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all" onClick={handleFlipCard}>Umdrehen</Button>
                             )}
-                        </div>
-                        <div
-                            className={cn(
-                                'flex justify-center items-center gap-2 transition-all duration-300',
-                                (!isFlipped || exitAnimation) && 'opacity-0 scale-90 hidden'
-                            )}
-                        >
-                            {isTypedMode ? (
-                                <Button size="lg" className="w-full h-12" onClick={handleCheckAnswer}>
-                                    Weiter
+                            {history.length > 0 && (
+                                <Button variant="ghost" className="h-12 rounded-full font-bold text-muted-foreground/60 hover:text-foreground hover:bg-transparent" onClick={handleGoBack}>
+                                    <ChevronLeft className="mr-2 h-5 w-5" />Karte zurück
                                 </Button>
-                            ) : (
-                            <>
-                                    <Button
-                                        variant="outline"
-                                        size="default"
-                                        className="w-[calc(50%-0.25rem)] h-12 text-base"
-                                        onClick={() => handleClassicAnswer(false)}
-                                    >
-                                        <X className="mr-2 h-4 w-4" /> Wusste ich nicht
-                                    </Button>
-                                    <Button
-                                        variant="default"
-                                        size="default"
-                                        className="w-[calc(50%-0.25rem)] h-12 text-base"
-                                        onClick={() => handleClassicAnswer(true)}
-                                    >
-                                        <Check className="mr-2 h-4 w-4" /> Wusste ich
-                                    </Button>
-                                </>
                             )}
                         </div>
-                    </div>
-                    <div className="w-full text-center h-[36px]">
-                        {history.length > 0 && !exitAnimation && (
-                            <Button variant="link" onClick={handleGoBack} className="text-muted-foreground">
-                                <ChevronLeft className="mr-1 h-4 w-4" />
-                                Zurück
-                            </Button>
-                        )}
-                    </div>
+                    ) : (
+                        <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                             {isTypedMode ? (
+                                <Button className="w-full h-24 text-3xl font-black rounded-full" onClick={handleCheckAnswer}>Weiter</Button>
+                            ) : (
+                                <div className="flex gap-6">
+                                    <Button variant="outline" className="h-24 flex-1 rounded-full border-4 text-2xl font-black hover:bg-destructive/5 hover:border-destructive hover:text-destructive active:scale-95 transition-all" onClick={() => handleClassicAnswer(false)}><X className="mr-4 h-8 w-8" />Nicht gewusst</Button>
+                                    <Button className="h-24 flex-1 rounded-full bg-primary shadow-2xl shadow-primary/30 text-2xl font-black active:scale-95 transition-all" onClick={() => handleClassicAnswer(true)}><Check className="mr-4 h-8 w-8" />Gewusst</Button>
+                                </div>
+                            )}
+                           {history.length > 0 && (
+                              <Button variant="ghost" className="h-12 rounded-full font-bold text-muted-foreground/60 hover:text-foreground hover:bg-transparent" onClick={handleGoBack}>
+                                <ChevronLeft className="mr-2 h-5 w-5" />Karte zurück
+                              </Button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
