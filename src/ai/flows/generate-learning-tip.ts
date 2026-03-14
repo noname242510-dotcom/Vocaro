@@ -27,6 +27,7 @@ export async function generateLearningTip(input: GenerateLearningTipInput): Prom
   return generateLearningTipFlow(input);
 }
 
+
 const prompt = ai.definePrompt({
   name: 'generateLearningTipPrompt',
   input: {schema: GenerateLearningTipInputSchema},
