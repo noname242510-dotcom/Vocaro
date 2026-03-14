@@ -8,7 +8,6 @@ import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
@@ -61,7 +60,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Minimal Header */}
       <header className="flex items-center justify-center py-8">
-        <Logo className="text-3xl" />
+        <h1 className="text-3xl font-bold font-headline tracking-tight">Vocaro</h1>
       </header>
 
       {/* Auth Card */}
