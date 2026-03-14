@@ -136,23 +136,50 @@ function FinishedScreen({ stats, onRestart, onBackToSubject }: { stats: { correc
 }
 
 function DiffDisplay({ userInput, correctAnswer }: { userInput: string, correctAnswer: string }) {
-    const userWords = userInput.trim().split(/\s+/);
+    const userWords = userInput.trim().toLowerCase().split(/\s+/);
     const correctWords = correctAnswer.trim().toLowerCase().split(/\s+/);
+
+    const result = [];
+    let userIndex = 0;
+
+    for (const correctWord of correctWords) {
+        if (userWords[userIndex] === correctWord) {
+            result.push({ word: userWords[userIndex], type: 'correct' });
+            userIndex++;
+        } else if (userWords.includes(correctWord)) {
+            while (userWords[userIndex] !== correctWord) {
+                result.push({ word: userWords[userIndex], type: 'incorrect' });
+                userIndex++;
+            }
+            result.push({ word: userWords[userIndex], type: 'correct' });
+            userIndex++;
+        } else {
+            result.push({ word: '   ', type: 'missing' });
+        }
+    }
+
+    while (userIndex < userWords.length) {
+        result.push({ word: userWords[userIndex], type: 'incorrect' });
+        userIndex++;
+    }
 
     return (
         <div className="mt-4 w-full max-w-md mx-auto bg-card/50 p-4 rounded-2xl">
             <p className="text-sm font-bold text-muted-foreground mb-2">Deine Eingabe</p>
             <p className="text-lg font-mono p-2 bg-black/5 dark:bg-white/5 rounded-md">
-                {userWords.map((word, index) => {
-                    const isIncorrect = word.toLowerCase() !== (correctWords[index] || '');
-                    return (
-                        <span key={index}>
-                            <span className={cn({ 'text-destructive': isIncorrect })}>
-                                {word}
-                            </span>{' '}
-                        </span>
-                    );
-                })}
+                {result.map((item, index) => (
+                    <span key={index}>
+                        <span
+                            className={cn({
+                                'text-green-600': item.type === 'correct',
+                                'text-destructive': item.type === 'incorrect' || item.type === 'missing',
+                                'px-2': item.type === 'missing',
+                            })}
+                        >
+                            {item.word}
+                        </span>{' '}
+                    </span>
+                ))}
             </p>
         </div>
     );
