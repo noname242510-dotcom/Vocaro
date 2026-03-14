@@ -1167,6 +1167,6 @@ export default function SubjectDetailPage() {
           />
         )
       }
-    </div >
+    </div>
   );
 }
