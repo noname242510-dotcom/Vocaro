@@ -344,6 +344,7 @@ export default function LearnPage() {
   const handleToggleInputMode = () => {
     if (isFlipped) {
         setIsFlipped(false);
+        setAnswerStatus('unanswered');
     }
     setInputMode(prev => !prev);
   };
@@ -427,71 +428,98 @@ export default function LearnPage() {
             </div>
         </div>
 
-      <div className="flex-1 flex flex-col justify-center items-center w-full max-w-2xl mx-auto" style={{ perspective: '2000px' }}>
-        <AnimatePresence>
-          {currentItem && (
-            <motion.div
-              key={currentItem.id}
-              className="w-full"
-              initial={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 30 }}
-            >
-              <div className="relative w-full aspect-[4/2.5] max-h-[60vh]" style={{ transformStyle: 'preserve-3d' }}>
+        <div className="flex-1 flex justify-center items-center w-full max-w-5xl mx-auto gap-4 px-4" style={{ perspective: '2000px' }}>
+            {/* DESKTOP: Back button */}
+            <div className="hidden md:flex flex-1 justify-end">
+                {previousCardState && (
+                    <Button onClick={handleGoToPreviousCard} variant="ghost" size="icon" className="h-20 w-20 rounded-full bg-secondary">
+                        <ChevronLeft className="h-10 w-10" />
+                    </Button>
+                )}
+            </div>
+
+            {/* CARD */}
+            <AnimatePresence>
+            {currentItem && (
                 <motion.div
-                  className="w-full h-full relative"
-                  style={{ transformStyle: 'preserve-3d' }}
-                  animate={{ rotateX: isFlipped ? 180 : 0 }}
-                  transition={{ type: "spring", stiffness: 250, damping: 30 }}
+                key={currentItem.id}
+                className="w-full max-w-2xl"
+                initial={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 30 }}
                 >
-                  {/* FRONT */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
-                    {previousCardState && (
-                        <Button onClick={handleGoToPreviousCard} variant="ghost" size="icon" className="absolute bottom-8 left-8 h-14 w-14 rounded-full bg-secondary/50 hover:bg-secondary">
-                            <ChevronLeft className="h-8 w-8" />
-                        </Button>
-                    )}
-                    <div className="absolute top-8 right-8 flex gap-3">
-                     { !isFlipped && frontIsForeign && (settings?.ttsEnabled ?? true) && <SpeakerButton text={frontContent} languageHint={subjectLanguage} ttsEnabled={settings?.ttsEnabled ?? true} autoplayEnabled={settings?.ttsAutoplay ?? false} autoplay={!isFlipped} className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all" /> }
-                      {currentItem.data.notes && <Popover><PopoverTrigger asChild><Button variant="ghost" size="icon" className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 transition-all"><Lightbulb className="h-6 w-6" /></Button></PopoverTrigger><PopoverContent className="rounded-full p-6 shadow-2xl border-none max-w-xs"><p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Notiz / Hilfe</p><p className="text-lg font-medium leading-relaxed">{currentItem.data.notes}</p></PopoverContent></Popover>}
+                <div className="relative w-full aspect-[4/2.5] max-h-[60vh]" style={{ transformStyle: 'preserve-3d' }}>
+                    <motion.div
+                    className="w-full h-full relative"
+                    style={{ transformStyle: 'preserve-3d' }}
+                    animate={{ rotateX: isFlipped ? 180 : 0 }}
+                    transition={{ type: "spring", stiffness: 250, damping: 30 }}
+                    >
+                    {/* FRONT */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
+                        {/* MOBILE: Back button */}
+                        <div className="md:hidden">
+                            {previousCardState && (
+                                <Button onClick={handleGoToPreviousCard} variant="ghost" size="icon" className="absolute top-1/2 -translate-y-1/2 left-4 h-14 w-14 rounded-full bg-secondary/50 hover:bg-secondary">
+                                    <ChevronLeft className="h-8 w-8" />
+                                </Button>
+                            )}
+                        </div>
+
+                        <div className="absolute top-8 right-8 flex gap-3">
+                        { !isFlipped && frontIsForeign && (settings?.ttsEnabled ?? true) && <SpeakerButton text={frontContent} languageHint={subjectLanguage} ttsEnabled={settings?.ttsEnabled ?? true} autoplayEnabled={settings?.ttsAutoplay ?? false} autoplay={!isFlipped} className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all" /> }
+                        {currentItem.data.notes && <Popover><PopoverTrigger asChild><Button variant="ghost" size="icon" className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 transition-all"><Lightbulb className="h-6 w-6" /></Button></PopoverTrigger><PopoverContent className="rounded-full p-6 shadow-2xl border-none max-w-xs"><p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Notiz / Hilfe</p><p className="text-lg font-medium leading-relaxed">{currentItem.data.notes}</p></PopoverContent></Popover>}
+                        </div>
+                        <div className="text-center space-y-4 px-12">
+                            <h3 className={cn("font-headline font-black tracking-tight leading-[1.1]", frontContent.length <= 10 ? "text-5xl md:text-6xl" : "text-3xl md:text-4xl")}>{frontContent}</h3>
+                            {currentItem.data.phonetic && frontIsForeign && <div className="inline-block px-6 py-2 bg-secondary/80 rounded-full"><p className={cn("text-lg font-medium text-muted-foreground/80 font-mono tracking-wider italic", answerStatus === 'correct' ? 'text-green-600' : '')}>{currentItem.data.phonetic}</p></div>}
+                        </div>
                     </div>
-                    <div className="text-center space-y-4">
-                      <h3 className={cn("font-headline font-black tracking-tight leading-[1.1]", frontContent.length <= 10 ? "text-5xl md:text-6xl" : "text-3xl md:text-4xl")}>{frontContent}</h3>
-                      {currentItem.data.phonetic && frontIsForeign && <div className="inline-block px-6 py-2 bg-secondary/80 rounded-full"><p className={cn("text-lg font-medium text-muted-foreground/80 font-mono tracking-wider italic", answerStatus === 'correct' ? 'text-green-600' : '')}>{currentItem.data.phonetic}</p></div>}
-                    </div>
-                  </div>
-                  {/* BACK */}
-                  <div className={cn("absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden", inputMode && (answerStatus === 'correct' ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'))} style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}>
-                    {previousCardState && (
-                        <Button onClick={handleGoToPreviousCard} variant="ghost" size="icon" className="absolute bottom-8 left-8 h-14 w-14 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20">
-                            <ChevronLeft className="h-8 w-8" />
-                        </Button>
-                    )}
-                    <div className="absolute top-8 right-8 flex gap-3">
-                        {isFlipped && !frontIsForeign && (settings?.ttsEnabled ?? true) && (
-                            <SpeakerButton
-                                text={backContent}
-                                languageHint={subjectLanguage}
-                                ttsEnabled={settings?.ttsEnabled ?? true}
-                                autoplayEnabled={settings?.ttsAutoplay ?? false}
-                                autoplay={isFlipped && !frontIsForeign}
-                                className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all"
-                            />
+
+                    {/* BACK */}
+                    <div className={cn("absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden", {
+                        'bg-green-100 dark:bg-green-900/20': inputMode && answerStatus === 'correct',
+                        'bg-red-100 dark:bg-red-900/20': inputMode && answerStatus === 'incorrect'
+                    })} style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}>
+                        {/* MOBILE: Back button */}
+                        <div className="md:hidden">
+                            {previousCardState && (
+                                <Button onClick={handleGoToPreviousCard} variant="ghost" size="icon" className="absolute top-1/2 -translate-y-1/2 left-4 h-14 w-14 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20">
+                                    <ChevronLeft className="h-8 w-8" />
+                                </Button>
+                            )}
+                        </div>
+
+                        <div className="absolute top-8 right-8 flex gap-3">
+                            {isFlipped && !frontIsForeign && (settings?.ttsEnabled ?? true) && (
+                                <SpeakerButton
+                                    text={backContent}
+                                    languageHint={subjectLanguage}
+                                    ttsEnabled={settings?.ttsEnabled ?? true}
+                                    autoplayEnabled={settings?.ttsAutoplay ?? false}
+                                    autoplay={isFlipped && !frontIsForeign}
+                                    className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all"
+                                />
+                            )}
+                        </div>
+                        <div className="text-center space-y-6 px-12">
+                        <h3 className={cn("font-headline font-black tracking-tight leading-[1.1]", backContent.length <= 10 ? "text-5xl md:text-6xl" : "text-3xl md:text-4xl")}>{backContent}</h3>
+                        {currentItem.data.relatedWord && <div className="inline-flex items-center gap-3 px-8 py-3 rounded-full bg-secondary/80"><span className="text-xs font-black uppercase tracking-[0.2em] opacity-60">{currentItem.data.relatedWord.language}:</span><span className="text-xl font-bold">{currentItem.data.relatedWord.word}</span></div>}
+                        </div>
+                        {isFlipped && inputMode && answerStatus === 'incorrect' && (
+                            <DiffDisplay userInput={userInput} correctAnswer={backContent} />
                         )}
                     </div>
-                    <div className="text-center space-y-6">
-                       <h3 className={cn("font-headline font-black tracking-tight leading-[1.1]", backContent.length <= 10 ? "text-5xl md:text-6xl" : "text-3xl md:text-4xl")}>{backContent}</h3>
-                      {currentItem.data.relatedWord && <div className="inline-flex items-center gap-3 px-8 py-3 rounded-full bg-secondary/80"><span className="text-xs font-black uppercase tracking-[0.2em] opacity-60">{currentItem.data.relatedWord.language}:</span><span className="text-xl font-bold">{currentItem.data.relatedWord.word}</span></div>}
-                    </div>
-                     {isFlipped && inputMode && answerStatus === 'incorrect' && (
-                        <DiffDisplay userInput={userInput} correctAnswer={backContent} />
-                    )}
-                  </div>
+                    </motion.div>
+                </div>
                 </motion.div>
-              </div>
-            </motion.div>
-          )}
-          </AnimatePresence>
-      </div>
+            )}
+            </AnimatePresence>
+
+            {/* DESKTOP: Placeholder for centering */}
+            <div className="hidden md:flex flex-1 justify-start">
+                {previousCardState && <div className="h-20 w-20"></div>}
+            </div>
+        </div>
 
       <div className="max-w-2xl mx-auto w-full pt-4">
         <div className="w-full min-h-[112px]">
