@@ -32,11 +32,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 
 export default function SubjectsPage() {
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
+    const router = useRouter();
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -52,7 +54,21 @@ export default function SubjectsPage() {
                 const subjectsRef = collection(firestore, 'users', user.uid, 'subjects');
                 const q = query(subjectsRef, orderBy('name'));
                 const subjectsSnap = await getDocs(q);
-                const allSubjects = subjectsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id } as Subject));
+                const allSubjects = await Promise.all(subjectsSnap.docs.map(async (doc) => {
+                    const subjectData = doc.data() as Subject;
+                    const stacksRef = collection(doc.ref, 'stacks');
+                    const verbsRef = collection(doc.ref, 'verbs');
+                    const [stacksSnap, verbsSnap] = await Promise.all([
+                        getDocs(stacksRef),
+                        getDocs(verbsRef)
+                    ]);
+                    return {
+                        ...subjectData,
+                        id: doc.id,
+                        stackCount: stacksSnap.size,
+                        verbCount: verbsSnap.size,
+                    };
+                }));
                 setSubjects(allSubjects);
             } catch (e) {
                 console.error('Error fetching subjects:', e);
@@ -85,7 +101,6 @@ export default function SubjectsPage() {
         try {
             const batch = writeBatch(firestore);
             
-            // Delete subcollections (stacks and their vocabulary)
             const stacksRef = collection(subjectDocRef, 'stacks');
             const stacksSnap = await getDocs(stacksRef);
             for (const stackDoc of stacksSnap.docs) {
@@ -95,12 +110,10 @@ export default function SubjectsPage() {
                 batch.delete(stackDoc.ref);
             }
             
-            // Delete verbs
             const verbsRef = collection(subjectDocRef, 'verbs');
             const verbsSnap = await getDocs(verbsRef);
             verbsSnap.forEach(verbDoc => batch.delete(verbDoc.ref));
 
-            // Delete the subject itself
             batch.delete(subjectDocRef);
 
             await batch.commit();
@@ -126,24 +139,33 @@ export default function SubjectsPage() {
             <div className="space-y-12 pb-28 md:pb-12 animate-in fade-in duration-700">
                 <header className="space-y-2 pb-4 border-b">
                     <h1 className="text-5xl font-bold font-creative tracking-tight text-foreground">Fächer</h1>
-                    <p className="text-xl text-muted-foreground">
-                       Verwalte deine Lernfächer und Stapel.
-                    </p>
                 </header>
 
                 <div className="space-y-4">
                     {subjects.map(subject => (
-                        <Card key={subject.id} className="bg-card border-none rounded-[2rem] shadow-xl shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 overflow-hidden">
-                            <div className="p-6 flex items-center gap-4">
-                               <div className="h-14 w-14 flex-shrink-0 rounded-2xl bg-secondary/50 flex items-center justify-center text-3xl shadow-sm">
+                        <Card key={subject.id} 
+                            className="bg-card border-none rounded-[2rem] shadow-xl shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 overflow-hidden cursor-pointer"
+                            onClick={() => router.push(`/dashboard/subjects/${subject.id}`)}>
+                            <div className="p-6 flex items-center gap-6">
+                               <div className="h-16 w-16 flex-shrink-0 rounded-2xl bg-secondary/50 flex items-center justify-center text-4xl shadow-sm">
                                     {subject.emoji}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h2 className="text-xl font-semibold font-headline text-foreground truncate">
+                                    <h2 className="text-2xl font-bold font-headline text-foreground truncate">
                                         {subject.name}
                                     </h2>
+                                    <div className="flex items-center gap-4 text-muted-foreground mt-2">
+                                        <div className="flex items-center gap-2">
+                                            <Layers className="h-4 w-4" />
+                                            <span>{subject.stackCount} Stapel</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <BookOpen className="h-4 w-4" />
+                                            <span>{subject.verbCount} Verben</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                      <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl" onClick={() => { setEditingSubject(subject); setRenamedSubjectName(subject.name); }}>
                                         <Pen className="h-5 w-5" />
                                     </Button>

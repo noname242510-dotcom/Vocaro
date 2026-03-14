@@ -275,7 +275,7 @@ export default function SubjectDetailPage() {
       await batch.commit();
 
       toast({ title: 'Erfolg', description: `Fach "${subject?.name}" wurde gelöscht.` });
-      router.push('/dashboard');
+      router.push('/dashboard/facher');
 
     } catch (error) {
       console.error('Error deleting subject:', error);
@@ -777,7 +777,7 @@ export default function SubjectDetailPage() {
       <div className="text-center">
         <h2 className="text-xl">Fach nicht gefunden</h2>
         <Button asChild variant="link">
-          <Link href="/dashboard">Zurück zum Dashboard</Link>
+          <Link href="/dashboard/facher">Zurück zur Fächerübersicht</Link>
         </Button>
       </div>
     );
@@ -788,12 +788,11 @@ export default function SubjectDetailPage() {
 
   return (
     <div className="space-y-12 max-w-7xl mx-auto">
-      {/* Premium Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-10 border-b relative">
         <div className="space-y-6">
-          <Link href="/dashboard" className="group flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm font-black uppercase tracking-widest">
+          <Link href="/dashboard/facher" className="group flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors text-sm font-black uppercase tracking-widest">
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-            Zurück
+            Zurück zu den Fächern
           </Link>
 
           <div className="flex items-center gap-6">
@@ -805,8 +804,6 @@ export default function SubjectDetailPage() {
                 {subject.name}
               </h1>
               <div className="flex items-center gap-4 text-muted-foreground font-medium">
-                <span className="flex items-center gap-1.5"><Book className="h-4 w-4" /> {stacks?.length || 0} Stapel</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-border"></span>
                 <span className="flex items-center gap-1.5"><WholeWord className="h-4 w-4" /> {Object.values(allVocabulary).flat().length} Vokabeln</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-border"></span>
                 <span className="flex items-center gap-1.5"><Zap className="h-4 w-4" /> {verbs?.length || 0} Verben</span>
@@ -818,7 +815,7 @@ export default function SubjectDetailPage() {
         <div className="flex items-center gap-3">
           <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="h-14 px-6 rounded-2xl border-2 font-bold shadow-xl shadow-primary/5 hover:bg-secondary/50">
+              <Button variant="outline" className="h-14 px-6 rounded-lg border-2 font-bold shadow-xl shadow-primary/5 hover:bg-secondary/50">
                 <Pen className="h-4 w-4 mr-2" /> Umbenennen
               </Button>
             </DialogTrigger>
@@ -833,20 +830,20 @@ export default function SubjectDetailPage() {
                   id="rename"
                   value={renamedSubjectName}
                   onChange={(e) => setRenamedSubjectName(e.target.value)}
-                  className="h-14 rounded-2xl border-2 text-lg px-6"
+                  className="h-14 rounded-lg border-2 text-lg px-6"
                 />
               </div>
               <DialogFooter className="gap-4">
-                <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)} className="h-14 rounded-2xl border-2 font-bold text-lg">Abbrechen</Button>
-                <Button onClick={handleRenameSubject} className="h-14 rounded-2xl font-bold text-lg px-10">Speichern</Button>
+                <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)} className="h-14 rounded-lg border-2 font-bold text-lg">Abbrechen</Button>
+                <Button onClick={handleRenameSubject} className="h-14 rounded-lg font-bold text-lg px-10">Speichern</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
 
           <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" className="h-14 w-14 rounded-2xl border-2 border-destructive/20 text-destructive hover:bg-destructive/5 hover:border-destructive shadow-xl shadow-destructive/5">
-                <Trash2 className="h-6 w-6" />
+              <Button variant="outline" className="h-14 w-14 rounded-lg border-2 border-destructive/20 text-destructive hover:bg-destructive/5 hover:border-destructive shadow-xl shadow-destructive/5">
+                <Trash2 className="h-8 w-8" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent className="rounded-[2.5rem] p-10">
@@ -857,8 +854,8 @@ export default function SubjectDetailPage() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="gap-4 mt-8">
-                <AlertDialogCancel className="h-14 rounded-2xl border-2 font-bold text-lg">Abbrechen</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteSubject} className="h-14 rounded-2xl bg-destructive hover:bg-destructive/90 font-bold text-lg">Löschen</AlertDialogAction>
+                <AlertDialogCancel className="h-14 rounded-lg border-2 font-bold text-lg">Abbrechen</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteSubject} className="h-14 rounded-lg bg-destructive hover:bg-destructive/90 font-bold text-lg">Löschen</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -889,7 +886,7 @@ export default function SubjectDetailPage() {
                 placeholder={activeTab === 'vocabulary' ? "Vokabeln suchen..." : "Verben suchen..."}
                 value={activeTab === 'vocabulary' ? vocabSearchQuery : verbSearchQuery}
                 onChange={(e) => activeTab === 'vocabulary' ? setVocabSearchQuery(e.target.value) : setVerbSearchQuery(e.target.value)}
-                className="h-14 w-64 md:w-80 pl-12 rounded-2xl border-none bg-card shadow-xl shadow-primary/5 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="h-14 w-64 md:w-80 pl-12 rounded-lg border-none bg-card shadow-xl shadow-primary/5 focus-visible:ring-primary focus-visible:ring-offset-2"
               />
             </div>
           </div>
@@ -897,17 +894,17 @@ export default function SubjectDetailPage() {
 
         <TabsContent value="vocabulary" className="space-y-8">
           <div className="flex justify-between items-center gap-4">
-              <h2 className="text-3xl font-black font-headline">Deine Vokabel-Stapel</h2>
+              <h2 className="text-3xl font-black font-headline">Deine Vokabeln</h2>
               <Dialog open={isAddVocabDialogOpen} onOpenChange={setIsAddVocabDialogOpen}>
                   <DialogTrigger asChild>
                       <Button
                           onClick={() => openAddVocabDialog()}
-                          className="h-12 rounded-2xl font-bold px-6 shadow-md shadow-primary/20"
+                          className="h-12 rounded-lg font-bold px-6 shadow-md shadow-primary/20"
                       >
                           <Plus className="mr-2 h-5 w-5" /> Vokabeln hinzufügen
                       </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-8">
+                  <DialogContent className="sm:max-w-xl rounded-xl p-8">
                       <DialogHeader>
                           <DialogTitle className="text-2xl font-bold font-headline">Vokabeln hinzufügen</DialogTitle>
                           <DialogDescription>
@@ -916,9 +913,9 @@ export default function SubjectDetailPage() {
                       </DialogHeader>
 
                       <Tabs defaultValue="ai" className="w-full mt-6">
-                          <TabsList className="grid w-full grid-cols-2 bg-secondary/50 rounded-xl p-1">
-                              <TabsTrigger value="ai" className="rounded-lg font-bold">KI-Scan (Bild)</TabsTrigger>
-                              <TabsTrigger value="manual" className="rounded-lg font-bold">Manuell</TabsTrigger>
+                          <TabsList className="grid w-full grid-cols-2 bg-secondary/50 rounded-lg p-1">
+                              <TabsTrigger value="ai" className="rounded-md font-bold">KI-Scan (Bild)</TabsTrigger>
+                              <TabsTrigger value="manual" className="rounded-md font-bold">Manuell</TabsTrigger>
                           </TabsList>
 
                           <TabsContent value="ai" className="space-y-6 pt-6">
@@ -929,7 +926,7 @@ export default function SubjectDetailPage() {
                                       value={newStackName}
                                       onChange={(e) => setNewStackName(e.target.value)}
                                       disabled={!!activeStackId}
-                                      className="h-12 rounded-xl"
+                                      className="h-12 rounded-md"
                                   />
                               </div>
 
@@ -937,12 +934,12 @@ export default function SubjectDetailPage() {
                                   <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Bilder hochladen (max. 4)</Label>
                                   <div className="grid grid-cols-2 gap-4">
                                       {previewImages.map((src, idx) => (
-                                          <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border">
+                                          <div key={idx} className="relative aspect-video rounded-lg overflow-hidden border">
                                               <Image src={src} alt="Preview" fill className="object-cover" />
                                           </div>
                                       ))}
                                       {previewImages.length < 4 && (
-                                          <label className="aspect-video rounded-xl border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all">
+                                          <label className="aspect-video rounded-lg border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all">
                                               <Upload className="h-6 w-6 text-muted-foreground" />
                                               <span className="text-xs mt-2 font-bold text-muted-foreground">Bild wählen</span>
                                               <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
@@ -954,7 +951,7 @@ export default function SubjectDetailPage() {
                               <Button
                                   onClick={handleExtractAndSaveVocabulary}
                                   disabled={previewImages.length === 0 || !newStackName || isRunning}
-                                  className="w-full h-14 rounded-2xl font-bold text-lg shadow-xl shadow-primary/10"
+                                  className="w-full h-14 rounded-lg font-bold text-lg shadow-xl shadow-primary/10"
                               >
                                   {isRunning ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Zap className="mr-2 h-5 w-5" />}
                                   KI-Erkennung starten
@@ -995,10 +992,10 @@ export default function SubjectDetailPage() {
                                   </div>
                                   <div className="space-y-2">
                                       <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Hinweise / Tipps (optional)</Label>
-                                      <Textarea value={manualNotes} onChange={(e) => setManualNotes(e.target.value)} placeholder="Merkregel, Kontext, Verwendung..." className="rounded-xl resize-none" rows={2} />
+                                      <Textarea value={manualNotes} onChange={(e) => setManualNotes(e.target.value)} placeholder="Merkregel, Kontext, Verwendung..." className="rounded-md resize-none" rows={2} />
                                   </div>
                               </div>
-                              <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually || !manualTerm || !manualDefinition} className="w-full h-12 rounded-xl font-bold">
+                              <Button onClick={() => handleAddManualVocabulary(true)} disabled={isAddingManually || !manualTerm || !manualDefinition} className="w-full h-12 rounded-lg font-bold">
                                   Hinzufügen
                               </Button>
                           </TabsContent>
@@ -1006,7 +1003,6 @@ export default function SubjectDetailPage() {
                   </DialogContent>
               </Dialog>
           </div>
-          {/* Stacks - vertical list */}
           <div className="space-y-6">
             {stacks?.map((stack) => {
               const results = filteredVocabulary[stack.id] || [];
@@ -1037,12 +1033,12 @@ export default function SubjectDetailPage() {
                 variant="outline"
                 disabled={selectedVerbsCount === 0}
                 onClick={handleOpenTenseDialog}
-                className="h-12 rounded-xl border-2 font-bold px-6"
+                className="h-12 rounded-lg border-2 font-bold px-6"
               >
                 <Settings2 className="mr-2 h-4 w-4" /> Zeiten auswählen
               </Button>
 
-              <Button onClick={handleAddNewVerb} className="h-12 rounded-xl font-bold px-8 shadow-lg shadow-primary/10">
+              <Button onClick={handleAddNewVerb} className="h-12 rounded-lg font-bold px-8 shadow-lg shadow-primary/10">
                 <Plus className="mr-2 h-5 w-5" /> Verb hinzufügen
               </Button>
             </div>
@@ -1061,7 +1057,7 @@ export default function SubjectDetailPage() {
                 />
               ))
             ) : (
-              <div className="col-span-full py-20 text-center space-y-4 bg-card rounded-[2.5rem] border-2 border-dashed border-muted-foreground/10">
+              <div className="col-span-full py-20 text-center space-y-4 bg-card rounded-xl border-2 border-dashed border-muted-foreground/10">
                 <WholeWord className="mx-auto h-16 w-16 text-muted-foreground/20" />
                 <div>
                   <h3 className="text-xl font-bold font-headline">Keine Verben gefunden</h3>
@@ -1072,14 +1068,14 @@ export default function SubjectDetailPage() {
           </div>
 
           <Dialog open={isTenseSelectionDialogOpen} onOpenChange={setIsTenseSelectionDialogOpen}>
-            <DialogContent className="rounded-[2.5rem] p-10 max-w-2xl">
+            <DialogContent className="rounded-xl p-10 max-w-2xl">
               <DialogHeader>
                 <div className="flex justify-between items-center mb-4">
                   <div>
                     <DialogTitle className="text-3xl font-bold font-headline">Zeiten auswählen</DialogTitle>
                     <DialogDescription className="text-lg">Wähle Zeiten für {selectedVerbsCount} ausgewählte Verben.</DialogDescription>
                   </div>
-                  <Button variant="outline" onClick={handleToggleAllTenses} className="rounded-xl border-2 font-bold">
+                  <Button variant="outline" onClick={handleToggleAllTenses} className="rounded-lg border-2 font-bold">
                     {allTempTensesSelected ? 'Keine' : 'Alle'}
                   </Button>
                 </div>
@@ -1114,8 +1110,8 @@ export default function SubjectDetailPage() {
                 </div>
               </ScrollArea>
               <DialogFooter className="mt-8 pt-8 border-t gap-4">
-                <Button variant="outline" onClick={() => setIsTenseSelectionDialogOpen(false)} className="h-14 rounded-2xl border-2 font-bold text-lg flex-1">Abbrechen</Button>
-                <Button onClick={handleApplyGlobalTenseSelection} className="h-14 rounded-2xl font-bold text-lg flex-1 shadow-xl shadow-primary/10">Anwenden</Button>
+                <Button variant="outline" onClick={() => setIsTenseSelectionDialogOpen(false)} className="h-14 rounded-lg border-2 font-bold text-lg flex-1">Abbrechen</Button>
+                <Button onClick={handleApplyGlobalTenseSelection} className="h-14 rounded-lg font-bold text-lg flex-1 shadow-xl shadow-primary/10">Anwenden</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -1123,13 +1119,12 @@ export default function SubjectDetailPage() {
       </Tabs>
 
 
-      {/* Floating Action Bar */}
-      <div className="fixed bottom-24 md:bottom-4 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
-        <div className="p-2 flex items-center justify-between gap-2 glass-effect rounded-full">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-auto mx-auto z-40">
+        <div className="p-2 flex items-center justify-between gap-2 bg-background/80 backdrop-blur-md rounded-lg border shadow-lg">
           {activeTab === 'vocabulary' && (
             <>
               <Button
-                className="rounded-full text-base px-8"
+                className="rounded-md text-base px-8"
                 disabled={!isAnyVocabSelected}
                 onClick={handleStartLearning}
               >
@@ -1141,7 +1136,7 @@ export default function SubjectDetailPage() {
           {activeTab === 'verbs' && (
             <>
               <Button
-                className="rounded-full text-base px-8"
+                className="rounded-md text-base px-8"
                 disabled={selectedVerbsCount === 0}
                 onClick={handleStartVerbPractice}
               >

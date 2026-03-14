@@ -55,10 +55,6 @@ function NavContent() {
           );
         })}
       </nav>
-
-      <div className="p-4">
-        <UserNav />
-      </div>
     </div>
   );
 }
@@ -117,5 +113,3 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     </TaskProvider>
   );
 }
-
-    
