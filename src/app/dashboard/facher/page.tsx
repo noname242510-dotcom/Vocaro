@@ -6,7 +6,7 @@ import { collection, getDocs, orderBy, query, doc, updateDoc, writeBatch, delete
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-    BookOpen, Layers, ChevronRight, Loader2, Plus, ArrowRight, Trash2, Pen, WholeWord, Zap
+    BookOpen, Layers, ChevronRight, Plus, ArrowRight, Trash2, Pen, WholeWord, Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { LoadingSpinner } from '@/components/loading-spinner';
 
 
 export default function SubjectsPage() {
@@ -135,11 +136,7 @@ export default function SubjectsPage() {
     };
 
     if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
-            </div>
-        );
+        return <LoadingSpinner />;
     }
 
     return (

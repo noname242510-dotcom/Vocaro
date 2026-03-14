@@ -13,10 +13,10 @@ interface AiTipModalProps {
 }
 
 const tipIcons = [
-  <Lightbulb className="h-5 w-5" />,
-  <Brain className="h-5 w-5" />,
-  <Book className="h-5 w-5" />,
-  <Users className="h-5 w-5" />
+  <Lightbulb className="h-8 w-8 flex-shrink-0" />,
+  <Brain className="h-8 w-8 flex-shrink-0" />,
+  <Book className="h-8 w-8 flex-shrink-0" />,
+  <Users className="h-8 w-8 flex-shrink-0" />
 ];
 
 export function AiTipModal({ word, onClose }: AiTipModalProps) {
@@ -103,16 +103,16 @@ export function AiTipModal({ word, onClose }: AiTipModalProps) {
 
     if (tips.length > 0) {
       return (
-        <div className="grid gap-2 py-4">
+        <div className="grid gap-3 py-4">
           {tips.map((tip, index) => (
             <Button
               key={index}
               variant={selectedTip === tip ? 'default' : 'outline'}
               onClick={() => setSelectedTip(tip)}
-              className="text-left h-auto whitespace-normal p-3 flex items-center gap-2"
+              className="text-left h-auto whitespace-normal p-4 flex items-start gap-4"
             >
               {tipIcons[index % tipIcons.length]}
-              {tip}
+              <span className="flex-1 pt-1">{tip}</span>
             </Button>
           ))}
         </div>

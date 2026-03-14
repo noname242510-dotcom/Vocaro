@@ -8,8 +8,9 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Group } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Plus, Loader2, ArrowRight } from 'lucide-react';
+import { Users, Plus, ArrowRight } from 'lucide-react';
 import { CreateGroupDialog } from './CreateGroupDialog';
+import { LoadingSpinner } from '@/components/loading-spinner';
 
 export function GroupsList({ key: _key }: { key: string }) {
   const { firestore, user } = useFirebase();
@@ -36,7 +37,7 @@ export function GroupsList({ key: _key }: { key: string }) {
           </Button>
         </div>
 
-        {isLoading && <div className="text-center py-20"><Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" /></div>}
+        {isLoading && <LoadingSpinner />}
 
         {!isLoading && (!groups || groups.length === 0) && (
           <div className="text-center py-20 bg-card border border-dashed rounded-[2rem]">
