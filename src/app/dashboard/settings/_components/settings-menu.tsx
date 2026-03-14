@@ -42,8 +42,8 @@ export function SettingsMenu({ onSelect }: SettingsMenuProps) {
           className={cn(
             "w-full justify-start h-14 rounded-2xl px-6 gap-4 text-base transition-all duration-300",
             currentSection === item.id
-              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90"
-              : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+              : "text-muted-foreground"
           )}
           onClick={() => handleSelect(item.id)}
         >

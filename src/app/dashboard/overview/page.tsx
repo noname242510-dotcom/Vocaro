@@ -41,9 +41,10 @@ function ProgressRing({ pct, size = 100, stroke = 8 }: { pct: number; size?: num
 
 // 7-Day Activity Line Chart (SVG)
 function ActivityLineChart({ data }: { data: { day: string; count: number }[] }) {
-  const maxCount = Math.max(...data.map(d => d.count), 1);
-  const chartHeight = 60;
-  const chartWidth = 300;
+  const maxCount = Math.max(...data.map(d => d.count), 5); // Ensure a minimum maxCount
+  const yAxisWidth = 30;
+  const chartHeight = 150;
+  const chartWidth = 400;
 
   const points = data.map((d, i) => {
     const x = (i / (data.length - 1)) * chartWidth;
@@ -51,38 +52,60 @@ function ActivityLineChart({ data }: { data: { day: string; count: number }[] })
     return `${x},${y}`;
   }).join(' ');
 
+  const yAxisLabels = Array.from({ length: 5 }, (_, i) => {
+    const value = Math.round(maxCount * (i / 4));
+    const y = chartHeight - (chartHeight * (i / 4));
+    return { y, value };
+  });
+
   return (
-    <div className="w-full h-32 flex flex-col justify-end relative">
-      <svg width="100%" height="80%" viewBox={`0 0 ${chartWidth} ${chartHeight + 10}`} preserveAspectRatio="none" className="overflow-visible">
-        {/* Fill Area */}
-        <polyline
-          points={`0,${chartHeight + 10} ${points} ${chartWidth},${chartHeight + 10}`}
-          className="fill-foreground/10"
-        />
-        {/* Stroke Line */}
-        <polyline
-          points={points}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        {/* Data points */}
-        {data.map((d, i) => {
-          const x = (i / (data.length - 1)) * chartWidth;
-          const y = chartHeight - (d.count / maxCount) * chartHeight;
-          return (
-            <circle key={i} cx={x} cy={y} r="4" className={cn(d.count > 0 ? "fill-foreground" : "fill-background", "stroke-foreground stroke-2")} />
-          );
-        })}
+    <div className="w-full h-48 flex items-end relative">
+      <svg width="100%" height="100%" viewBox={`0 0 ${chartWidth + yAxisWidth} ${chartHeight + 30}`} preserveAspectRatio="none" className="overflow-visible">
+        <g transform={`translate(${yAxisWidth}, 0)`}>
+          {/* Grid Lines and Y-Axis Labels */}
+          {yAxisLabels.map((label, i) => (
+            <g key={i}>
+              <line x1="0" y1={label.y} x2={chartWidth} y2={label.y} className="stroke-border/50" strokeDasharray="4" />
+              <text x="-10" y={label.y + 5} textAnchor="end" className="text-xs fill-muted-foreground font-mono">
+                {label.value}
+              </text>
+            </g>
+          ))}
+
+          {/* Fill Area */}
+          <polyline
+            points={`0,${chartHeight + 10} ${points} ${chartWidth},${chartHeight + 10}`}
+            className="fill-primary/10"
+          />
+          {/* Stroke Line */}
+          <polyline
+            points={points}
+            fill="none"
+            className="stroke-primary"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Data points */}
+          {data.map((d, i) => {
+            const x = (i / (data.length - 1)) * chartWidth;
+            const y = chartHeight - (d.count / maxCount) * chartHeight;
+            return (
+              <circle key={i} cx={x} cy={y} r="3" className={cn(d.count > 0 ? "fill-primary" : "fill-background", "stroke-primary stroke-2")} />
+            );
+          })}
+        </g>
+        
+        {/* X Axis Labels */}
+        <g transform={`translate(${yAxisWidth}, ${chartHeight + 20})`}>
+          {data.map((d, i) => {
+             const x = (i / (data.length - 1)) * chartWidth;
+            return (
+              <text key={i} x={x} y="0" textAnchor="middle" className="text-xs font-bold fill-muted-foreground">{d.day}</text>
+            )
+          })}
+        </g>
       </svg>
-      {/* X Axis Labels */}
-      <div className="flex justify-between mt-4">
-        {data.map((d, i) => (
-          <span key={i} className="text-xs font-bold text-muted-foreground">{d.day}</span>
-        ))}
-      </div>
     </div>
   );
 }
@@ -249,7 +272,7 @@ export default function DashboardOverviewPage() {
       </div>
 
       {/* Hero Metric: Mastery */}
-      <Card className="bg-primary text-white border-none shadow-2xl shadow-primary/20 rounded-[3rem] p-12 overflow-hidden relative">
+      <Card className="bg-card border-none shadow-xl shadow-primary/5 rounded-[3rem] p-12 overflow-hidden relative">
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
           <div className="relative flex-shrink-0">
             <ProgressRing pct={masteryPct} size={180} stroke={16} />
@@ -262,20 +285,20 @@ export default function DashboardOverviewPage() {
           <div className="space-y-6 text-center md:text-left">
             <div className="space-y-2">
               <h2 className="text-4xl font-bold font-headline tracking-tighter">Dein aktueller Rang: {rank.label} {rank.emoji}</h2>
-              <p className="text-primary-foreground/70 text-lg max-w-md">
+              <p className="text-muted-foreground text-lg max-w-md">
                 Du gehörst zu den Top 10% der Lernenden in diesem Monat. Bleib dran für den nächsten Meilenstein!
               </p>
             </div>
 
             <div className="flex flex-wrap justify-center md:justify-start gap-4">
-              <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl flex items-center gap-3 border border-white/10">
+              <div className="bg-background/50 backdrop-blur-md px-6 py-3 rounded-2xl flex items-center gap-3 border">
                 <Zap className="h-6 w-6 text-orange-400" />
                 <div className="text-left">
                   <p className="text-xs font-bold uppercase tracking-widest opacity-60 leading-none">Streak</p>
                   <p className="text-xl font-black">{streak} Tage</p>
                 </div>
               </div>
-              <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl flex items-center gap-3 border border-white/10">
+              <div className="bg-background/50 backdrop-blur-md px-6 py-3 rounded-2xl flex items-center gap-3 border">
                 <Sparkles className="h-6 w-6 text-blue-300" />
                 <div className="text-left">
                   <p className="text-xs font-bold uppercase tracking-widest opacity-60 leading-none">AI Items</p>
@@ -287,7 +310,7 @@ export default function DashboardOverviewPage() {
         </div>
 
         {/* Decorative background logo */}
-        <Activity className="absolute right-[-40px] bottom-[-40px] w-64 h-64 text-white/5 pointer-events-none" />
+        <Activity className="absolute right-[-40px] bottom-[-40px] w-64 h-64 text-primary/5 pointer-events-none" />
       </Card>
 
       {/* Activity Chart */}

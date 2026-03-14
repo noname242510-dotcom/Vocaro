@@ -56,7 +56,7 @@ export function SettingsLayout({ menu, children, showMenuOnMobile, onMobileBack 
             <Button
               variant="ghost"
               size="icon"
-              className="h-12 w-12 rounded-2xl bg-card shadow-xl shadow-primary/5 hover:scale-110 transition-all"
+              className="h-12 w-12 rounded-2xl bg-card shadow-xl shadow-primary/5 transition-all"
               onClick={() => router.back()}
             >
               <ArrowLeft className="h-6 w-6" />

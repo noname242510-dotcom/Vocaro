@@ -74,46 +74,6 @@
     -ms-hyphens: auto;
     hyphens: auto;
   }
-
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes fade-out {
-    from {
-      opacity: 1;
-    }
-
-    to {
-      opacity: 0;
-    }
-  }
-
-  @keyframes fall {
-    to {
-      transform: translateY(var(--y-end)) translateX(calc(var(--x-end) - var(--x-start))) rotate3d(1, 1, 1, var(--rotation-end));
-    }
-  }
-
-  @keyframes pulse {
-
-    0%,
-    100% {
-      transform: scale(1);
-      opacity: 1;
-    }
-
-    50% {
-      transform: scale(1.1);
-      opacity: 0.8;
-    }
-  }
 }
 
 @layer components {

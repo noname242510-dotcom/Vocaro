@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     viewportFit: 'cover',
   },
   icons: {
-    icon: '/AppImages/ios/64.png',
+    icon: '/icon.png',
   },
 };
 
