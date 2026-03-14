@@ -9,7 +9,7 @@ export async function generateLearningTip(input: { item: string; definition?: st
 
   // Wir nutzen hier die stabilste Basis-ID. 
   // KEIN "-latest", KEIN "-001", einfach nur der Name.
-  const modelId = "gemini-1.5-flash"; 
+  const modelId = "gemini-2.5-flash"; 
   const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`;
 
   try {
