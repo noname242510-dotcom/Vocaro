@@ -321,17 +321,13 @@ export default function LearnPage() {
     
     const status = isCorrect ? 'correct' : 'incorrect';
     setAnswerStatus(status);
-    
-    if (status === 'correct') {
-        goToNextCard(true);
-    }
   };
 
   const handleIKnewIt = () => {
     setAnswerStatus('correct');
     setTimeout(() => {
         goToNextCard(true);
-    }, 300);
+    }, 1000);
   };
 
   const handleRestart = () => {
@@ -421,7 +417,7 @@ export default function LearnPage() {
                     </div>
                     <div className="text-center space-y-4">
                       <h3 className={cn("font-headline font-black tracking-tight leading-[1.1]", frontContent.length <= 10 ? "text-5xl md:text-6xl" : "text-3xl md:text-4xl")}>{frontContent}</h3>
-                      {currentItem.data.phonetic && frontIsForeign && <div className="inline-block px-6 py-2 bg-secondary/80 rounded-full"><p className="text-lg font-medium text-muted-foreground/80 font-mono tracking-wider italic">{currentItem.data.phonetic}</p></div>}
+                      {currentItem.data.phonetic && frontIsForeign && <div className="inline-block px-6 py-2 bg-secondary/80 rounded-full"><p className={cn("text-lg font-medium text-muted-foreground/80 font-mono tracking-wider italic", answerStatus === 'correct' ? 'text-green-600' : '')}>{currentItem.data.phonetic}</p></div>}
                     </div>
                   </div>
                   {/* BACK */}
