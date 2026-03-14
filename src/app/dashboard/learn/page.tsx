@@ -321,6 +321,17 @@ export default function LearnPage() {
     
     const status = isCorrect ? 'correct' : 'incorrect';
     setAnswerStatus(status);
+    
+    if (status === 'correct') {
+        goToNextCard(true);
+    }
+  };
+
+  const handleIKnewIt = () => {
+    setAnswerStatus('correct');
+    setTimeout(() => {
+        goToNextCard(true);
+    }, 300);
   };
 
   const handleRestart = () => {
@@ -445,12 +456,41 @@ export default function LearnPage() {
       <div className="max-w-2xl mx-auto w-full pt-4">
         <div className="w-full min-h-[112px]">
             {isFlipped ? (
+                inputMode ? (
+                    answerStatus === 'correct' ? (
+                        <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <Button
+                                className="w-full h-24 text-3xl font-black rounded-full bg-primary shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all"
+                                onClick={() => goToNextCard(true)}
+                            >
+                                Weiter <ChevronRight className="ml-4 h-8 w-8" />
+                            </Button>
+                        </div>
+                    ) : ( // answerStatus === 'incorrect'
+                        <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <Button
+                                variant="outline"
+                                className="h-24 rounded-full border-4 text-xl font-black flex-[1] hover:bg-primary/5 hover:border-primary hover:text-primary active:scale-95 transition-all"
+                                onClick={handleIKnewIt}
+                            >
+                                Wusste ich doch
+                            </Button>
+                            <Button
+                                className="h-24 rounded-full bg-primary shadow-2xl shadow-primary/30 text-2xl font-black flex-[2] active:scale-95 transition-all"
+                                onClick={() => goToNextCard(false)}
+                            >
+                                Weiter <ChevronRight className="ml-4 h-8 w-8" />
+                            </Button>
+                        </div>
+                    )
+                ) : (
                     <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="flex gap-6">
                             <Button variant="outline" className="h-24 flex-1 rounded-full border-4 text-2xl font-black hover:bg-destructive/5 hover:border-destructive hover:text-destructive active:scale-95 transition-all" onClick={() => goToNextCard(false)}><X className="mr-4 h-8 w-8" />Nicht gewusst</Button>
                             <Button className="h-24 flex-1 rounded-full bg-primary shadow-2xl shadow-primary/30 text-2xl font-black active:scale-95 transition-all" onClick={() => goToNextCard(true)}><Check className="mr-4 h-8 w-8" />Gewusst</Button>
                         </div>
                     </div>
+                )
             ) : inputMode ? (
                <form onSubmit={(e) => { e.preventDefault(); handleCheckAnswer(); }} className="animate-in fade-in duration-300">
                     <div className="flex items-center gap-4">
