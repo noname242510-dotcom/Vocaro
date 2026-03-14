@@ -13,10 +13,10 @@ interface AiTipModalProps {
 }
 
 const tipIcons = [
-  <Lightbulb className="h-4 w-4" />,
-  <Brain className="h-4 w-4" />,
-  <Book className="h-4 w-4" />,
-  <Users className="h-4 w-4" />
+  <Lightbulb className="h-5 w-5" />,
+  <Brain className="h-5 w-5" />,
+  <Book className="h-5 w-5" />,
+  <Users className="h-5 w-5" />
 ];
 
 export function AiTipModal({ word, onClose }: AiTipModalProps) {
