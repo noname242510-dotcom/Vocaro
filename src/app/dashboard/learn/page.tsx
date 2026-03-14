@@ -7,7 +7,6 @@ import {
     X,
     Check,
     ChevronLeft,
-    ChevronRight,
     CornerDownLeft
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -62,12 +61,12 @@ function shuffleArray<T>(array: T[]): T[] {
 const LoadingSpinner = () => (
     <div className="fixed inset-0 flex items-center justify-center bg-background">
         <div className="flex space-x-2">
-            <div className="w-3 h-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-            <div className="w-3 h-3 bg-foreground rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-            <div className="w-3 h-3 bg-foreground rounded-full animate-bounce"></div>
+            <div className="w-3 h-3 bg-foreground rounded-full animate-dot-bounce [animation-delay:-0.3s]"></div>
+            <div className="w-3 h-3 bg-foreground rounded-full animate-dot-bounce [animation-delay:-0.15s]"></div>
+            <div className="w-3 h-3 bg-foreground rounded-full animate-dot-bounce"></div>
         </div>
         <style jsx>{`
-      @keyframes bounce {
+      @keyframes dot-bounce {
         0%, 80%, 100% {
           transform: scale(0);
         }
@@ -75,8 +74,8 @@ const LoadingSpinner = () => (
           transform: scale(1.0);
         }
       }
-      .animate-bounce {
-        animation: bounce 1.4s infinite ease-in-out both;
+      .animate-dot-bounce {
+        animation: dot-bounce 1.4s infinite ease-in-out both;
       }
     `}</style>
     </div>
@@ -283,7 +282,7 @@ export default function LearnPage() {
         }
     };
 
-    const progress = deck.length > 0 ? ((deck.length - queue.length + (answerStatus === 'correct' ? 1 : 0)) / deck.length) * 100 : 0;
+    const progress = deck.length > 0 ? (correctlyAnswered.length / deck.length) * 100 : 0;
     const currentItem = !isLoading && !isFinished ? queue[currentIndex] : null;
 
     if (isLoading) {
@@ -337,7 +336,7 @@ export default function LearnPage() {
                 </AlertDialog>
                 <Progress value={progress} className="w-full h-3" />
                 <div className="text-sm font-bold text-muted-foreground min-w-[70px] text-right">
-                    {deck.length - queue.length + (answerStatus === 'correct' ? 1 : 0)} / {deck.length}
+                    {correctlyAnswered.length} / {deck.length}
                 </div>
             </div>
 
