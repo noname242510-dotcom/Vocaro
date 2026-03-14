@@ -1,15 +1,17 @@
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
-import Image from 'next/image';
 
 interface LogoProps {
     className?: string;
+    href?: string;
 }
 
-export function Logo({ className }: LogoProps) {
-  return (
-    <Link href="/dashboard" className={cn("flex items-center justify-center", className)}>
-      <Image src="/icon.png" alt="Vocaro Logo" width={40} height={40} />
-    </Link>
-  );
+export function Logo({ className, href = "/dashboard" }: LogoProps) {
+ return (
+   <Link href={href} className={cn("flex items-center justify-center group", className)}>
+     <span className="text-3xl font-bold font-creative text-foreground group-hover:text-primary transition-colors">
+        Vocaro
+     </span>
+   </Link>
+ );
 }
