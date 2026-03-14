@@ -2,8 +2,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest, NextResponse } from 'next/server';
 
+const apiKey = process.env.GEMINI_API_KEY;
+
+if (!apiKey) {
+  throw new Error("GEMINI_API_KEY environment variable not set.");
+}
+
 // Get the API key from environment variables
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const genAI = new GoogleGenerativeAI(apiKey);
 
 async function generateTipsFromApi(term: string, definition: string): Promise<string[]> {
   // For text-only input, use the gemini-pro model
