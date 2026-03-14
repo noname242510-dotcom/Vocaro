@@ -42,6 +42,7 @@ import { SpeakerButton } from '@/components/speaker-button';
 import { useSettings } from '@/contexts/settings-context';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { diffChars } from 'diff';
 
 type LearnItem = {
   id: string;
@@ -60,15 +61,6 @@ function shuffleArray<T>(array: T[]): T[] {
     [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }
   return newArray;
-}
-
-function getIncorrectParts(userInput: string, correctAnswer: string) {
-    const userWords = userInput.toLowerCase().split(' ');
-    const correctWords = correctAnswer.toLowerCase().split(' ');
-    const incorrectParts = userWords.map((word, index) => {
-        return correctWords[index] !== word;
-    });
-    return incorrectParts;
 }
 
 const LoadingSpinner = () => (
@@ -166,7 +158,6 @@ export default function LearnPage() {
 
   const [userInput, setUserInput] = useState('');
   const [answerStatus, setAnswerStatus] = useState<'unanswered' | 'correct' | 'incorrect'>('unanswered');
-  const [incorrectParts, setIncorrectParts] = useState<boolean[]>([]);
 
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [subjectLanguage, setSubjectLanguage] = useState('en-US');
@@ -259,7 +250,6 @@ export default function LearnPage() {
     setIsFlipped(false);
     setUserInput('');
     setAnswerStatus('unanswered');
-    setIncorrectParts([]);
 
     if (newQueue.length === 0) {
         setIsFinished(true);
@@ -272,9 +262,8 @@ export default function LearnPage() {
   };
 
   const handleCheckAnswer = () => {
-    if (!currentItem || isChecking) return;
+    if (!currentItem) return;
     
-    setIsChecking(true);
     setIsFlipped(true);
     triggerHapticFeedback('light');
 
@@ -283,17 +272,6 @@ export default function LearnPage() {
     
     const status = isCorrect ? 'correct' : 'incorrect';
     setAnswerStatus(status);
-
-    if (!isCorrect) {
-        setIncorrectParts(getIncorrectParts(userInput, expectedAnswer));
-    }
-
-    if (inputMode) {
-      setTimeout(() => {
-          goToNextCard(isCorrect);
-          setIsChecking(false);
-      }, 1500); 
-    }
   };
 
   const handleRestart = () => {
@@ -340,6 +318,8 @@ export default function LearnPage() {
   const frontIsForeign = !settings?.vocabQueryDirection;
   const frontContent = frontIsForeign ? currentItem?.term : currentItem?.definition;
   const backContent = frontIsForeign ? currentItem?.definition : currentItem?.term;
+
+  const diff = diffChars(userInput.trim(), backContent.trim());
 
   return (
     <div className="max-w-4xl mx-auto h-screen flex flex-col justify-between py-6 px-4 overflow-hidden">
@@ -389,19 +369,19 @@ export default function LearnPage() {
                   {/* BACK */}
                   <div className={cn("absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden", inputMode && (answerStatus === 'correct' ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'))} style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}>
                     <div className="text-center space-y-6">
-                       <h3 className={cn("font-headline font-black tracking-tight leading-[1.1]", backContent.length <= 10 ? "text-5xl md:text-6xl" : "text-3xl md:text-4xl")}>{backContent}</h3>
+                       <h3 className={cn("font-headline font-black tracking-tight leading-[1.1]", backContent.length <= 10 ? "text-5xl md:text-6xl" : "text-3xl md:text-4xl")}>
+                        {answerStatus === 'incorrect' ? (
+                            <span className="text-red-500">
+                                {diff.map((part, i) => (
+                                    <span key={i} className={cn({ 'text-green-500 line-through': part.added, 'bg-red-500/20': part.removed })}>
+                                        {part.value}
+                                    </span>
+                                ))}
+                            </span>
+                        ) : backContent}
+                       </h3>
                       {currentItem.data.relatedWord && <div className="inline-flex items-center gap-3 px-8 py-3 rounded-full bg-secondary/80"><span className="text-xs font-black uppercase tracking-[0.2em] opacity-60">{currentItem.data.relatedWord.language}:</span><span className="text-xl font-bold">{currentItem.data.relatedWord.word}</span></div>}
                     </div>
-                    {isFlipped && inputMode && answerStatus !== 'correct' && (
-                        <div className="absolute bottom-8 text-center">
-                            <p className="text-sm text-muted-foreground">Deine Antwort:</p>
-                            <p className="text-lg font-mono p-2 bg-black/5 dark:bg-white/5 rounded-md mt-1">
-                                {userInput.split(' ').map((word, index) => (
-                                    <span key={index} className={cn(incorrectParts[index] && 'underline decoration-red-500')}>{word} </span>
-                                ))}
-                            </p>
-                        </div>
-                    )}
                   </div>
                 </motion.div>
               </div>
@@ -413,14 +393,12 @@ export default function LearnPage() {
       <div className="max-w-2xl mx-auto w-full pt-4">
         <div className="w-full min-h-[112px]">
             {isFlipped ? (
-                !inputMode ? (
                     <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="flex gap-6">
                             <Button variant="outline" className="h-24 flex-1 rounded-full border-4 text-2xl font-black hover:bg-destructive/5 hover:border-destructive hover:text-destructive active:scale-95 transition-all" onClick={() => goToNextCard(false)}><X className="mr-4 h-8 w-8" />Nicht gewusst</Button>
                             <Button className="h-24 flex-1 rounded-full bg-primary shadow-2xl shadow-primary/30 text-2xl font-black active:scale-95 transition-all" onClick={() => goToNextCard(true)}><Check className="mr-4 h-8 w-8" />Gewusst</Button>
                         </div>
                     </div>
-                ) : <div className="h-24" />
             ) : inputMode ? (
                <form onSubmit={(e) => { e.preventDefault(); handleCheckAnswer(); }} className="animate-in fade-in duration-300">
                     <div className="flex items-center gap-4">
