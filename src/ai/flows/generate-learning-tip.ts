@@ -19,7 +19,10 @@ export async function generateLearningTip(input: { item: string; definition?: st
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Gib mir 3 kurze Eselbrücken für das Wort "${input.item}". Antworte NUR im JSON-Format: {"tips": ["1", "2", "3"]}`
+            text: `Erstelle 3 einprägsame Eselbrücken für das Wort "${input.item}" (${input.definition}). 
+Nutze Wortspiele, Ähnlichkeiten zum Deutschen oder bildhafte Szenarien. 
+Kurz und prägnant. 
+Antworte NUR als JSON: {"tips": ["Tipp 1", "Tipp 2", "Tipp 3"]}`
           }]
         }]
       }),
