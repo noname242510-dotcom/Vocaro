@@ -1,11 +1,9 @@
 import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
+import { googleAI, gemini15Flash } from '@genkit-ai/google-genai'; // gemini15Flash hier importieren!
 
 export const ai = genkit({
   plugins: [
-    // Wir übergeben den Key explizit aus deiner .env Variable
     googleAI({ apiKey: process.env.GEMINI_API_KEY }),
   ],
-  // Wir nutzen das aktuelle, extrem schnelle 1.5-Flash Modell
-  model: 'gemini-1.5-flash-latest',
+  model: gemini15Flash, // Hier die Referenz nutzen, keinen String!
 });

@@ -1,6 +1,7 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
+import { gemini15Flash } from '@genkit-ai/google-genai'; // Auch hier importieren
 import { z } from 'genkit';
 
 const GenerateLearningTipOutputSchema = z.object({
@@ -9,26 +10,20 @@ const GenerateLearningTipOutputSchema = z.object({
 
 export async function generateLearningTip(input: any) {
   try {
-    // 1. Kurzer Check, ob der Key überhaupt da ist (für das Vercel Log)
-    if (!process.env.GEMINI_API_KEY) {
-      return { tips: ["Fehler: API Key fehlt in Vercel", "Bitte Settings prüfen", "GEMINI_API_KEY ist leer"] };
-    }
-
     const response = await ai.generate({
-      model: 'gemini-1.5-flashlatest',
-      prompt: `Erstelle 3 kurze Eselsbrücken für: ${input.item} (${input.definition}). Sprache: ${input.language}`,
+      model: gemini15Flash, // Referenz statt String 'googleai/...'
+      prompt: `Du bist ein Lehrer. Erstelle 3 kurze Lerntipps für: ${input.item}.`,
       output: { schema: GenerateLearningTipOutputSchema },
     });
 
     return response.output; 
   } catch (error: any) {
-    // Wir geben den Fehler als Tipps zurück, damit du ihn im Modal lesen kannst!
-    console.error("Vercel Server Error:", error);
+    console.error("Vercel Error:", error);
     return { 
       tips: [
-        `Server-Fehler: ${error.message || 'Unbekannt'}`,
-        `Typ: ${error.constructor?.name || 'Error'}`,
-        "Check Vercel Logs für Details"
+        `Fehler: ${error.message}`,
+        "Bitte prüfe, ob der Gemini API Key korrekt ist.",
+        "Stelle sicher, dass @genkit-ai/google-genai installiert ist."
       ] 
     };
   }
