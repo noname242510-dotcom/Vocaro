@@ -62,6 +62,15 @@ function shuffleArray<T>(array: T[]): T[] {
   return newArray;
 }
 
+function getIncorrectParts(userInput: string, correctAnswer: string) {
+    const userWords = userInput.toLowerCase().split(' ');
+    const correctWords = correctAnswer.toLowerCase().split(' ');
+    const incorrectParts = userWords.map((word, index) => {
+        return correctWords[index] !== word;
+    });
+    return incorrectParts;
+}
+
 const LoadingSpinner = () => (
     <div className="fixed inset-0 flex items-center justify-center bg-background">
         <div className="flex space-x-2">
@@ -157,6 +166,7 @@ export default function LearnPage() {
 
   const [userInput, setUserInput] = useState('');
   const [answerStatus, setAnswerStatus] = useState<'unanswered' | 'correct' | 'incorrect'>('unanswered');
+  const [incorrectParts, setIncorrectParts] = useState<boolean[]>([]);
 
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [subjectLanguage, setSubjectLanguage] = useState('en-US');
@@ -249,6 +259,7 @@ export default function LearnPage() {
     setIsFlipped(false);
     setUserInput('');
     setAnswerStatus('unanswered');
+    setIncorrectParts([]);
 
     if (newQueue.length === 0) {
         setIsFinished(true);
@@ -273,10 +284,16 @@ export default function LearnPage() {
     const status = isCorrect ? 'correct' : 'incorrect';
     setAnswerStatus(status);
 
-    setTimeout(() => {
-        goToNextCard(isCorrect);
-        setIsChecking(false);
-    }, 1500); 
+    if (!isCorrect) {
+        setIncorrectParts(getIncorrectParts(userInput, expectedAnswer));
+    }
+
+    if (inputMode) {
+      setTimeout(() => {
+          goToNextCard(isCorrect);
+          setIsChecking(false);
+      }, 1500); 
+    }
   };
 
   const handleRestart = () => {
@@ -326,12 +343,21 @@ export default function LearnPage() {
 
   return (
     <div className="max-w-4xl mx-auto h-screen flex flex-col justify-between py-6 px-4 overflow-hidden">
-      <div className="flex items-center gap-4 w-full">
-        <AlertDialog>
-          <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-14 w-14 rounded-full"><ChevronLeft className="h-8 w-8" /></Button></AlertDialogTrigger>
-          <AlertDialogContent className="rounded-[3rem] p-10"><AlertDialogHeader><AlertDialogTitle className="text-3xl font-black font-headline">Lernen unterbrechen?</AlertDialogTitle><AlertDialogDescription className="text-lg mt-4 font-medium">Dein Fokus geht verloren. Du kannst aber später genau hier weitermachen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-4 mt-8"><AlertDialogCancel className="h-14 rounded-full font-bold border-2">Bleiben</AlertDialogCancel><AlertDialogAction className="h-14 rounded-full font-bold bg-destructive hover:bg-destructive/90" onClick={handleBackToSubject}>Unterbrechen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-        </AlertDialog>
-      </div>
+        <div className="w-full relative py-4">
+             <div className="absolute top-0 left-1/2 -translate-x-1/2 text-sm font-bold text-muted-foreground">
+                {correctlyAnswered.length} / {deck.length}
+            </div>
+            <div className="flex items-center gap-4 w-full">
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-14 w-14 rounded-full"><ChevronLeft className="h-8 w-8" /></Button></AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-[3rem] p-10"><AlertDialogHeader><AlertDialogTitle className="text-3xl font-black font-headline">Lernen unterbrechen?</AlertDialogTitle><AlertDialogDescription className="text-lg mt-4 font-medium">Dein Fokus geht verloren. Du kannst aber später genau hier weitermachen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-4 mt-8"><AlertDialogCancel className="h-14 rounded-full font-bold border-2">Bleiben</AlertDialogCancel><AlertDialogAction className="h-14 rounded-full font-bold bg-destructive hover:bg-destructive/90" onClick={handleBackToSubject}>Unterbrechen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                </AlertDialog>
+                <Progress value={progress} className="h-3 w-full"/>
+                <Button variant={inputMode ? "secondary" : "ghost"} size="icon" className="h-14 w-14 rounded-full flex-shrink-0" onClick={() => setInputMode(!inputMode)}>
+                    <Pencil className="h-6 w-6" />
+                </Button>
+            </div>
+        </div>
 
       <div className="flex-1 flex flex-col justify-center items-center w-full max-w-2xl mx-auto" style={{ perspective: '2000px' }}>
         <AnimatePresence>
@@ -369,7 +395,11 @@ export default function LearnPage() {
                     {isFlipped && inputMode && answerStatus !== 'correct' && (
                         <div className="absolute bottom-8 text-center">
                             <p className="text-sm text-muted-foreground">Deine Antwort:</p>
-                            <p className="text-lg font-mono p-2 bg-black/5 dark:bg-white/5 rounded-md mt-1">{userInput}</p>
+                            <p className="text-lg font-mono p-2 bg-black/5 dark:bg-white/5 rounded-md mt-1">
+                                {userInput.split(' ').map((word, index) => (
+                                    <span key={index} className={cn(incorrectParts[index] && 'underline decoration-red-500')}>{word} </span>
+                                ))}
+                            </p>
                         </div>
                     )}
                   </div>
@@ -381,19 +411,6 @@ export default function LearnPage() {
       </div>
 
       <div className="max-w-2xl mx-auto w-full pt-4">
-        <div className="w-full mb-6 space-y-3">
-             <div className="flex justify-between items-center text-sm font-bold text-muted-foreground px-2">
-                <span>FORTSCHRITT</span>
-                <span>{correctlyAnswered.length} / {deck.length}</span>
-            </div>
-            <div className="flex items-center gap-4 w-full">
-                <Progress value={progress} className="h-3 w-full"/>
-                <Button variant={inputMode ? "secondary" : "ghost"} size="icon" className="h-14 w-14 rounded-full flex-shrink-0" onClick={() => setInputMode(!inputMode)}>
-                    <Pencil className="h-6 w-6" />
-                </Button>
-            </div>
-        </div>
-
         <div className="w-full min-h-[112px]">
             {isFlipped ? (
                 !inputMode ? (
