@@ -19,10 +19,16 @@ export async function generateLearningTip(input: { item: string; definition?: st
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Erstelle 3 einprägsame Eselbrücken für das Wort "${input.item}" (${input.definition}). 
-Nutze Wortspiele, Ähnlichkeiten zum Deutschen oder bildhafte Szenarien. 
-Kurz und prägnant. 
-Antworte NUR als JSON: {"tips": ["Tipp 1", "Tipp 2", "Tipp 3"]}`
+            text: `Du bist ein Sprachlehrer. 
+            Analysiere das Wort "${input.item}" (${input.definition || 'unbekannt'}). 
+            Erstelle 3 abwechslungsreiche Merkhilfen. 
+            Mixe dabei: 
+            1. Eine kreative Eselbrücke (bildhaft/lustig). 
+            2. Einen Hinweis zur Rechtschreibung oder Aussprache (falls tückisch). 
+            3. Einen Kontext-Tipp (typische Redewendung oder Eselsbrücke).
+            
+            Halte es kurz und direkt. Keine Einleitung. 
+            Antworte NUR als JSON: {"tips": ["...", "...", "..."]}`
           }]
         }]
       }),
