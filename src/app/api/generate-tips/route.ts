@@ -12,8 +12,8 @@ if (!apiKey) {
 const genAI = new GoogleGenerativeAI(apiKey);
 
 async function generateTipsFromApi(term: string, definition: string): Promise<string[]> {
-  // For text-only input, use the gemini-pro model
-  const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+  // For text-only input, use the gemini-1.5-flash model
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
   const prompt = `Erstelle 3 kurze, prägnante Lerntipps für den folgenden deutschen Begriff und seine Definition. Die Tipps sollten kreativ und leicht zu merken sein. Gib nur die Tipps als Liste zurück, ohne zusätzliche Einleitung oder Formatierung.
 
