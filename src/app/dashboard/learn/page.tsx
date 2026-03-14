@@ -42,7 +42,6 @@ import { SpeakerButton } from '@/components/speaker-button';
 import { useSettings } from '@/contexts/settings-context';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
-import { diffChars, type Change } from 'diff';
 
 type LearnItem = {
   id: string;
@@ -137,24 +136,23 @@ function FinishedScreen({ stats, onRestart, onBackToSubject }: { stats: { correc
 }
 
 function DiffDisplay({ userInput, correctAnswer }: { userInput: string, correctAnswer: string }) {
-    const diff = diffChars(userInput.trim().toLowerCase(), correctAnswer.trim().toLowerCase());
+    const userWords = userInput.trim().split(/\s+/);
+    const correctWords = correctAnswer.trim().toLowerCase().split(/\s+/);
 
     return (
         <div className="mt-4 w-full max-w-md mx-auto bg-card/50 p-4 rounded-2xl">
             <p className="text-sm font-bold text-muted-foreground mb-2">Deine Eingabe</p>
             <p className="text-lg font-mono p-2 bg-black/5 dark:bg-white/5 rounded-md">
-                {diff.map((part: Change, i: number) => (
-                    <span
-                        key={i}
-                        className={cn({
-                            'text-destructive bg-red-500/10': part.removed,
-                            'text-green-600 bg-green-500/10': part.added,
-                            'text-muted-foreground': !part.added && !part.removed,
-                        })}
-                    >
-                        {part.value}
-                    </span>
-                ))}
+                {userWords.map((word, index) => {
+                    const isIncorrect = word.toLowerCase() !== (correctWords[index] || '');
+                    return (
+                        <span key={index}>
+                            <span className={cn({ 'text-destructive': isIncorrect })}>
+                                {word}
+                            </span>{' '}
+                        </span>
+                    );
+                })}
             </p>
         </div>
     );
@@ -380,7 +378,7 @@ export default function LearnPage() {
                   {/* FRONT */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
                     <div className="absolute top-8 right-8 flex gap-3">
-                     { !isFlipped && frontIsForeign && (settings?.ttsEnabled ?? true) && <SpeakerButton text={currentItem.term} languageHint={subjectLanguage} ttsEnabled={settings?.ttsEnabled ?? true} autoplayEnabled={settings?.ttsAutoplay ?? false} autoplay={!isFlipped} className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all" /> }
+                     { !isFlipped && frontIsForeign && (settings?.ttsEnabled ?? true) && <SpeakerButton text={frontContent} languageHint={subjectLanguage} ttsEnabled={settings?.ttsEnabled ?? true} autoplayEnabled={settings?.ttsAutoplay ?? false} autoplay={!isFlipped} className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all" /> }
                       {currentItem.data.notes && <Popover><PopoverTrigger asChild><Button variant="ghost" size="icon" className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 transition-all"><Lightbulb className="h-6 w-6" /></Button></PopoverTrigger><PopoverContent className="rounded-full p-6 shadow-2xl border-none max-w-xs"><p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Notiz / Hilfe</p><p className="text-lg font-medium leading-relaxed">{currentItem.data.notes}</p></PopoverContent></Popover>}
                     </div>
                     <div className="text-center space-y-4">
@@ -390,6 +388,18 @@ export default function LearnPage() {
                   </div>
                   {/* BACK */}
                   <div className={cn("absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden", inputMode && (answerStatus === 'correct' ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'))} style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}>
+                    <div className="absolute top-8 right-8 flex gap-3">
+                        {isFlipped && !frontIsForeign && (settings?.ttsEnabled ?? true) && (
+                            <SpeakerButton
+                                text={backContent}
+                                languageHint={subjectLanguage}
+                                ttsEnabled={settings?.ttsEnabled ?? true}
+                                autoplayEnabled={settings?.ttsAutoplay ?? false}
+                                autoplay={isFlipped && !frontIsForeign}
+                                className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all"
+                            />
+                        )}
+                    </div>
                     <div className="text-center space-y-6">
                        <h3 className={cn("font-headline font-black tracking-tight leading-[1.1]", backContent.length <= 10 ? "text-5xl md:text-6xl" : "text-3xl md:text-4xl")}>{backContent}</h3>
                       {currentItem.data.relatedWord && <div className="inline-flex items-center gap-3 px-8 py-3 rounded-full bg-secondary/80"><span className="text-xs font-black uppercase tracking-[0.2em] opacity-60">{currentItem.data.relatedWord.language}:</span><span className="text-xl font-bold">{currentItem.data.relatedWord.word}</span></div>}
