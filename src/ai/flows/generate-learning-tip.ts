@@ -15,7 +15,7 @@ export async function generateLearningTip(input: any) {
     }
 
     const response = await ai.generate({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-1.5-flashlatest',
       prompt: `Erstelle 3 kurze Eselsbrücken für: ${input.item} (${input.definition}). Sprache: ${input.language}`,
       output: { schema: GenerateLearningTipOutputSchema },
     });
