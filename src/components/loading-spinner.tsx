@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import LoadingDots from './ui/loading-dots';
 
 export function LoadingSpinner({ className, fullPage = false }: { className?: string; fullPage?: boolean }) {
   return (
@@ -11,11 +12,7 @@ export function LoadingSpinner({ className, fullPage = false }: { className?: st
         className
       )}
     >
-      <div className="flex items-center justify-center space-x-2">
-        <div className="w-4 h-4 rounded-full bg-primary bounce-1"></div>
-        <div className="w-4 h-4 rounded-full bg-primary bounce-2"></div>
-        <div className="w-4 h-4 rounded-full bg-primary bounce-3"></div>
-      </div>
+      <LoadingDots />
     </div>
   );
 }

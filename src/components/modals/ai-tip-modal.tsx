@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, Lightbulb, Brain, Book, Users } from 'lucide-react';
 // WICHTIG: Wir importieren jetzt die Server Action statt fetch zu nutzen
 import { generateLearningTip } from '@/ai/flows/generate-learning-tip';
 
@@ -11,6 +11,13 @@ interface AiTipModalProps {
   word: { term: string; definition: string; language?: string; type?: 'Vokabel' | 'Verb' };
   onClose: () => void;
 }
+
+const tipIcons = [
+  <Lightbulb className="h-4 w-4" />,
+  <Brain className="h-4 w-4" />,
+  <Book className="h-4 w-4" />,
+  <Users className="h-4 w-4" />
+];
 
 export function AiTipModal({ word, onClose }: AiTipModalProps) {
   const [tips, setTips] = useState<string[]>([]);
@@ -102,8 +109,9 @@ export function AiTipModal({ word, onClose }: AiTipModalProps) {
               key={index}
               variant={selectedTip === tip ? 'default' : 'outline'}
               onClick={() => setSelectedTip(tip)}
-              className="text-left h-auto whitespace-normal p-3"
+              className="text-left h-auto whitespace-normal p-3 flex items-center gap-2"
             >
+              {tipIcons[index % tipIcons.length]}
               {tip}
             </Button>
           ))}
@@ -158,7 +166,7 @@ export function AiTipModal({ word, onClose }: AiTipModalProps) {
             KI-Tipps für "{word.term}"
           </DialogTitle>
           <DialogDescription>
-            Hier sind einige Eselsbrücken, um sich dieses Wort besser zu merken.
+            {word.definition}
           </DialogDescription>
         </DialogHeader>
         
