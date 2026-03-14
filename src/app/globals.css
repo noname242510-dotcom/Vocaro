@@ -132,6 +132,14 @@
       opacity: 0;
     }
   }
+
+  @keyframes bounce {
+    0%, 80%, 100% { 
+      transform: scale(0);
+    } 40% { 
+      transform: scale(1.0);
+    }
+  }
 }
 
 @layer components {
@@ -170,5 +178,19 @@
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
+  }
+
+  .bounce-1 {
+    animation: bounce 1.4s infinite ease-in-out both;
+    animation-delay: -0.32s;
+  }
+
+  .bounce-2 {
+    animation: bounce 1.4s infinite ease-in-out both;
+    animation-delay: -0.16s;
+  }
+
+  .bounce-3 {
+    animation: bounce 1.4s infinite ease-in-out both;
   }
 }
