@@ -419,7 +419,18 @@ export default function LearnPage() {
             <div className="flex items-center gap-4 w-full">
                  <AlertDialog>
                     <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-14 w-14 rounded-full"><ChevronLeft className="h-8 w-8" /></Button></AlertDialogTrigger>
-                    <AlertDialogContent className="rounded-[3rem] p-10"><AlertDialogHeader><AlertDialogTitle className="text-3xl font-black font-headline">Lernen unterbrechen?</AlertDialogTitle><AlertDialogDescription className="text-lg mt-4 font-medium">Dein Fokus geht verloren. Du kannst aber später genau hier weitermachen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-4 mt-8"><AlertDialogCancel className="h-14 rounded-full font-bold border-2">Bleiben</AlertDialogCancel><AlertDialogAction className="h-14 rounded-full font-bold bg-destructive hover:bg-destructive/90" onClick={handleBackToSubject}>Unterbrechen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                    <AlertDialogContent className="rounded-[3rem] p-10">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle className="text-3xl font-black font-headline">Session beenden?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-lg mt-4 font-medium">
+                                Wenn du die aktuelle Lern-Session beendest, geht dein bisheriger Fortschritt für diese Runde verloren und du musst eine neue starten.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="gap-4 mt-8">
+                            <AlertDialogCancel className="h-14 rounded-full font-bold border-2">Bleiben</AlertDialogCancel>
+                            <AlertDialogAction className="h-14 rounded-full font-bold bg-destructive hover:bg-destructive/90" onClick={handleBackToSubject}>Beenden</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
                 </AlertDialog>
                 <Progress value={progress} className="h-3 w-full"/>
                 <Button variant={inputMode ? "secondary" : "ghost"} size="icon" className="h-14 w-14 rounded-full flex-shrink-0" onClick={handleToggleInputMode}>

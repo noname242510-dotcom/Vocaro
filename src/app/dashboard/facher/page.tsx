@@ -6,7 +6,7 @@ import { collection, getDocs, orderBy, query, doc, updateDoc, writeBatch, delete
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-    BookOpen, Layers, ChevronRight, Loader2, Plus, ArrowRight, Trash2, Pen
+    BookOpen, Layers, ChevronRight, Loader2, Plus, ArrowRight, Trash2, Pen, WholeWord, Zap
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -54,19 +54,27 @@ export default function SubjectsPage() {
                 const subjectsRef = collection(firestore, 'users', user.uid, 'subjects');
                 const q = query(subjectsRef, orderBy('name'));
                 const subjectsSnap = await getDocs(q);
-                const allSubjects = await Promise.all(subjectsSnap.docs.map(async (doc) => {
-                    const subjectData = doc.data() as Subject;
-                    const stacksRef = collection(doc.ref, 'stacks');
-                    const verbsRef = collection(doc.ref, 'verbs');
-                    const [stacksSnap, verbsSnap] = await Promise.all([
-                        getDocs(stacksRef),
-                        getDocs(verbsRef)
-                    ]);
+                const allSubjects = await Promise.all(subjectsSnap.docs.map(async (subjectDoc) => {
+                    const subjectData = subjectDoc.data() as Subject;
+
+                    const verbsRef = collection(subjectDoc.ref, 'verbs');
+                    const verbsSnap = await getDocs(verbsRef);
+                    const verbCount = verbsSnap.size;
+
+                    const stacksRef = collection(subjectDoc.ref, 'stacks');
+                    const stacksSnap = await getDocs(stacksRef);
+                    let vocabCount = 0;
+                    for (const stackDoc of stacksSnap.docs) {
+                        const vocabRef = collection(stackDoc.ref, 'vocabulary');
+                        const vocabSnap = await getDocs(vocabRef);
+                        vocabCount += vocabSnap.size;
+                    }
+
                     return {
                         ...subjectData,
-                        id: doc.id,
-                        stackCount: stacksSnap.size,
-                        verbCount: verbsSnap.size,
+                        id: subjectDoc.id,
+                        vocabCount: vocabCount,
+                        verbCount: verbCount,
                     };
                 }));
                 setSubjects(allSubjects);
@@ -144,10 +152,10 @@ export default function SubjectsPage() {
                 <div className="space-y-4">
                     {subjects.map(subject => (
                         <Card key={subject.id} 
-                            className="bg-card border-none rounded-[2rem] shadow-xl shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 overflow-hidden cursor-pointer"
+                            className="bg-card border-none rounded-[3rem] shadow-xl shadow-primary/5 hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 overflow-hidden cursor-pointer"
                             onClick={() => router.push(`/dashboard/subjects/${subject.id}`)}>
                             <div className="p-6 flex items-center gap-6">
-                               <div className="h-16 w-16 flex-shrink-0 rounded-2xl bg-secondary/50 flex items-center justify-center text-4xl shadow-sm">
+                               <div className="h-16 w-16 flex-shrink-0 rounded-3xl bg-secondary/50 flex items-center justify-center text-4xl shadow-sm">
                                     {subject.emoji}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -156,24 +164,24 @@ export default function SubjectsPage() {
                                     </h2>
                                     <div className="flex items-center gap-4 text-muted-foreground mt-2">
                                         <div className="flex items-center gap-2">
-                                            <Layers className="h-4 w-4" />
-                                            <span>{subject.stackCount} Stapel</span>
+                                            <WholeWord className="h-4 w-4" />
+                                            <span>{subject.vocabCount} Vokabeln</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <BookOpen className="h-4 w-4" />
+                                            <Zap className="h-4 w-4" />
                                             <span>{subject.verbCount} Verben</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                     <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl" onClick={() => { setEditingSubject(subject); setRenamedSubjectName(subject.name); }}>
+                                     <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl" onClick={() => { setEditingSubject(subject); setRenamedSubjectName(subject.name); }}>
                                         <Pen className="h-5 w-5" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => setDeletingSubject(subject)}>
+                                    <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => setDeletingSubject(subject)}>
                                         <Trash2 className="h-5 w-5" />
                                     </Button>
                                     <Link href={`/dashboard/subjects/${subject.id}`} legacyBehavior>
-                                        <a className="h-12 w-12 rounded-xl flex items-center justify-center bg-secondary/50 hover:bg-primary hover:text-primary-foreground transition-colors">
+                                        <a className="h-12 w-12 rounded-2xl flex items-center justify-center bg-secondary/50 hover:bg-primary hover:text-primary-foreground transition-colors">
                                             <ArrowRight className="h-5 w-5" />
                                         </a>
                                     </Link>
@@ -190,7 +198,7 @@ export default function SubjectsPage() {
             </div>
 
             <Dialog open={!!editingSubject} onOpenChange={(open) => !open && setEditingSubject(null)}>
-                <DialogContent aria-describedby="rename-dialog-description">
+                <DialogContent className="rounded-[3rem]" aria-describedby="rename-dialog-description">
                     <DialogHeader>
                         <DialogTitle>Fach umbenennen</DialogTitle>
                         <DialogDescription id="rename-dialog-description">
@@ -209,7 +217,7 @@ export default function SubjectsPage() {
             </Dialog>
 
             <AlertDialog open={!!deletingSubject} onOpenChange={(open) => !open && setDeletingSubject(null)}>
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-[3rem]">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
                         <AlertDialogDescription>

@@ -133,11 +133,11 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
   return (
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="group/stack w-full h-fit self-start">
-        <Card className="rounded-lg border-none bg-card shadow-xl shadow-primary/5 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10">
+        <Card className="rounded-[2.5rem] border-none bg-card shadow-xl shadow-primary/5 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10">
           <div className="p-8 flex items-center justify-between gap-6">
             <div className="flex items-center gap-6 flex-1 min-w-0">
               <Checkbox
-                className="w-8 h-8 rounded-lg border-2 border-primary/10 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all scale-110"
+                className="w-8 h-8 rounded-xl border-2 border-primary/10 data-[state=checked]:bg-primary data-[state=checked]:border-primary transition-all scale-110"
                 checked={allVisibleInStackSelected}
                 onCheckedChange={(checked) => handleSelectAll(Boolean(checked))}
               />
@@ -156,25 +156,25 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
             <div className="flex items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-12 w-12 rounded-lg hover:bg-secondary/50 group-hover/stack:opacity-100 opacity-60 transition-all">
+                  <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl hover:bg-secondary/50 group-hover/stack:opacity-100 opacity-60 transition-all">
                     <MoreHorizontal className="h-6 w-6" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 rounded-lg p-2 shadow-2xl border-none">
-                  <DropdownMenuItem onClick={() => onAddVocab(stack)} className="rounded-md px-4 py-3 font-bold gap-3 cursor-pointer">
+                <DropdownMenuContent align="end" className="w-56 rounded-[1.5rem] p-2 shadow-2xl border-none">
+                  <DropdownMenuItem onClick={() => onAddVocab(stack)} className="rounded-xl px-4 py-3 font-bold gap-3 cursor-pointer">
                     <Plus className="h-4 w-4" /> Vokabel hinzufügen
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setNewStackName(stack.name); setIsRenameDialogOpen(true) }} className="rounded-md px-4 py-3 font-bold gap-3 cursor-pointer">
+                  <DropdownMenuItem onClick={() => { setNewStackName(stack.name); setIsRenameDialogOpen(true) }} className="rounded-xl px-4 py-3 font-bold gap-3 cursor-pointer">
                     <Pen className="h-4 w-4" /> Umbenennen
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="rounded-md px-4 py-3 font-bold gap-3 text-destructive focus:text-destructive cursor-pointer">
+                  <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="rounded-xl px-4 py-3 font-bold gap-3 text-destructive focus:text-destructive cursor-pointer">
                     <Trash2 className="h-4 w-4" /> Löschen
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
 
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-12 w-12 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all">
+                <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-secondary/30 hover:bg-secondary/50 transition-all">
                   <ChevronDown className={cn('h-6 w-6 transition-transform duration-500', isOpen && 'rotate-180')} />
                 </Button>
               </CollapsibleTrigger>
@@ -188,11 +188,11 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                 vocabulary.map((item) => (
                   <div
                     key={item.id}
-                    className="group/item flex items-center gap-6 p-6 rounded-lg hover:bg-primary/5 transition-all border border-transparent hover:border-primary/5 relative"
+                    className="group/item flex items-center gap-6 p-6 rounded-[2rem] hover:bg-primary/5 transition-all border border-transparent hover:border-primary/5 relative"
                   >
                     <Checkbox
                       id={`vocab-${item.id}`}
-                      className="w-6 h-6 rounded-md border-2"
+                      className="w-6 h-6 rounded-lg border-2"
                       checked={!!item.isSelected}
                       onCheckedChange={(checked) => onSelectionChange(item.id, Boolean(checked))}
                     />
@@ -207,11 +207,11 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                       {item.relatedWord && (
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-lg border-2">
+                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-2">
                               <Languages className="h-4 w-4" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-4 rounded-lg shadow-2xl border-none">
+                          <PopoverContent className="w-auto p-4 rounded-2xl shadow-2xl border-none">
                             <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-1">Synonym / Verwandt</p>
                             <p className="text-base font-bold">
                               <span className="text-primary">{item.relatedWord.language}:</span> {item.relatedWord.word}
@@ -219,7 +219,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                           </PopoverContent>
                         </Popover>
                       )}
-                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-lg border-2" onClick={() => onEditVocab(item)}>
+                      <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-2" onClick={() => onEditVocab(item)}>
                         <Pen className="h-4 w-4" />
                       </Button>
                     </div>
@@ -231,7 +231,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
                     <Book className="h-8 w-8 text-muted-foreground/40" />
                   </div>
                   <p className="font-bold">Keine Vokabeln in diesem Stapel.</p>
-                  <Button variant="outline" onClick={() => onAddVocab(stack)} className="rounded-lg border-2 font-bold">
+                  <Button variant="outline" onClick={() => onAddVocab(stack)} className="rounded-xl border-2 font-bold">
                     Jetzt hinzufügen
                   </Button>
                 </div>
@@ -242,7 +242,7 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
       </Collapsible>
 
       <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-        <DialogContent className="rounded-lg p-10">
+        <DialogContent className="rounded-[2.5rem] p-10">
           <DialogHeader>
             <DialogTitle className="text-3xl font-bold font-headline">Stapel umbenennen</DialogTitle>
             <DialogDescription className="text-lg mt-2">
@@ -255,19 +255,19 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
               id="stack-name"
               value={newStackName}
               onChange={(e) => setNewStackName(e.target.value)}
-              className="h-14 rounded-lg border-2 text-lg px-6"
+              className="h-14 rounded-2xl border-2 text-lg px-6"
               onKeyDown={(e) => e.key === 'Enter' && handleRenameStack()}
             />
           </div>
           <DialogFooter className="gap-4">
-            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)} className="h-14 rounded-lg border-2 font-bold text-lg">Abbrechen</Button>
-            <Button onClick={handleRenameStack} className="h-14 rounded-lg font-bold text-lg px-10">Speichern</Button>
+            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)} className="h-14 rounded-2xl border-2 font-bold text-lg">Abbrechen</Button>
+            <Button onClick={handleRenameStack} className="h-14 rounded-2xl font-bold text-lg px-10">Speichern</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent className="rounded-lg p-10">
+        <AlertDialogContent className="rounded-[2.5rem] p-10">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-3xl font-bold font-headline">Stapel löschen?</AlertDialogTitle>
             <AlertDialogDescription className="text-lg mt-4">
@@ -275,8 +275,8 @@ export function StackItem({ stack, subjectId, vocabulary, onSelectionChange, onD
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-4 mt-8">
-            <AlertDialogCancel className="h-14 rounded-lg border-2 font-bold text-lg">Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteStack} disabled={isDeleting} className="h-14 rounded-lg bg-destructive hover:bg-destructive/90 font-bold text-lg">
+            <AlertDialogCancel className="h-14 rounded-2xl border-2 font-bold text-lg">Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteStack} disabled={isDeleting} className="h-14 rounded-2xl bg-destructive hover:bg-destructive/90 font-bold text-lg">
               {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Löschen"}
             </AlertDialogAction>
           </AlertDialogFooter>
