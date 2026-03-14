@@ -32,8 +32,8 @@ export async function generateLearningTip(input: { item: string; definition?: st
             - Benutze KEINE Einleitungen wie "Kreative Eselsbrücke:" oder "Tipp:".
             - Benutze KEINE Sternchen (**) oder andere Formatierungen.
             - Nur reiner Text.
-
-            Halte es kurz und direkt. Keine Einleitung. 
+            - Halte es kurz und direkt. Keine Einleitung. 
+            
             Antworte NUR als JSON: {"tips": ["...", "...", "..."]}`
           }]
         }]
