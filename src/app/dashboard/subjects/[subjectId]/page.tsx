@@ -915,7 +915,7 @@ export default function SubjectDetailPage() {
                       <Tabs defaultValue="ai" className="w-full mt-6">
                           <TabsList className="grid w-full grid-cols-2 bg-secondary/50 rounded-xl p-1">
                               <TabsTrigger value="ai" className="rounded-lg font-bold">KI-Scan (Bild)</TabsTrigger>
-                              <TabsTrigger value="manual" className="rounded-lg font-bold">Manuell</TabsTrigger
+                              <TabsTrigger value="manual" className="rounded-lg font-bold">Manuell</TabsTrigger>
                           </TabsList>
 
                           <TabsContent value="ai" className="space-y-6 pt-6">
@@ -1156,17 +1156,16 @@ export default function SubjectDetailPage() {
         subjectId={subjectId}
         existingVerb={editingVerb}
       />
-      {
-        editingVocab && (
-          <VocabDialog
-            isOpen={isVocabDialogOpen}
-            onOpenChange={setIsVocabDialogOpen}
-            vocabItem={editingVocab}
-            subjectId={subjectId}
-            onSave={handleSaveVocab}
-          />
-        )
-      }
+
+      {editingVocab && (
+        <VocabDialog
+          isOpen={isVocabDialogOpen}
+          onOpenChange={setIsVocabDialogOpen}
+          vocabItem={editingVocab}
+          subjectId={subjectId}
+          onSave={handleSaveVocab}
+        />
+      )}
     </div>
   );
 }
