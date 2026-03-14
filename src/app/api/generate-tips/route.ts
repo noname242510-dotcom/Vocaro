@@ -1,65 +1,37 @@
-
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { NextRequest, NextResponse } from 'next/server';
-
-const apiKey = process.env.GEMINI_API_KEY;
-
-if (!apiKey) {
-  throw new Error("GEMINI_API_KEY environment variable not set.");
-}
-
-// Get the API key from environment variables
-const genAI = new GoogleGenerativeAI(apiKey);
-
 async function generateTipsFromApi(term: string, definition: string): Promise<string[]> {
-  // For text-only input, use the gemini-1.5-flash model
+  // ÄNDERUNG: Nutze ein aktuelles Modell wie 'gemini-1.5-flash'
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-  const prompt = `Erstelle 3 kurze, prägnante Lerntipps für den folgenden deutschen Begriff und seine Definition. Die Tipps sollten kreativ und leicht zu merken sein. Gib nur die Tipps als Liste zurück, ohne zusätzliche Einleitung oder Formatierung.
+  const prompt = `Erstelle 3 kurze, prägnante Lerntipps für den folgenden deutschen Begriff und seine Definition. 
+  Die Tipps sollten kreativ und leicht zu merken sein. 
+  Gib NUR die Tipps als Liste zurück (ein Tipp pro Zeile), ohne Einleitung oder Nummerierung.
 
-Begriff: "${term}"
-Definition: "${definition}"
-
-Beispiel-Tipps:
-- Denk an "..." wie in [Beispiel]
-- Das Wort reimt sich auf [Beispiel]
-- Stell dir vor: [visuelle Eselsbrücke]`;
+  Begriff: "${term}"
+  Definition: "${definition}"`;
 
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
-    // Split the response into individual tips. Assuming the AI returns a list separated by newlines.
-    const tips = text.split('\n').map(tip => tip.startsWith('- ') ? tip.substring(2) : tip).filter(tip => tip.trim() !== '');
+    if (!text) throw new Error("Leere Antwort von Gemini erhalten");
+
+    // Bereinigung der Tipps (entfernt Bindestriche, Zahlen und Leerzeilen)
+    const tips = text
+      .split('\n')
+      .map(tip => tip.replace(/^[-*0-9.]+\s*/, '').trim()) 
+      .filter(tip => tip.length > 0)
+      .slice(0, 3); // Sicherstellen, dass wir max. 3 Tipps haben
 
     return tips;
   } catch (error) {
-    console.error("Error generating tips from Gemini:", error);
-    // Return some fallback tips in case of an error
+    // Pro-Tipp: Logge den echten Fehler in die Konsole, um zu sehen, ob z.B. der API-Key ungültig ist
+    console.error("Gemini API Error Detail:", error);
+    
     return [
-      `Konnte keine Tipps für "${term}" generieren.`,
-      "Versuche es später erneut.",
-      "Überprüfe die Verbindung zur API.",
+      `Fehler beim Generieren für "${term}".`,
+      "Bitte API-Quota oder Key prüfen.",
+      "Versuche es in wenigen Augenblicken noch einmal."
     ];
-  }
-}
-
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { term, definition } = body;
-
-    if (!term || !definition) {
-      return NextResponse.json({ error: 'Term and definition are required' }, { status: 400 });
-    }
-
-    const tips = await generateTipsFromApi(term, definition);
-
-    return NextResponse.json({ tips });
-
-  } catch (error) {
-    console.error("Error generating tips:", error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
