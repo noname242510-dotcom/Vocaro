@@ -5,6 +5,10 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+  # Secrets are not part of your source code and are only available during runtime.
+  # https://firebase.google.com/docs/app-hosting/configure#manage-secrets
+  secrets:
+    - GEMINI_API_KEY
 headers:
   - source: /.*
     headers:

@@ -133,11 +133,11 @@
     }
   }
 
-  @keyframes bounce {
+  @keyframes hop {
     0%, 80%, 100% { 
-      transform: scale(0);
+      transform: translateY(0);
     } 40% { 
-      transform: scale(1.0);
+      transform: translateY(-15px);
     }
   }
 }
@@ -180,17 +180,17 @@
     /* Firefox */
   }
 
-  .bounce-1 {
-    animation: bounce 1.4s infinite ease-in-out both;
+  .hop-1 {
+    animation: hop 1.4s infinite ease-in-out both;
     animation-delay: -0.32s;
   }
 
-  .bounce-2 {
-    animation: bounce 1.4s infinite ease-in-out both;
+  .hop-2 {
+    animation: hop 1.4s infinite ease-in-out both;
     animation-delay: -0.16s;
   }
 
-  .bounce-3 {
-    animation: bounce 1.4s infinite ease-in-out both;
+  .hop-3 {
+    animation: hop 1.4s infinite ease-in-out both;
   }
 }

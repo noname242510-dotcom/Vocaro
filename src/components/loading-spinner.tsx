@@ -12,9 +12,9 @@ export function LoadingSpinner({ className, fullPage = false }: { className?: st
       )}
     >
       <div className="flex items-center justify-center space-x-2">
-        <div className="w-4 h-4 rounded-full bg-primary bounce-1"></div>
-        <div className="w-4 h-4 rounded-full bg-primary bounce-2"></div>
-        <div className="w-4 h-4 rounded-full bg-primary bounce-3"></div>
+        <div className="w-4 h-4 rounded-full bg-primary hop-1"></div>
+        <div className="w-4 h-4 rounded-full bg-primary hop-2"></div>
+        <div className="w-4 h-4 rounded-full bg-primary hop-3"></div>
       </div>
       <p className="text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">
         Lade...
