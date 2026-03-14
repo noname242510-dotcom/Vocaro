@@ -3,25 +3,41 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function generateLearningTip(input: any) {
-  // WICHTIG: API Key Check direkt hier
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) throw new Error("API Key missing");
+  const apiKey = process.env.GEMINI_API_KEY;
+  
+  if (!apiKey) {
+    return { tips: ["Fehler: API Key in Vercel nicht gefunden.", "Bitte Env-Variablen prüfen.", "Key leer."] };
+  }
 
   try {
-    const genAI = new GoogleGenerativeAI(key);
-    // Wir nutzen hier 'gemini-1.5-flash' - das stabilste Modell
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Wir initialisieren das SDK
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // WICHTIG: Wir erzwingen hier die API-Version v1
+    // Das verhindert den 404-Fehler mit v1beta, den du in den Screenshots siehst
+    const model = genAI.getGenerativeModel(
+      { model: "gemini-1.5-flash" },
+      { apiVersion: "v1" } 
+    );
 
-    const prompt = `Erstelle 3 kurze Lerntipps für "${input.item}". 
-    Gib NUR JSON zurück: {"tips": ["1", "2", "3"]}`;
+    const prompt = `Du bist ein Sprachlehrer. Erstelle 3 kurze, kreative Lerntipps für das Wort "${input.item}" (${input.definition}).
+    Antworte NUR mit einem JSON-Objekt: {"tips": ["Tipp 1", "Tipp 2", "Tipp 3"]}`;
 
     const result = await model.generateContent(prompt);
-    const text = await result.response.text(); // WICHTIG: await hier!
+    const text = result.response.text();
     
-    return JSON.parse(text.replace(/```json|```/g, '').trim());
-  } catch (e: any) {
-    // Dieser Log ist für deine Vercel-Logs
-    console.error("Critical SDK Error:", e);
-    return { tips: ["Fehler: " + e.message, "Bitte Vercel Logs prüfen", "Region Check?"] };
+    // Robustes JSON-Parsing
+    const cleanJson = text.replace(/```json|```/g, '').trim();
+    return JSON.parse(cleanJson);
+
+  } catch (error: any) {
+    console.error("Gemini-Fehler:", error);
+    return { 
+      tips: [
+        "Google API Fehler (v1)",
+        `Details: ${error.message.substring(0, 50)}`,
+        "Versuche die Vercel Region auf 'Washington' zu stellen."
+      ] 
+    };
   }
 }
