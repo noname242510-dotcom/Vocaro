@@ -1,7 +1,6 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { gemini15Flash } from '@genkit-ai/google-genai'; // Auch hier importieren
 import { z } from 'genkit';
 
 const GenerateLearningTipOutputSchema = z.object({
@@ -11,7 +10,9 @@ const GenerateLearningTipOutputSchema = z.object({
 export async function generateLearningTip(input: any) {
   try {
     const response = await ai.generate({
-      model: gemini15Flash, // Referenz statt String 'googleai/...'
+      // WICHTIG: Nutze exakt diesen String. 
+      // Das 'googleai/' Präfix ist der Schlüssel!
+      model: 'googleai/gemini-1.5-flash', 
       prompt: `Du bist ein Lehrer. Erstelle 3 kurze Lerntipps für: ${input.item}.`,
       output: { schema: GenerateLearningTipOutputSchema },
     });
@@ -22,8 +23,8 @@ export async function generateLearningTip(input: any) {
     return { 
       tips: [
         `Fehler: ${error.message}`,
-        "Bitte prüfe, ob der Gemini API Key korrekt ist.",
-        "Stelle sicher, dass @genkit-ai/google-genai installiert ist."
+        "Modell-Aufruf fehlgeschlagen.",
+        "Checke, ob das googleAI Plugin geladen ist."
       ] 
     };
   }
