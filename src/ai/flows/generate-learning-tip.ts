@@ -27,6 +27,12 @@ export async function generateLearningTip(input: { item: string; definition?: st
             2. Einen Hinweis zur Rechtschreibung oder Aussprache (falls tückisch). 
             3. Einen Kontext-Tipp (typische Redewendung oder Eselsbrücke).
             
+            WICHTIG: 
+            - Starte DIREKT mit dem Inhalt. 
+            - Benutze KEINE Einleitungen wie "Kreative Eselsbrücke:" oder "Tipp:".
+            - Benutze KEINE Sternchen (**) oder andere Formatierungen.
+            - Nur reiner Text.
+
             Halte es kurz und direkt. Keine Einleitung. 
             Antworte NUR als JSON: {"tips": ["...", "...", "..."]}`
           }]
