@@ -202,11 +202,17 @@ export default function LearnPage() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isFinished, setIsFinished] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
   const [inputMode, setInputMode] = useState(false);
 
   const [userInput, setUserInput] = useState('');
   const [answerStatus, setAnswerStatus] = useState<'unanswered' | 'correct' | 'incorrect'>('unanswered');
+
+  const [previousCardState, setPreviousCardState] = useState<{
+    queue: LearnItem[],
+    currentIndex: number,
+    correctlyAnswered: LearnItem[],
+    incorrectlyAnswered: LearnItem[],
+  } | null>(null);
 
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [subjectLanguage, setSubjectLanguage] = useState('en-US');
@@ -274,6 +280,14 @@ export default function LearnPage() {
 
   const goToNextCard = (wasCorrect: boolean) => {
     if (isFinished) return;
+
+    setPreviousCardState({
+      queue,
+      currentIndex,
+      correctlyAnswered,
+      incorrectlyAnswered,
+    });
+
     const currentItem = queue[currentIndex];
     let newQueue = [...queue];
 
@@ -325,9 +339,28 @@ export default function LearnPage() {
 
   const handleIKnewIt = () => {
     setAnswerStatus('correct');
-    setTimeout(() => {
-        goToNextCard(true);
-    }, 1000);
+  };
+
+  const handleToggleInputMode = () => {
+    if (isFlipped) {
+        setIsFlipped(false);
+    }
+    setInputMode(prev => !prev);
+  };
+
+  const handleGoToPreviousCard = () => {
+    if (!previousCardState) return;
+
+    setQueue(previousCardState.queue);
+    setCurrentIndex(previousCardState.currentIndex);
+    setCorrectlyAnswered(previousCardState.correctlyAnswered);
+    setIncorrectlyAnswered(previousCardState.incorrectlyAnswered);
+
+    setIsFlipped(false);
+    setAnswerStatus('unanswered');
+    setUserInput('');
+    
+    setPreviousCardState(null);
   };
 
   const handleRestart = () => {
@@ -336,6 +369,7 @@ export default function LearnPage() {
     setCurrentIndex(0);
     setCorrectlyAnswered([]);
     setIncorrectlyAnswered([]);
+    setPreviousCardState(null);
   };
 
   const handleBackToSubject = () => {
@@ -387,7 +421,7 @@ export default function LearnPage() {
                     <AlertDialogContent className="rounded-[3rem] p-10"><AlertDialogHeader><AlertDialogTitle className="text-3xl font-black font-headline">Lernen unterbrechen?</AlertDialogTitle><AlertDialogDescription className="text-lg mt-4 font-medium">Dein Fokus geht verloren. Du kannst aber später genau hier weitermachen.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="gap-4 mt-8"><AlertDialogCancel className="h-14 rounded-full font-bold border-2">Bleiben</AlertDialogCancel><AlertDialogAction className="h-14 rounded-full font-bold bg-destructive hover:bg-destructive/90" onClick={handleBackToSubject}>Unterbrechen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
                 </AlertDialog>
                 <Progress value={progress} className="h-3 w-full"/>
-                <Button variant={inputMode ? "secondary" : "ghost"} size="icon" className="h-14 w-14 rounded-full flex-shrink-0" onClick={() => setInputMode(!inputMode)}>
+                <Button variant={inputMode ? "secondary" : "ghost"} size="icon" className="h-14 w-14 rounded-full flex-shrink-0" onClick={handleToggleInputMode}>
                     <Pencil className="h-6 w-6" />
                 </Button>
             </div>
@@ -411,6 +445,11 @@ export default function LearnPage() {
                 >
                   {/* FRONT */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
+                    {previousCardState && (
+                        <Button onClick={handleGoToPreviousCard} variant="ghost" size="icon" className="absolute bottom-8 left-8 h-14 w-14 rounded-full bg-secondary/50 hover:bg-secondary">
+                            <ChevronLeft className="h-8 w-8" />
+                        </Button>
+                    )}
                     <div className="absolute top-8 right-8 flex gap-3">
                      { !isFlipped && frontIsForeign && (settings?.ttsEnabled ?? true) && <SpeakerButton text={frontContent} languageHint={subjectLanguage} ttsEnabled={settings?.ttsEnabled ?? true} autoplayEnabled={settings?.ttsAutoplay ?? false} autoplay={!isFlipped} className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all" /> }
                       {currentItem.data.notes && <Popover><PopoverTrigger asChild><Button variant="ghost" size="icon" className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 transition-all"><Lightbulb className="h-6 w-6" /></Button></PopoverTrigger><PopoverContent className="rounded-full p-6 shadow-2xl border-none max-w-xs"><p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Notiz / Hilfe</p><p className="text-lg font-medium leading-relaxed">{currentItem.data.notes}</p></PopoverContent></Popover>}
@@ -422,6 +461,11 @@ export default function LearnPage() {
                   </div>
                   {/* BACK */}
                   <div className={cn("absolute inset-0 flex flex-col items-center justify-center p-8 md:p-12 bg-card rounded-[3rem] shadow-2xl shadow-primary/10 border-none overflow-hidden", inputMode && (answerStatus === 'correct' ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'))} style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}>
+                    {previousCardState && (
+                        <Button onClick={handleGoToPreviousCard} variant="ghost" size="icon" className="absolute bottom-8 left-8 h-14 w-14 rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20">
+                            <ChevronLeft className="h-8 w-8" />
+                        </Button>
+                    )}
                     <div className="absolute top-8 right-8 flex gap-3">
                         {isFlipped && !frontIsForeign && (settings?.ttsEnabled ?? true) && (
                             <SpeakerButton
