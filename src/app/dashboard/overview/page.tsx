@@ -9,6 +9,8 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Sparkles, Target, Activity, Zap } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { AiTipModal } from '@/components/modals/ai-tip-modal';
 
 // --- Rank Tier ---
 function getRankTier(pct: number): { label: string; emoji: string } {
@@ -121,6 +123,7 @@ export default function DashboardOverviewPage() {
   const { firestore, user } = useFirebase();
   const [isLoading, setIsLoading] = useState(true);
   const [showSpinner, setShowSpinner] = useState(false);
+  const [selectedWord, setSelectedWord] = useState<VocabularyItem | null>(null);
 
   // Overall metrics
   const [streak, setStreak] = useState(0);
@@ -271,6 +274,10 @@ export default function DashboardOverviewPage() {
         </p>
       </div>
 
+      {selectedWord && (
+        <AiTipModal word={selectedWord} onClose={() => setSelectedWord(null)} />
+      )}
+
       {/* Hero Metric: Mastery */}
       <Card className="bg-card border-none shadow-xl shadow-primary/5 rounded-[3rem] p-12 overflow-hidden relative">
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
@@ -283,7 +290,7 @@ export default function DashboardOverviewPage() {
           </div>
 
           <div className="space-y-6 text-center md:text-left">
-            <div className="space-y-2">
+            <div className="spacey-2">
               <h2 className="text-4xl font-bold font-headline tracking-tighter">Dein aktueller Rang: {rank.label} {rank.emoji}</h2>
               <p className="text-muted-foreground text-lg max-w-md">
                 Du gehörst zu den Top 10% der Lernenden in diesem Monat. Bleib dran für den nächsten Meilenstein!
@@ -357,16 +364,20 @@ export default function DashboardOverviewPage() {
               <div className="p-8 flex-1 space-y-6">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Top Error Radar</h4>
-                  <Link href={`/dashboard/learn?subject=${stat.subject.id}`} className="text-xs font-bold text-primary hover:underline">Focus now</Link>
                 </div>
 
                 {stat.errorWords.length > 0 ? (
                   <div className="grid gap-3">
                     {stat.errorWords.map((word) => (
                       <div key={word.id} className="p-4 bg-background rounded-2xl flex items-center justify-between group-hover:bg-primary/5 transition-colors">
-                        <span className="font-bold text-foreground truncate">{word.term}</span>
-                        <span className="text-sm font-medium text-muted-foreground mr-4 truncate max-w-[120px]">{word.definition}</span>
-                        <span className="text-xs font-black uppercase tracking-widest text-destructive/80 bg-destructive/10 px-3 py-1 rounded-full">Error</span>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-foreground">{word.term}</span>
+                          <span className="text-sm font-medium text-muted-foreground">{word.definition}</span>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => setSelectedWord(word)}>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          KI-Tipp
+                        </Button>
                       </div>
                     ))}
                   </div>
