@@ -296,6 +296,7 @@ export default function LearnPage() {
         newQueue.splice(currentIndex, 1);
         if (!correctlyAnswered.some(item => item.id === currentItem.id) && !incorrectlyAnswered.some(item => item.id === currentItem.id)) {
             setCorrectlyAnswered(prev => [...prev, currentItem]);
+            import('@/lib/notifications').then(({ cancelTodaysReminder }) => cancelTodaysReminder()).catch(console.error);
         }
         if (subjectId && currentItem.stackId && !currentItem.isMastered) {
             const docRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', currentItem.stackId, 'vocabulary', currentItem.id);

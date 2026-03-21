@@ -393,6 +393,7 @@ export default function VerbPracticePage() {
           setAnswerStatus(partialMatch ? 'omitted-correct' : 'correct');
           if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
             setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+            import('@/lib/notifications').then(({ cancelTodaysReminder }) => cancelTodaysReminder()).catch(console.error);
           }
            if (!currentCard.isConjugation && firestore && user && subjectId) {
                 const verbDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'verbs', currentCard.verbId);
@@ -427,6 +428,7 @@ export default function VerbPracticePage() {
         if (knewIt) {
             if (!answeredIds.has(currentCard.id) || answeredIds.get(currentCard.id) === 'incorrect') {
                 setAnsweredIds(prev => new Map(prev).set(currentCard.id, 'correct'));
+                import('@/lib/notifications').then(({ cancelTodaysReminder }) => cancelTodaysReminder()).catch(console.error);
             }
             if (!currentCard.isConjugation && firestore && user && subjectId) {
                 const verbDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'verbs', currentCard.verbId);

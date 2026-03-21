@@ -3,7 +3,7 @@
 import { Home, Settings, Sun, Moon, LayoutDashboard, Users, BookOpen, BarChart2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -61,6 +61,13 @@ function NavContent() {
 
 function DashboardClientLayout({ children }: { children: ReactNode }) {
   const [isExpanded, setIsExpanded] = useState(true);
+  
+  useEffect(() => {
+    import('@/lib/notifications').then(({ setupDailyReminders }) => {
+      setupDailyReminders();
+    }).catch(console.error);
+  }, []);
+
   const isMobile = useIsMobile();
   const { subjects, isLoading: isLoadingSubjects } = useSubjectsCache();
   const pathname = usePathname();
