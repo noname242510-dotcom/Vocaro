@@ -19,9 +19,9 @@ type GenerateVerbFormsInput = z.infer<typeof GenerateVerbFormsInputSchema>;
 
 
 const FlatConjugationSchema = z.object({
-    tense: z.string().describe('The tense of the conjugation (e.g., "Présent", "Simple Past").'),
-    pronoun: z.string().describe('The pronoun for the conjugation (e.g., "je", "I", or "form" for participles).'),
-    form: z.string().describe('The conjugated verb form.'),
+  tense: z.string().describe('The tense of the conjugation (e.g., "Présent", "Simple Past").'),
+  pronoun: z.string().describe('The pronoun for the conjugation (e.g., "je", "I", or "form" for participles).'),
+  form: z.string().describe('The conjugated verb form.'),
 });
 
 const AISchema = z.object({
@@ -74,6 +74,7 @@ const germanPronouns = `"ich", "du", "er/sie/es", "wir", "ihr", "sie/Sie"`;
 
 const prompt = ai.definePrompt({
   name: 'generateVerbFormsPrompt',
+  model: 'googleai/gemini-2.5-flash',
   input: { schema: z.object({ verb: z.string(), language: z.string(), tenses: z.string(), pronouns: z.string(), germanPronouns: z.string() }) },
   output: { schema: AISchema },
   prompt: `You are an expert linguist. Your task is to take a verb, provide its German translation, and generate all its conjugated forms in both the original language and German.
@@ -121,7 +122,7 @@ const generateVerbFormsFlow = ai.defineFlow(
       tenses = englishTenses;
       pronouns = englishPronouns;
     }
-    
+
     const { output } = await prompt({
       verb: input.verb,
       language: input.language,
@@ -133,24 +134,24 @@ const generateVerbFormsFlow = ai.defineFlow(
     if (!output) {
       throw new Error('AI failed to generate verb forms.');
     }
-    
+
     return output;
   }
 );
 
 export async function generateVerbForms(input: GenerateVerbFormsInput): Promise<GenerateVerbFormsOutput> {
   const aiResponse = await generateVerbFormsFlow(input);
-  
+
   // Helper function to transform the flat array into the nested object structure
   const structureForms = (conjugations: z.infer<typeof FlatConjugationSchema>[]) => {
-      const structured: GenerateVerbFormsOutput['forms'] = {};
-      for (const conjugation of conjugations) {
-          if (!structured[conjugation.tense]) {
-              structured[conjugation.tense] = {};
-          }
-          structured[conjugation.tense][conjugation.pronoun] = conjugation.form;
+    const structured: GenerateVerbFormsOutput['forms'] = {};
+    for (const conjugation of conjugations) {
+      if (!structured[conjugation.tense]) {
+        structured[conjugation.tense] = {};
       }
-      return structured;
+      structured[conjugation.tense][conjugation.pronoun] = conjugation.form;
+    }
+    return structured;
   }
 
   return {

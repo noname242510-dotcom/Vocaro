@@ -8,8 +8,8 @@
  * - GenerateStackNamesFromSubjectOutput - The return type for the generateStackNamesFromSubject function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const GenerateStackNamesFromSubjectInputSchema = z.object({
   subject: z.string().describe('The subject for which stack names should be generated.'),
@@ -27,8 +27,9 @@ export async function generateStackNamesFromSubject(input: GenerateStackNamesFro
 
 const prompt = ai.definePrompt({
   name: 'generateStackNamesFromSubjectPrompt',
-  input: {schema: GenerateStackNamesFromSubjectInputSchema},
-  output: {schema: GenerateStackNamesFromSubjectOutputSchema},
+  model: 'googleai/gemini-2.5-flash',
+  input: { schema: GenerateStackNamesFromSubjectInputSchema },
+  output: { schema: GenerateStackNamesFromSubjectOutputSchema },
   prompt: `You are an expert at generating creative and relevant stack names for vocabulary learning apps.
   Given the subject, generate five stack names that would be appropriate for organizing vocabulary related to that subject. Be creative and concise.
   Subject: {{{subject}}}`,
@@ -41,7 +42,7 @@ const generateStackNamesFromSubjectFlow = ai.defineFlow(
     outputSchema: GenerateStackNamesFromSubjectOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const { output } = await prompt(input);
     return output!;
   }
 );

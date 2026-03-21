@@ -7,8 +7,8 @@
  * - SuggestVocabularyFromImageContextOutput - The return type for the suggestVocabularyFromImageContext function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const SuggestVocabularyFromImageContextInputSchema = z.object({
   imageDataUri: z
@@ -30,8 +30,9 @@ export async function suggestVocabularyFromImageContext(input: SuggestVocabulary
 
 const prompt = ai.definePrompt({
   name: 'suggestVocabularyFromImageContextPrompt',
-  input: {schema: SuggestVocabularyFromImageContextInputSchema},
-  output: {schema: SuggestVocabularyFromImageContextOutputSchema},
+  model: 'googleai/gemini-2.5-flash',
+  input: { schema: SuggestVocabularyFromImageContextInputSchema },
+  output: { schema: SuggestVocabularyFromImageContextOutputSchema },
   prompt: `You are an Optical Character Recognition (OCR) specialist. Your task is to extract all text from the provided image.
   
   Return the text exactly as it appears in the image. Do not summarize, translate, or interpret the text.
@@ -67,7 +68,7 @@ const suggestVocabularyFromImageContextFlow = ai.defineFlow(
     outputSchema: SuggestVocabularyFromImageContextOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const { output } = await prompt(input);
     return output!;
   }
 );

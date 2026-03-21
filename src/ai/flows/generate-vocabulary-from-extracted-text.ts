@@ -12,8 +12,8 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
 const RelatedWordSchema = z.object({
-    language: z.string().describe("The language of the related word (e.g., 'French', 'English')."),
-    word: z.string().describe('The related word or phrase.'),
+  language: z.string().describe("The language of the related word (e.g., 'French', 'English')."),
+  word: z.string().describe('The related word or phrase.'),
 });
 
 const VocabularyItemSchema = z.object({
@@ -43,6 +43,7 @@ export async function generateVocabularyFromExtractedText(input: GenerateVocabul
 
 const prompt = ai.definePrompt({
   name: 'generateVocabularyFromExtractedTextPrompt',
+  model: 'googleai/gemini-2.5-flash',
   input: { schema: GenerateVocabularyFromExtractedTextInputSchema },
   output: { schema: GenerateVocabularyFromExtractedTextOutputSchema },
   prompt: `You are an expert linguist and OCR cleanup specialist. Your task is to parse unstructured text extracted from an image into a structured vocabulary list.

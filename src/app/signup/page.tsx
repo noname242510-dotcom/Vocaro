@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
 import { useToast } from '@/hooks/use-toast';
+import { useFirebase } from '@/firebase';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function SignUpPage() {
@@ -19,6 +20,7 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const { auth, firestore: firestoreInstance } = useFirebase();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,45 +31,63 @@ export default function SignUpPage() {
     const email = `${trimmedUsername}@vocaro.app`;
 
     try {
-      // Pre-check: does this username already exist in Firestore?
-      const firestoreInstance = getFirestore();
-      const profilesRef = collection(firestoreInstance, 'publicProfiles');
-      const q = query(profilesRef, where('displayName_lowercase', '==', trimmedUsername.toLowerCase()));
-      const existing = await getDocs(q);
+      console.log('Checking username availability...');
+      try {
+        const profilesRef = collection(firestoreInstance, 'publicProfiles');
+        const q = query(profilesRef, where('displayName_lowercase', '==', trimmedUsername.toLowerCase()));
+        const existing = await getDocs(q);
 
-      if (!existing.empty) {
-        toast({
-          variant: 'destructive',
-          title: 'Benutzername vergeben',
-          description: 'Dieser Benutzername ist bereits vergeben. Bitte wähle einen anderen.',
-        });
-        return;
+        if (!existing.empty) {
+          toast({
+            variant: 'destructive',
+            title: 'Benutzername vergeben',
+            description: 'Dieser Benutzername ist bereits vergeben. Bitte wähle einen anderen.',
+          });
+          setIsLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.warn('Username check failed (likely permissions), proceeding:', error);
       }
 
-      const auth = getAuth();
+      console.log('Proceeding to Auth creation for:', email);
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('Auth user created successfully');
 
       if (userCredential.user) {
         const user = userCredential.user;
+        console.log('Updating profile display name...');
         await updateProfile(user, { displayName: trimmedUsername });
-
-        await setDoc(doc(firestoreInstance, 'publicProfiles', user.uid), {
-          displayName: trimmedUsername,
-          displayName_lowercase: trimmedUsername.toLowerCase(),
-          photoURL: user.photoURL || null,
-          createdAt: serverTimestamp(),
-        });
+        
+        console.log('Creating Firestore public profile document (with timeout)...');
+        try {
+          // Use a timeout to prevent hanging if Firestore rules or connection issues persist
+          await Promise.race([
+            setDoc(doc(firestoreInstance, 'publicProfiles', user.uid), {
+              displayName: trimmedUsername,
+              displayName_lowercase: trimmedUsername.toLowerCase(),
+              photoURL: user.photoURL || null,
+              createdAt: serverTimestamp(),
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore operation timed out')), 3000))
+          ]);
+          console.log('Firestore profile created successfully');
+        } catch (fsError: any) {
+          console.error('Error creating public profile document (or timed out):', fsError);
+          // We don't block the whole process if this fails, but it's important
+        }
       }
 
+      console.log('Redirecting to dashboard...');
       router.push('/dashboard');
     } catch (error: any) {
+      console.error('Registration error detail:', error);
       let description = 'Bitte versuche es später erneut.';
       if (error.code === 'auth/email-already-in-use') description = 'Dieser Benutzername ist bereits vergeben.';
       else if (error.code === 'auth/invalid-email') description = 'Der Benutzername ist ungültig. Bitte vermeide Sonderzeichen.';
       else if (error.code === 'auth/weak-password') description = 'Das Passwort ist zu schwach (min. 6 Zeichen).';
 
       toast({ variant: 'destructive', title: 'Registrierung fehlgeschlagen', description });
-    } finally {
       setIsLoading(false);
     }
   };

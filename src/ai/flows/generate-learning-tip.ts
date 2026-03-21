@@ -2,14 +2,14 @@
 
 export async function generateLearningTip(input: { item: string; definition?: string; language?: string }) {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
-  
+
   if (!apiKey) {
     return { tips: ["Fehler: GEMINI_API_KEY fehlt in Vercel."] };
   }
 
   // Wir nutzen hier die stabilste Basis-ID. 
   // KEIN "-latest", KEIN "-001", einfach nur der Name.
-  const modelId = "gemini-2.5-flash"; 
+  const modelId = "gemini-2.5-flash";
   const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`;
 
   try {
@@ -23,7 +23,7 @@ export async function generateLearningTip(input: { item: string; definition?: st
             Analysiere das Wort "${input.item}" (${input.definition || 'unbekannt'}). 
             Erstelle 3 abwechslungsreiche Merkhilfen. 
             Mixe dabei: 
-            1. Eine kreative Eselbrücke (bildhaft/lustig). 
+            1. Eine kreative Eselbrücke (bildhaft/lustig).
             2. Einen Hinweis zur Rechtschreibung oder Aussprache (falls tückisch). 
             3. Einen Kontext-Tipp (typische Redewendung oder Eselsbrücke).
             
@@ -38,19 +38,19 @@ export async function generateLearningTip(input: { item: string; definition?: st
           }]
         }]
       }),
-      cache: 'no-store' 
+      cache: 'no-store'
     });
 
     const data = await response.json();
 
     // Wenn 'gemini-1.5-flash' nicht gefunden wird (404), versuchen wir es mit 'gemini-pro'
     if (data.error && data.error.status === "NOT_FOUND") {
-      return { 
+      return {
         tips: [
           "Modell 'flash' nicht gefunden.",
           "Dein Key scheint nur für 'gemini-pro' oder 'gemini-1.0-pro' zu gehen.",
           "Bitte ändere modelId im Code zu 'gemini-pro'."
-        ] 
+        ]
       };
     }
 
