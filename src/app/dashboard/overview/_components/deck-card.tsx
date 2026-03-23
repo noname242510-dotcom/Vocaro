@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { Preferences } from '@capacitor/preferences';
 
 interface DeckCardProps {
   stack: Stack;
@@ -19,14 +20,14 @@ export function DeckCard({ stack, subject, vocab, masteryPercentage }: DeckCardP
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleQuickTest = () => {
+  const handleQuickTest = async () => {
     const nonMasteredVocab = vocab.filter(v => !v.isMastered);
 
     if (nonMasteredVocab.length > 0) {
-      sessionStorage.setItem('learn-session-vocab', JSON.stringify(nonMasteredVocab.map(v => v.id)));
-      sessionStorage.setItem('learn-session-subject', subject.id);
-      sessionStorage.setItem('learn-session-emoji', subject.emoji);
-      sessionStorage.setItem('learn-session-subject-name', subject.name);
+      await Preferences.set({ key: 'learn-session-vocab', value: JSON.stringify(nonMasteredVocab.map(v => v.id)) });
+      await Preferences.set({ key: 'learn-session-subject', value: subject.id });
+      await Preferences.set({ key: 'learn-session-emoji', value: subject.emoji });
+      await Preferences.set({ key: 'learn-session-subject-name', value: subject.name });
       router.push('/dashboard/learn');
     } else {
       toast({

@@ -28,6 +28,7 @@ import { doc, getDoc, collection, addDoc, serverTimestamp, writeBatch, updateDoc
 import { SpeakerButton } from '@/components/speaker-button';
 import { LoadingSpinner } from '@/components/loading-spinner';
 import { useSettings } from '@/contexts/settings-context';
+import { Preferences } from '@capacitor/preferences';
 
 
 // Function to shuffle an array
@@ -294,7 +295,7 @@ export default function VerbPracticePage() {
             await batch.commit();
         }
 
-        sessionStorage.removeItem(SESSION_STATE_KEY);
+        await Preferences.remove({ key: SESSION_STATE_KEY });
 
         setShowResults(true);
     };
@@ -481,7 +482,7 @@ export default function VerbPracticePage() {
       };
     }, [isFlipped, isTypedMode, exitAnimation]);
 
-     useEffect(() => {
+    useEffect(() => {
         if (!isLoading && practiceItems.length > 0) {
             const stateToSave = {
                 practiceItems,
@@ -493,7 +494,7 @@ export default function VerbPracticePage() {
                 history,
                 totalItemCount,
             };
-            sessionStorage.setItem(SESSION_STATE_KEY, JSON.stringify(stateToSave, replacer));
+            Preferences.set({ key: SESSION_STATE_KEY, value: JSON.stringify(stateToSave, replacer) });
         }
     }, [practiceItems, currentIndex, answeredIds, incorrectlyAnsweredIds, history, sessionId, totalItemCount, initialItems, isLoading]);
 
@@ -515,65 +516,55 @@ export default function VerbPracticePage() {
             return;
         }
 
-        const typedModeSetting = localStorage.getItem('learn-mode-typed') === 'true';
-        setIsTypedMode(typedModeSetting);
+        const init = async () => {
+            const { value: typedModeValue } = await Preferences.get({ key: 'learn-mode-typed' });
+            setIsTypedMode(typedModeValue === 'true');
 
-        setShouldShowHints(settings.verbShowHints);
-        setHapticsEnabled(settings.hapticFeedback);
-        
-        const savedStateJSON = sessionStorage.getItem(SESSION_STATE_KEY);
-        if (savedStateJSON) {
-            const savedState = JSON.parse(savedStateJSON, reviver);
-            const storedSubjectId = sessionStorage.getItem('verb-practice-subject-id');
+            setShouldShowHints(settings.verbShowHints);
+            setHapticsEnabled(settings.hapticFeedback);
             
-            if (storedSubjectId) {
-                setPracticeItems(savedState.practiceItems);
-                setInitialItems(savedState.initialItems);
-                setCurrentIndex(savedState.currentIndex);
-                setIncorrectlyAnsweredIds(savedState.incorrectlyAnsweredIds);
-                setAnsweredIds(savedState.answeredIds);
-                setSessionId(savedState.sessionId);
-                setHistory(savedState.history || []);
-                setTotalItemCount(savedState.totalItemCount);
-                setSubjectId(storedSubjectId);
+            const { value: savedStateJSON } = await Preferences.get({ key: SESSION_STATE_KEY });
+            if (savedStateJSON) {
+                const savedState = JSON.parse(savedStateJSON, reviver);
+                const { value: storedSubjectId } = await Preferences.get({ key: 'verb-practice-subject-id' });
                 
-                getDoc(doc(firestore, 'users', user.uid, 'subjects', storedSubjectId)).then(docSnap => {
-                    if (docSnap.exists()) {
-                        setSubject({ ...docSnap.data(), id: docSnap.id } as Subject);
-                    }
-                });
+                if (storedSubjectId) {
+                    setPracticeItems(savedState.practiceItems);
+                    setInitialItems(savedState.initialItems);
+                    setCurrentIndex(savedState.currentIndex);
+                    setIncorrectlyAnsweredIds(savedState.incorrectlyAnsweredIds);
+                    setAnsweredIds(savedState.answeredIds);
+                    setSessionId(savedState.sessionId);
+                    setHistory(savedState.history || []);
+                    setTotalItemCount(savedState.totalItemCount);
+                    setSubjectId(storedSubjectId);
+                    
+                    getDoc(doc(firestore, 'users', user.uid, 'subjects', storedSubjectId)).then(docSnap => {
+                        if (docSnap.exists()) {
+                            setSubject({ ...docSnap.data(), id: docSnap.id } as Subject);
+                        }
+                    });
 
+                    setIsLoading(false);
+                    return;
+                } else {
+                    await Preferences.remove({ key: SESSION_STATE_KEY });
+                }
+            }
+
+            const sessionDataRes = await Preferences.get({ key: 'verb-practice-session' });
+            const subjectIdDataRes = await Preferences.get({ key: 'verb-practice-subject-id' });
+            const sessionData = sessionDataRes.value;
+            const subjectIdData = subjectIdDataRes.value;
+
+            if (!sessionData || !subjectIdData) {
+                setError('Keine Übungsdaten gefunden. Bitte gehe zurück und wähle Verben aus.');
                 setIsLoading(false);
                 return;
-            } else {
-                sessionStorage.removeItem(SESSION_STATE_KEY);
             }
-        }
 
+            setSubjectId(subjectIdData);
 
-        const createSession = async () => {
-            const sessionRef = await addDoc(collection(firestore, 'users', user.uid, 'learningSessions'), {
-              userId: user.uid,
-              startTime: serverTimestamp(),
-              endTime: null
-            });
-            setSessionId(sessionRef.id);
-        };
-        
-
-        const sessionData = sessionStorage.getItem('verb-practice-session');
-        const subjectIdData = sessionStorage.getItem('verb-practice-subject-id');
-
-        if (!sessionData || !subjectIdData) {
-            setError('Keine Übungsdaten gefunden. Bitte gehe zurück und wähle Verben aus.');
-            setIsLoading(false);
-            return;
-        }
-
-        setSubjectId(subjectIdData);
-
-
-        const loadData = async () => {
             try {
                 if (user && firestore) {
                     const subjectDocRef = doc(firestore, 'users', user.uid, 'subjects', subjectIdData);
@@ -586,7 +577,6 @@ export default function VerbPracticePage() {
                 const verbs: (Verb & { selectedTenses: string[] })[] = JSON.parse(sessionData);
                 const items: PracticeItem[] = [];
                 const germanFirst = settings.verbQueryDirection;
-
 
                 verbs.forEach((verb) => {
                     if (verb.selectedTenses.length === 0) {
@@ -638,7 +628,16 @@ export default function VerbPracticePage() {
                     return;
                 }
 
-                createSession();
+                const createSession = async () => {
+                    const sessionRef = await addDoc(collection(firestore, 'users', user.uid, 'learningSessions'), {
+                      userId: user.uid,
+                      startTime: serverTimestamp(),
+                      endTime: null
+                    });
+                    setSessionId(sessionRef.id);
+                };
+
+                await createSession();
                 const shuffledItems = shuffleArray(finalItems);
                 setPracticeItems(shuffledItems);
                 setInitialItems(shuffledItems);
@@ -650,10 +649,9 @@ export default function VerbPracticePage() {
             } finally {
                 setIsLoading(false);
             }
-        }
-        
-        loadData();
+        };
 
+        init();
     }, [user, firestore, settings]);
 
     useEffect(() => {
@@ -704,8 +702,8 @@ export default function VerbPracticePage() {
         if (hapticsEnabled) triggerHapticFeedback('light');
     };
     
-    const resetSession = () => {
-        sessionStorage.removeItem(SESSION_STATE_KEY);
+    const resetSession = async () => {
+        await Preferences.remove({ key: SESSION_STATE_KEY });
         setPracticeItems(shuffleArray(initialItems));
         setCurrentIndex(0);
         setIsFlipped(false);
@@ -717,8 +715,8 @@ export default function VerbPracticePage() {
         setAnswerStatus('unanswered');
     };
 
-    const handleBackToSubject = () => {
-        sessionStorage.removeItem(SESSION_STATE_KEY);
+    const handleBackToSubject = async () => {
+        await Preferences.remove({ key: SESSION_STATE_KEY });
         if (subjectId) {
             router.push(`/dashboard/subjects/${subjectId}?tab=verbs`);
         } else {
@@ -726,10 +724,10 @@ export default function VerbPracticePage() {
         }
     };
 
-    const toggleInputMode = () => {
+    const toggleInputMode = async () => {
         const newMode = !isTypedMode;
         setIsTypedMode(newMode);
-        localStorage.setItem('learn-mode-typed', String(newMode));
+        await Preferences.set({ key: 'learn-mode-typed', value: String(newMode) });
         
         if (isFlipped && (answerStatus === 'correct' || answerStatus === 'accepted' || answerStatus === 'omitted-correct')) {
             return;

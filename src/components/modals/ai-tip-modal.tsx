@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Sparkles, Loader2, Lightbulb, Brain, Book, Users } from 'lucide-react';
 // WICHTIG: Wir importieren jetzt die Server Action statt fetch zu nutzen
 import { generateLearningTip } from '@/ai/flows/generate-learning-tip';
+import { Preferences } from '@capacitor/preferences';
 
 interface AiTipModalProps {
   word: { term: string; definition: string; language?: string; type?: 'Vokabel' | 'Verb' };
@@ -27,10 +28,13 @@ export function AiTipModal({ word, onClose }: AiTipModalProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedTip = localStorage.getItem(`tip_${word.term}`);
-    if (storedTip) {
-      setSavedTip(storedTip);
-    }
+    const loadStoredTip = async () => {
+      const { value } = await Preferences.get({ key: `tip_${word.term}` });
+      if (value) {
+        setSavedTip(value);
+      }
+    };
+    loadStoredTip();
   }, [word.term]);
 
   const generateTips = async () => {
@@ -43,8 +47,7 @@ export function AiTipModal({ word, onClose }: AiTipModalProps) {
       const result = await generateLearningTip({
         item: word.term,
         definition: word.definition,
-        language: word.language || 'Deutsch',
-        type: word.type || 'Vokabel'
+        language: word.language || 'Deutsch'
       });
 
       if (result && result.tips) {
@@ -60,9 +63,9 @@ export function AiTipModal({ word, onClose }: AiTipModalProps) {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (selectedTip) {
-      localStorage.setItem(`tip_${word.term}`, selectedTip);
+      await Preferences.set({ key: `tip_${word.term}`, value: selectedTip });
       setSavedTip(selectedTip);
       onClose();
     }

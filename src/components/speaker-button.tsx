@@ -4,6 +4,7 @@ import { useState, useCallback, forwardRef, useImperativeHandle, useRef, useEffe
 import { Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Preferences } from '@capacitor/preferences';
 
 interface SpeakerButtonProps {
   text: string;
@@ -89,10 +90,17 @@ const prepareTextForSpeech = (input: string, lang: string): string => {
 export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps>(
   ({ text, languageHint, className, autoplay, ttsEnabled, autoplayEnabled }, ref) => {
     const [isPlaying, setIsPlaying] = useState(false);
+    const [persistedVoiceURI, setPersistedVoiceURI] = useState<string | null>(null);
     const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
     const lastTextRef = useRef<string>("");
 
     useEffect(() => {
+      const loadPersistedVoice = async () => {
+        const { value } = await Preferences.get({ key: 'tts-voice-uri' });
+        setPersistedVoiceURI(value);
+      };
+      loadPersistedVoice();
+
       if (!ttsEnabled || typeof window === 'undefined' || !window.speechSynthesis) return;
 
       const loadVoices = () => {
@@ -145,7 +153,6 @@ export const SpeakerButton = forwardRef<{ play: () => void }, SpeakerButtonProps
       utterance.lang = langCode;
 
       const voices = voicesRef.current;
-      const persistedVoiceURI = localStorage.getItem('tts-voice-uri');
 
       let selectedVoice: SpeechSynthesisVoice | null = null;
 

@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase/provider';
+import { Preferences } from '@capacitor/preferences';
 import {
   collection,
   getDocs,
@@ -216,13 +217,15 @@ export default function LearnPage() {
 
   const [subjectId, setSubjectId] = useState<string | null>(null);
   const [subjectLanguage, setSubjectLanguage] = useState('en-US');
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
 
   useEffect(() => {
     const init = async () => {
       if (!firestore || !user) return;
 
-      const storedSubjectId = sessionStorage.getItem('learn-session-subject');
-      const vocabIdsJson = sessionStorage.getItem('learn-session-vocab');
+      const { value: storedSubjectId } = await Preferences.get({ key: 'learn-session-subject' });
+      const { value: vocabIdsJson } = await Preferences.get({ key: 'learn-session-vocab' });
 
       if (!storedSubjectId || !vocabIdsJson) {
         setIsLoading(false);
@@ -278,6 +281,20 @@ export default function LearnPage() {
     init();
   }, [firestore, user]);
 
+  useEffect(() => {
+    if (user && firestore && !sessionId) {
+        const createSession = async () => {
+            const sessionRef = await addDoc(collection(firestore, 'users', user.uid, 'learningSessions'), {
+            userId: user.uid,
+            startTime: serverTimestamp(),
+            endTime: null
+            });
+            setSessionId(sessionRef.id);
+        };
+        createSession();
+    }
+  }, [user, firestore, sessionId]);
+
   const goToNextCard = (wasCorrect: boolean) => {
     if (isFinished) return;
 
@@ -298,7 +315,7 @@ export default function LearnPage() {
             setCorrectlyAnswered(prev => [...prev, currentItem]);
             import('@/lib/notifications').then(({ cancelTodaysReminder }) => cancelTodaysReminder()).catch(console.error);
         }
-        if (subjectId && currentItem.stackId && !currentItem.isMastered) {
+        if (subjectId && currentItem.stackId && !currentItem.isMastered && user) { // Added user check
             const docRef = doc(firestore, 'users', user.uid, 'subjects', subjectId, 'stacks', currentItem.stackId, 'vocabulary', currentItem.id);
             updateDoc(docRef, { isMastered: true }).catch(console.error);
         }
@@ -408,8 +425,8 @@ export default function LearnPage() {
   }
 
   const frontIsForeign = !settings?.vocabQueryDirection;
-  const frontContent = frontIsForeign ? currentItem?.term : currentItem?.definition;
-  const backContent = frontIsForeign ? currentItem?.definition : currentItem?.term;
+  const frontContent = currentItem ? (frontIsForeign ? currentItem.term : currentItem.definition) : '';
+  const backContent = currentItem ? (frontIsForeign ? currentItem.definition : currentItem.term) : '';
 
   return (
     <div className="max-w-4xl mx-auto h-screen flex flex-col justify-between py-6 px-4 overflow-hidden">
@@ -478,11 +495,11 @@ export default function LearnPage() {
                         </div>
 
                         <div className="absolute top-8 right-8 flex gap-3">
-                        { !isFlipped && frontIsForeign && (settings?.ttsEnabled ?? true) && <SpeakerButton text={frontContent} languageHint={subjectLanguage} ttsEnabled={settings?.ttsEnabled ?? true} autoplayEnabled={settings?.ttsAutoplay ?? false} autoplay={!isFlipped} className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all" /> }
+                        { frontContent && !isFlipped && frontIsForeign && (settings?.ttsEnabled ?? true) && <SpeakerButton text={frontContent} languageHint={subjectLanguage} ttsEnabled={settings?.ttsEnabled ?? true} autoplayEnabled={settings?.ttsAutoplay ?? false} autoplay={!isFlipped} className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 border-none transition-all" /> }
                         {currentItem.data.notes && <Popover><PopoverTrigger asChild><Button variant="ghost" size="icon" className="h-14 w-14 rounded-full bg-secondary hover:bg-secondary/80 transition-all"><Lightbulb className="h-6 w-6" /></Button></PopoverTrigger><PopoverContent className="rounded-full p-6 shadow-2xl border-none max-w-xs"><p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3">Notiz / Hilfe</p><p className="text-lg font-medium leading-relaxed">{currentItem.data.notes}</p></PopoverContent></Popover>}
                         </div>
                         <div className="text-center space-y-4 px-12">
-                            <h3 className={cn("font-headline font-black tracking-tight leading-[1.1]", frontContent.length <= 10 ? "text-5xl md:text-6xl" : "text-3xl md:text-4xl")}>{frontContent}</h3>
+                            {frontContent && <h3 className={cn("font-headline font-black tracking-tight leading-[1.1]", frontContent.length <= 10 ? "text-5xl md:text-6xl" : "text-3xl md:text-4xl")}>{frontContent}</h3>}
                             {currentItem.data.phonetic && frontIsForeign && <div className="inline-block px-6 py-2 bg-secondary/80 rounded-full"><p className={cn("text-lg font-medium text-muted-foreground/80 font-mono tracking-wider italic", answerStatus === 'correct' ? 'text-green-600' : '')}>{currentItem.data.phonetic}</p></div>}
                         </div>
                     </div>
@@ -502,7 +519,7 @@ export default function LearnPage() {
                         </div>
 
                         <div className="absolute top-8 right-8 flex gap-3">
-                            {isFlipped && !frontIsForeign && (settings?.ttsEnabled ?? true) && (
+                            {backContent && isFlipped && !frontIsForeign && (settings?.ttsEnabled ?? true) && (
                                 <SpeakerButton
                                     text={backContent}
                                     languageHint={subjectLanguage}

@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'export',
+  trailingSlash: true,
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -7,6 +9,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -27,19 +30,6 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'Permissions-Policy',
-            value: 'publickey-credentials-get=*, publickey-credentials-create=*',
-          },
-        ],
-      },
-    ];
   },
 };
 
