@@ -1,15 +1,10 @@
-'use server';
+
 
 /**
  * @fileOverview Generates stack names based on the subject provided by the user.
- *
- * - generateStackNamesFromSubject - A function that generates stack names based on the subject.
- * - GenerateStackNamesFromSubjectInput - The input type for the generateStackNamesFromSubject function.
- * - GenerateStackNamesFromSubjectOutput - The return type for the generateStackNamesFromSubject function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const GenerateStackNamesFromSubjectInputSchema = z.object({
   subject: z.string().describe('The subject for which stack names should be generated.'),
@@ -22,27 +17,19 @@ const GenerateStackNamesFromSubjectOutputSchema = z.object({
 export type GenerateStackNamesFromSubjectOutput = z.infer<typeof GenerateStackNamesFromSubjectOutputSchema>;
 
 export async function generateStackNamesFromSubject(input: GenerateStackNamesFromSubjectInput): Promise<GenerateStackNamesFromSubjectOutput> {
-  return generateStackNamesFromSubjectFlow(input);
+  if (typeof window !== 'undefined') {
+    throw new Error('AI generation is not supported directly on the client. Please use Firebase Functions.');
+  }
+
+  const { ai } = await import('@/ai/genkit');
+
+  const { output } = await ai.generate({
+    model: 'googleai/gemini-1.5-flash',
+    input: input,
+    output: { schema: GenerateStackNamesFromSubjectOutputSchema },
+    prompt: `Generate five stack names for reorganizing vocabulary for subject: {{subject}}`
+  });
+
+  return output as GenerateStackNamesFromSubjectOutput;
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateStackNamesFromSubjectPrompt',
-  model: 'googleai/gemini-2.5-flash',
-  input: { schema: GenerateStackNamesFromSubjectInputSchema },
-  output: { schema: GenerateStackNamesFromSubjectOutputSchema },
-  prompt: `You are an expert at generating creative and relevant stack names for vocabulary learning apps.
-  Given the subject, generate five stack names that would be appropriate for organizing vocabulary related to that subject. Be creative and concise.
-  Subject: {{{subject}}}`,
-});
-
-const generateStackNamesFromSubjectFlow = ai.defineFlow(
-  {
-    name: 'generateStackNamesFromSubjectFlow',
-    inputSchema: GenerateStackNamesFromSubjectInputSchema,
-    outputSchema: GenerateStackNamesFromSubjectOutputSchema,
-  },
-  async input => {
-    const { output } = await prompt(input);
-    return output!;
-  }
-);

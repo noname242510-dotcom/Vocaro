@@ -1,14 +1,5 @@
-'use server';
-/**
- * @fileOverview Extracts text from an image using OCR.
- *
- * - suggestVocabularyFromImageContext - A function that performs OCR on an image.
- * - SuggestVocabularyFromImageContextInput - The input type for the suggestVocabularyFromImageContext function.
- * - SuggestVocabularyFromImageContextOutput - The return type for the suggestVocabularyFromImageContext function.
- */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const SuggestVocabularyFromImageContextInputSchema = z.object({
   imageDataUri: z
@@ -25,50 +16,18 @@ const SuggestVocabularyFromImageContextOutputSchema = z.object({
 export type SuggestVocabularyFromImageContextOutput = z.infer<typeof SuggestVocabularyFromImageContextOutputSchema>;
 
 export async function suggestVocabularyFromImageContext(input: SuggestVocabularyFromImageContextInput): Promise<SuggestVocabularyFromImageContextOutput> {
-  return suggestVocabularyFromImageContextFlow(input);
+  if (typeof window !== 'undefined') {
+    throw new Error('AI generation is not supported directly on the client. Please move to Firebase Functions.');
+  }
+
+  const { ai } = await import('@/ai/genkit');
+
+  const { output } = await ai.generate({
+    model: 'googleai/gemini-1.5-flash',
+    prompt: `Extract text from this image: ${input.imageDataUri}`,
+    output: { schema: SuggestVocabularyFromImageContextOutputSchema }
+  });
+
+  return output as SuggestVocabularyFromImageContextOutput;
 }
 
-const prompt = ai.definePrompt({
-  name: 'suggestVocabularyFromImageContextPrompt',
-  model: 'googleai/gemini-2.5-flash',
-  input: { schema: SuggestVocabularyFromImageContextInputSchema },
-  output: { schema: SuggestVocabularyFromImageContextOutputSchema },
-  prompt: `You are an Optical Character Recognition (OCR) specialist. Your task is to extract all text from the provided image.
-  
-  Return the text exactly as it appears in the image. Do not summarize, translate, or interpret the text.
-  
-  Image: {{media url=imageDataUri}}
-  `,
-  config: {
-    safetySettings: [
-      {
-        category: 'HARM_CATEGORY_HATE_SPEECH',
-        threshold: 'BLOCK_ONLY_HIGH',
-      },
-      {
-        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-        threshold: 'BLOCK_ONLY_HIGH',
-      },
-      {
-        category: 'HARM_CATEGORY_HARASSMENT',
-        threshold: 'BLOCK_ONLY_HIGH',
-      },
-      {
-        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-        threshold: 'BLOCK_ONLY_HIGH',
-      },
-    ],
-  },
-});
-
-const suggestVocabularyFromImageContextFlow = ai.defineFlow(
-  {
-    name: 'suggestVocabularyFromImageContextFlow',
-    inputSchema: SuggestVocabularyFromImageContextInputSchema,
-    outputSchema: SuggestVocabularyFromImageContextOutputSchema,
-  },
-  async input => {
-    const { output } = await prompt(input);
-    return output!;
-  }
-);

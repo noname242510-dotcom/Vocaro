@@ -1,4 +1,4 @@
-'use server';
+
 
 export async function generateLearningTip(input: { item: string; definition?: string; language?: string }) {
   const apiKey = process.env.GEMINI_API_KEY?.trim();

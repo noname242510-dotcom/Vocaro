@@ -15,12 +15,11 @@ export async function initializeFirebase() {
 }
 
 export async function getSdks(firebaseApp: FirebaseApp) {
+  console.log("getSdks: Initializing Auth...");
   const auth = getAuth(firebaseApp);
-  const firestore = initializeFirestore(firebaseApp, {
-    localCache: persistentLocalCache({
-      tabManager: persistentMultipleTabManager()
-    })
-  });
+  console.log("getSdks: Initializing Firestore (no persistence)...");
+  const firestore = initializeFirestore(firebaseApp, {});
+  console.log("getSdks: SDKs initialized.");
 
   return {
     firebaseApp,

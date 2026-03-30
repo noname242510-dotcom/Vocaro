@@ -15,23 +15,40 @@ interface FirebaseClientProviderProps {
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const [firebaseServices, setFirebaseServices] = useState<FirebaseServices | null>(null);
+  const [status, setStatus] = useState<string>("Initialisiere...");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
+      console.log("FirebaseClientProvider: Starting initialization...");
+      setStatus("Firebase wird geladen...");
+      
+      const timeoutId = setTimeout(() => {
+        if (!firebaseServices) {
+          console.warn("FirebaseClientProvider: Initialization timed out.");
+          setStatus("Initialisierung dauert lange... bitte warten.");
+        }
+      }, 5000);
+
       try {
         const services = await initializeFirebase();
+        clearTimeout(timeoutId);
+        console.log("FirebaseClientProvider: Services object received.");
+        setStatus("Dienste bereit...");
 
-        try {
-          await setPersistence(services.auth, browserLocalPersistence);
-        } catch (error) {
-          console.error("Fehler beim Setzen der Auth-Persistence:", error);
-        }
-
+        // Set services immediately
         setFirebaseServices(services);
+
+        // Persistence can happen in the background without blocking the UI
+        console.log("FirebaseClientProvider: Triggering auth persistence (background)...");
+        setPersistence(services.auth, browserLocalPersistence)
+          .then(() => console.log("FirebaseClientProvider: Auth persistence set."))
+          .catch(err => console.error("FirebaseClientProvider: Auth persistence error:", err));
+
       } catch (err: any) {
+        clearTimeout(timeoutId);
         console.error("FirebaseClientProvider: Initialization failed", err);
-        setError(err.message || String(err));
+        setError("Fehler beim Starten von Firebase: " + (err.message || String(err)));
       }
     };
     init();
@@ -41,8 +58,14 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     return (
       <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
         <div className="max-w-md p-8 text-center space-y-4">
-          <h1 className="text-2xl font-bold text-destructive">Firebase Error</h1>
-          <p className="">{error}</p>
+          <h1 className="text-2xl font-bold text-destructive">Firebase Fehler</h1>
+          <p>{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+          >
+            Neu laden
+          </button>
         </div>
       </div>
     );
@@ -50,8 +73,9 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
 
   if (!firebaseServices) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-muted-foreground">
-        Lade Firebase...
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-muted-foreground">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+        <p>{status}</p>
       </div>
     );
   }

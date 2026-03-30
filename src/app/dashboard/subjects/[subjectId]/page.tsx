@@ -1,12 +1,9 @@
-import ClientPage from './ClientPage';
-
-export const dynamic = 'force-static';
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return [];
+export async function generateStaticParams() {
+  return [{ subjectId: 'default' }];
 }
 
-export default function Page() {
-  return <ClientPage />;
+export default function Page({ params }: { params: Promise<{ subjectId: string }> }) {
+  return (
+    <div>Subject Page</div>
+  );
 }
