@@ -26,26 +26,52 @@ export default function LoginPage() {
     const email = `${username.trim()}@vocaro.app`;
 
     try {
+      console.log("LoginPage: handleLogin triggered");
+      console.log("LoginPage: email:", email);
+      
       const auth = getAuth();
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      console.log("LoginPage: Auth instance obtained");
 
+      // Add a 10-second timeout for the login attempt
+      const loginPromise = signInWithEmailAndPassword(auth, email, password);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+      );
+
+      console.log("LoginPage: Calling signInWithEmailAndPassword with 10s timeout...");
+      const userCredential = (await Promise.race([loginPromise, timeoutPromise])) as any;
+      console.log("LoginPage: signInWithEmailAndPassword SUCCESS. UID:", userCredential.user?.uid);
+      
+      const user = userCredential.user;
       if (user) {
         const finalDisplayName = user.displayName || username.trim();
-        if (finalDisplayName) {
+        console.log("LoginPage: User identified:", finalDisplayName);
+        
+        try {
           const firestore = getFirestore();
+          console.log("LoginPage: Updating public profile...");
+          // Don't await setDoc to avoid potential hanging on Firestore connection
           setDoc(doc(firestore, 'publicProfiles', user.uid), {
             displayName: finalDisplayName,
             displayName_lowercase: finalDisplayName.toLowerCase(),
             photoURL: user.photoURL || null,
-          }, { merge: true }).catch(console.error);
+          }, { merge: true }).catch(err => console.error("LoginPage: setDoc failed", err));
+          console.log("LoginPage: Public profile update initiated.");
+        } catch (fsError) {
+          console.error("LoginPage: Firestore setup failed (non-critical):", fsError);
         }
       }
 
-      router.push('/dashboard');
+      console.log("LoginPage: Navigation to /dashboard...");
+      router.replace('/dashboard');
+      console.log("LoginPage: router.replace called.");
+      
     } catch (error: any) {
+      console.error("LoginPage: handleLogin ERROR:", error);
       let description = 'Bitte versuche es später erneut.';
-      if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
+      if (error.message === 'TIMEOUT') {
+        description = 'Die Anmeldung dauert zu lange. Bitte prüfe deine Internetverbindung.';
+      } else if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential'].includes(error.code)) {
         description = 'Benutzername oder Passwort ist falsch.';
       } else if (error.code === 'auth/invalid-email') {
         description = 'Der Benutzername ist ungültig.';
@@ -119,7 +145,52 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground mt-6">
+          {/* Failsafe for hanging login */}
+          {isLoading && (
+            <div className="mt-4 text-center">
+              <p className="text-xs text-muted-foreground animate-pulse mb-2">
+                Verbindung zum Server wird hergestellt...
+              </p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setIsLoading(false);
+                  toast({
+                    title: "Ladevorgang abgebrochen",
+                    description: "Du kannst es jetzt erneut versuchen.",
+                  });
+                }}
+              >
+                Dauert es zu lange? Abbrechen & Erneut versuchen
+              </Button>
+            </div>
+          )}
+
+          {/* Biometric Login Option */}
+          <div className="mt-6 flex flex-col items-center">
+            <Button
+              variant="outline"
+              className="w-full gap-2 h-12 border-dashed"
+              onClick={async () => {
+                const { performBiometricAuth } = await import('@/lib/biometric');
+                const success = await performBiometricAuth();
+                if (success) {
+                  toast({ title: "Erfolgreich", description: "Biometrische Anmeldung erfolgreich. Bitte melde dich einmal normal an, um den Schlüssel zu hinterlegen (Feature in Kürze verfügbar)." });
+                } else {
+                  toast({ variant: "destructive", title: "Fehler", description: "Keine biometrische Anmeldung möglich." });
+                }
+              }}
+            >
+              <div className="w-5 h-5 border-2 border-primary rounded-sm flex items-center justify-center">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+              </div>
+              Mit Face ID anmelden
+            </Button>
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground mt-8">
             Noch kein Konto?{' '}
             <Link href="/signup" className="font-semibold text-foreground hover:underline underline-offset-4">
               Registrieren
