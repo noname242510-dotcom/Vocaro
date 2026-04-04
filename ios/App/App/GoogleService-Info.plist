@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyBD9a7981QePcQREORqF02zWoHpRf6IWyM</string>
+	<key>GCM_SENDER_ID</key>
+	<string>694153403725</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>org.vocaro.app</string>
+	<key>PROJECT_ID</key>
+	<string>studio-5191777611-eedb2</string>
+	<key>STORAGE_BUCKET</key>
+	<string>studio-5191777611-eedb2.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:694153403725:ios:967b70a85d7e0917626b04</string>
+</dict>
+</plist>

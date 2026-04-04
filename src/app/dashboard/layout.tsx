@@ -75,28 +75,30 @@ function DashboardClientLayout({ children }: { children: ReactNode }) {
 
   if (isMobile) {
     return (
-      <div className="pb-32">
-        <main>{children}</main>
+      <div className="flex flex-col min-h-screen pt-[var(--sat)] bg-background pb-32">
+        <main className="flex-1 w-full relative">
+          {children}
+        </main>
         {!isLearnPage && <NavBar subjects={subjects} isLoadingSubjects={isLoadingSubjects} />}
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-background relative selection:bg-primary/20">
       <aside
         className={cn(
-          'fixed left-0 top-0 h-full bg-card border-r transition-all duration-300 z-20',
+          'fixed left-0 top-0 h-full bg-card border-r transition-all duration-300 z-20 pt-[var(--sat)]',
           isExpanded ? 'w-64' : 'w-20',
           isLearnPage && 'w-0 -translate-x-full opacity-0'
         )}
       >
         <NavContent />
       </aside>
-      <div className={cn("flex-1 flex flex-col min-h-screen transition-[margin-left]", 
+      <div className={cn("flex-1 flex flex-col min-h-screen transition-[margin-left] relative", 
         isLearnPage ? 'md:ml-0' : (isExpanded ? 'md:ml-64' : 'md:ml-20')
       )}>
-        <header className={cn("sticky top-0 z-10 h-20 flex items-center justify-end px-8 bg-background/80 backdrop-blur-sm border-b", isLearnPage && 'hidden')}>
+        <header className={cn("sticky top-0 z-10 h-20 flex items-center justify-end px-8 bg-background/80 backdrop-blur-sm border-b pt-[var(--sat)]", isLearnPage && 'hidden')}>
            <UserNav />
         </header>
         <main className={cn("flex-1 p-8 md:p-12 pb-28 md:pb-12 bg-secondary/30", isLearnPage && 'p-0 md:p-0 bg-background')}>
@@ -109,14 +111,18 @@ function DashboardClientLayout({ children }: { children: ReactNode }) {
   );
 }
 
+import { AuthGuard } from '@/components/auth-guard';
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <TaskProvider>
-      <SettingsProvider>
-        <SubjectsCacheProvider>
-          <DashboardClientLayout>{children}</DashboardClientLayout>
-        </SubjectsCacheProvider>
-      </SettingsProvider>
-    </TaskProvider>
+    <AuthGuard>
+      <TaskProvider>
+        <SettingsProvider>
+          <SubjectsCacheProvider>
+            <DashboardClientLayout>{children}</DashboardClientLayout>
+          </SubjectsCacheProvider>
+        </SettingsProvider>
+      </TaskProvider>
+    </AuthGuard>
   );
 }

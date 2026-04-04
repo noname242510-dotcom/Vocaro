@@ -27,6 +27,12 @@
     --glass-bg: rgba(255, 255, 255, 0.5);
     --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     --glass-border: rgba(255, 255, 255, 0.3);
+    
+    /* Native Safe Area Variables */
+    --sat: env(safe-area-inset-top);
+    --sab: env(safe-area-inset-bottom);
+    --sar: env(safe-area-inset-right);
+    --sal: env(safe-area-inset-left);
   }
 
   .dark {
@@ -60,31 +66,15 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-
-  html {
-    -webkit-hyphens: auto;
-    -ms-hyphens: auto;
-    hyphens: auto;
-  }
-
   html,
   body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-    overscroll-behavior: none;
+    @apply bg-background text-foreground;
+    overscroll-behavior-y: none; /* Prevents the whole page from bouncing too much, but allows scroll */
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
-    height: 100%;
+    width: 100%;
+    min-height: 100vh;
   }
 
   @keyframes fade-in {

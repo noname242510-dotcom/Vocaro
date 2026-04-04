@@ -31,23 +31,19 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
       }, 5000);
 
       try {
+        console.log("FirebaseClientProvider: Calling initializeFirebase()...");
         const services = await initializeFirebase();
         clearTimeout(timeoutId);
-        console.log("FirebaseClientProvider: Services object received.");
+        console.log("FirebaseClientProvider: initializeFirebase() SUCCESS.");
         setStatus("Dienste bereit...");
 
         // Set services immediately
         setFirebaseServices(services);
-
-        // Persistence can happen in the background without blocking the UI
-        console.log("FirebaseClientProvider: Triggering auth persistence (background)...");
-        setPersistence(services.auth, browserLocalPersistence)
-          .then(() => console.log("FirebaseClientProvider: Auth persistence set."))
-          .catch(err => console.error("FirebaseClientProvider: Auth persistence error:", err));
+        console.log("FirebaseClientProvider: Services state updated.");
 
       } catch (err: any) {
         clearTimeout(timeoutId);
-        console.error("FirebaseClientProvider: Initialization failed", err);
+        console.error("FirebaseClientProvider: initializeFirebase() FAILED!", err);
         setError("Fehler beim Starten von Firebase: " + (err.message || String(err)));
       }
     };

@@ -26,20 +26,46 @@ export default function LoginPage() {
     const email = `${username.trim()}@vocaro.app`;
 
     try {
-      console.log("LoginPage: handleLogin triggered");
-      console.log("LoginPage: email:", email);
+      console.log("LoginPage: handleLogin triggered for user:", username);
+      console.log("LoginPage: Browser Online Status:", navigator.onLine ? "ONLINE" : "OFFLINE");
       
-      const auth = getAuth();
-      console.log("LoginPage: Auth instance obtained");
+      // Basic connectivity test to Google APIs
+      try {
+        console.log("LoginPage: Connectivity test to Google...");
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const testResp = await fetch('https://www.googleapis.com/identitytoolkit/v3/relyingparty/getProjectConfig', {
+          method: 'HEAD',
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        console.log("LoginPage: Google connectivity test result:", testResp.status);
+      } catch (testError) {
+        console.warn("LoginPage: Google connectivity test FAILED (non-blocking):", testError);
+      }
 
-      // Add a 10-second timeout for the login attempt
+      const auth = getAuth();
+      console.log("LoginPage: Auth instance status:", auth ? "INITIALIZED" : "NOT INITIALIZED");
+
+      // Increase timeout to 60 seconds of patience for very slow mobile connections
+      const timeoutMs = 60000;
+      const startTime = Date.now();
+      
+      // Logging interval during wait
+      const logInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        console.log(`LoginPage: Still waiting for signInWithEmailAndPassword... (${elapsed}s elapsed)`);
+      }, 10000);
+
       const loginPromise = signInWithEmailAndPassword(auth, email, password);
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('TIMEOUT')), 10000)
+        setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs)
       );
 
-      console.log("LoginPage: Calling signInWithEmailAndPassword with 10s timeout...");
+      console.log(`LoginPage: Calling signInWithEmailAndPassword with ${timeoutMs/1000}s timeout...`);
       const userCredential = (await Promise.race([loginPromise, timeoutPromise])) as any;
+      clearInterval(logInterval);
+      
       console.log("LoginPage: signInWithEmailAndPassword SUCCESS. UID:", userCredential.user?.uid);
       
       const user = userCredential.user;
@@ -49,25 +75,32 @@ export default function LoginPage() {
         
         try {
           const firestore = getFirestore();
-          console.log("LoginPage: Updating public profile...");
           // Don't await setDoc to avoid potential hanging on Firestore connection
           setDoc(doc(firestore, 'publicProfiles', user.uid), {
             displayName: finalDisplayName,
             displayName_lowercase: finalDisplayName.toLowerCase(),
             photoURL: user.photoURL || null,
-          }, { merge: true }).catch(err => console.error("LoginPage: setDoc failed", err));
-          console.log("LoginPage: Public profile update initiated.");
+          }, { merge: true })
+          .then(() => console.log("LoginPage: Public profile updated successfully."))
+          .catch(err => console.warn("LoginPage: setDoc background update failed:", err));
+          
+          console.log("LoginPage: Firestore update initiated.");
         } catch (fsError) {
           console.error("LoginPage: Firestore setup failed (non-critical):", fsError);
         }
       }
 
-      console.log("LoginPage: Navigation to /dashboard...");
+      console.log("LoginPage: Navigation to /dashboard starting...");
       router.replace('/dashboard');
-      console.log("LoginPage: router.replace called.");
+      console.log("LoginPage: router.replace was called.");
       
     } catch (error: any) {
-      console.error("LoginPage: handleLogin ERROR:", error);
+      console.error("LoginPage: handleLogin ERROR detail:", {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      
       let description = 'Bitte versuche es später erneut.';
       if (error.message === 'TIMEOUT') {
         description = 'Die Anmeldung dauert zu lange. Bitte prüfe deine Internetverbindung.';

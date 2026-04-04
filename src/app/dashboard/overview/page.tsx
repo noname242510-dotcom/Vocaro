@@ -143,109 +143,116 @@ export default function DashboardOverviewPage() {
     if (!user || !firestore) return;
 
     const fetchAllData = async () => {
+      if (!user || !firestore) return;
       setIsLoading(true);
 
-      // 1. Subjects
-      const subjectsSnap = await getDocs(query(collection(firestore, 'users', user.uid, 'subjects'), orderBy('name')));
-      const fetchedSubjects = subjectsSnap.docs.map(d => ({ ...d.data(), id: d.id } as Subject));
+      try {
+        console.log("DashboardOverviewPage: Fetching all stats...");
+        
+        // 1. Subjects
+        const subjectsSnap = await getDocs(query(collection(firestore, 'users', user.uid, 'subjects'), orderBy('name')));
+        const fetchedSubjects = subjectsSnap.docs.map(d => ({ ...d.data(), id: d.id } as Subject));
 
-      let overallTotal = 0;
-      let overallMastered = 0;
-      let overallAiCount = 0;
+        let overallTotal = 0;
+        let overallMastered = 0;
+        let overallAiCount = 0;
 
-      const statsPromises = fetchedSubjects.map(async (sub) => {
-        let subVocabCount = 0;
-        let subMasteredCount = 0;
-        const subUnmastered: VocabularyItem[] = [];
+        const statsPromises = fetchedSubjects.map(async (sub) => {
+          let subVocabCount = 0;
+          let subMasteredCount = 0;
+          const subUnmastered: VocabularyItem[] = [];
 
-        // Stacks & Vocab
-        const stacksSnap = await getDocs(collection(firestore, 'users', user.uid, 'subjects', sub.id, 'stacks'));
-        for (const stackDoc of stacksSnap.docs) {
-          const vocabSnap = await getDocs(collection(stackDoc.ref, 'vocabulary'));
-          vocabSnap.docs.forEach(d => {
-            const v = { ...d.data(), id: d.id } as VocabularyItem;
+          // Stacks & Vocab
+          const stacksSnap = await getDocs(collection(firestore, 'users', user.uid, 'subjects', sub.id, 'stacks'));
+          for (const stackDoc of stacksSnap.docs) {
+            const vocabSnap = await getDocs(collection(stackDoc.ref, 'vocabulary'));
+            vocabSnap.docs.forEach(d => {
+              const v = { ...d.data(), id: d.id } as VocabularyItem;
+              subVocabCount++;
+              if (v.isMastered) subMasteredCount++;
+              else subUnmastered.push(v);
+              if (v.source === 'ai') overallAiCount++;
+            });
+          }
+
+          // Verbs
+          const verbsSnap = await getDocs(collection(firestore, 'users', user.uid, 'subjects', sub.id, 'verbs'));
+          verbsSnap.docs.forEach(d => {
+            const v = { ...d.data(), id: d.id } as Verb;
             subVocabCount++;
             if (v.isMastered) subMasteredCount++;
-            else subUnmastered.push(v);
             if (v.source === 'ai') overallAiCount++;
           });
-        }
 
-        // Verbs
-        const verbsSnap = await getDocs(collection(firestore, 'users', user.uid, 'subjects', sub.id, 'verbs'));
-        verbsSnap.docs.forEach(d => {
-          const v = { ...d.data(), id: d.id } as Verb;
-          subVocabCount++;
-          if (v.isMastered) subMasteredCount++;
-          if (v.source === 'ai') overallAiCount++;
+          overallTotal += subVocabCount;
+          overallMastered += subMasteredCount;
+
+          return {
+            subject: sub,
+            vocabCount: subVocabCount,
+            masteredCount: subMasteredCount,
+            errorWords: subUnmastered.slice(0, 5)
+          };
         });
 
-        overallTotal += subVocabCount;
-        overallMastered += subMasteredCount;
+        const resolvedStats = await Promise.all(statsPromises);
+        setSubjectDetails(resolvedStats);
 
-        return {
-          subject: sub,
-          vocabCount: subVocabCount,
-          masteredCount: subMasteredCount,
-          // Sort or pick a few unmastered items as the "Error Radar" sample
-          errorWords: subUnmastered.slice(0, 5)
-        };
-      });
+        setTotalItemsCount(overallTotal);
+        setAiUsageCount(overallAiCount);
 
-      const resolvedStats = await Promise.all(statsPromises);
-      setSubjectDetails(resolvedStats);
+        // Mastery %
+        const pct = overallTotal > 0 ? Math.round((overallMastered / overallTotal) * 100) : 0;
+        setMasteryPct(pct);
 
-      setTotalItemsCount(overallTotal);
-      setAiUsageCount(overallAiCount);
+        // 3. Learning sessions for streak + weekly activity
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        const sessionsSnap = await getDocs(
+          query(
+            collection(firestore, 'users', user.uid, 'learningSessions'),
+            where('startTime', '>=', Timestamp.fromDate(ninetyDaysAgo)),
+            orderBy('startTime', 'desc')
+          )
+        );
 
-      // Mastery %
-      const pct = overallTotal > 0 ? Math.round((overallMastered / overallTotal) * 100) : 0;
-      setMasteryPct(pct);
+        // Map days to count of sessions (instead of just 1 if active)
+        const dayCounts = new Map<string, number>();
+        sessionsSnap.docs.forEach(doc => {
+          const ts = doc.data().startTime as Timestamp;
+          if (ts) {
+            const dateStr = ts.toDate().toISOString().split('T')[0];
+            dayCounts.set(dateStr, (dayCounts.get(dateStr) || 0) + 1);
+          }
+        });
 
-      // 3. Learning sessions for streak + weekly activity
-      const ninetyDaysAgo = new Date();
-      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-      const sessionsSnap = await getDocs(
-        query(
-          collection(firestore, 'users', user.uid, 'learningSessions'),
-          where('startTime', '>=', Timestamp.fromDate(ninetyDaysAgo)),
-          orderBy('startTime', 'desc')
-        )
-      );
-
-      // Map days to count of sessions (instead of just 1 if active)
-      const dayCounts = new Map<string, number>();
-      sessionsSnap.docs.forEach(doc => {
-        const ts = doc.data().startTime as Timestamp;
-        if (ts) {
-          const dateStr = ts.toDate().toISOString().split('T')[0];
-          dayCounts.set(dateStr, (dayCounts.get(dateStr) || 0) + 1);
+        // Streak
+        let computedStreak = 0;
+        const today = new Date();
+        for (let i = 0; i < 90; i++) {
+          const d = new Date(today);
+          d.setDate(today.getDate() - i);
+          if (dayCounts.has(d.toISOString().split('T')[0])) {
+            computedStreak++;
+          } else if (i > 0) break;
         }
-      });
+        setStreak(computedStreak);
 
-      // Streak
-      let computedStreak = 0;
-      const today = new Date();
-      for (let i = 0; i < 90; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        if (dayCounts.has(d.toISOString().split('T')[0])) {
-          computedStreak++;
-        } else if (i > 0) break;
+        // Weekly activity (last 7 days)
+        const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+        const weekData = Array.from({ length: 7 }, (_, i) => {
+          const d = new Date(today);
+          d.setDate(today.getDate() - (6 - i));
+          const key = d.toISOString().split('T')[0];
+          return { day: dayNames[d.getDay()], count: dayCounts.get(key) || 0 };
+        });
+        setWeekActivity(weekData);
+        console.log("DashboardOverviewPage: Stats successfully calculated.");
+      } catch (err) {
+        console.error("DashboardOverviewPage: Error loading statistics data:", err);
+      } finally {
+        setIsLoading(false);
       }
-      setStreak(computedStreak);
-
-      // Weekly activity (last 7 days)
-      const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-      const weekData = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(today);
-        d.setDate(today.getDate() - (6 - i));
-        const key = d.toISOString().split('T')[0];
-        return { day: dayNames[d.getDay()], count: dayCounts.get(key) || 0 };
-      });
-      setWeekActivity(weekData);
-
-      setIsLoading(false);
     };
 
     fetchAllData();

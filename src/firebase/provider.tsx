@@ -68,23 +68,29 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
-    if (!auth) { // If no Auth service instance, cannot determine user state
+    if (!auth) { 
+      console.warn("FirebaseProvider: No Auth instance provided to listener.");
       setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth service not provided.") });
       return;
     }
 
+    console.log("FirebaseProvider: Subscribing to onAuthStateChanged...");
     const unsubscribe = onAuthStateChanged(
       auth,
-      (firebaseUser) => { // Auth state determined
+      (firebaseUser) => {
+        console.log("FirebaseProvider: onAuthStateChanged EVENT - User:", firebaseUser ? `${firebaseUser.uid} (${firebaseUser.email})` : "NULL");
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
       },
-      (error) => { // Auth listener error
-        console.error("FirebaseProvider: onAuthStateChanged error:", error);
+      (error) => {
+        console.error("FirebaseProvider: onAuthStateChanged ERROR:", error);
         setUserAuthState({ user: null, isUserLoading: false, userError: error });
       }
     );
-    return () => unsubscribe(); // Cleanup
-  }, [auth]); // Depends on the auth instance
+    return () => {
+      console.log("FirebaseProvider: Unsubscribing from onAuthStateChanged.");
+      unsubscribe();
+    };
+  }, [auth]);
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
