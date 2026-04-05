@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, Users, Zap, TrendingUp, Star, BookOpen, ChevronDown } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { Plus, Users, Zap, TrendingUp, Star, BookOpen, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import type { Subject } from '@/lib/types';
@@ -30,6 +30,7 @@ import {
 } from 'firebase/firestore';
 import { SubjectCard, type SubjectWithCounts } from './_components/subject-card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 // --- Rank Tier ---
 function getRankTier(masteryPct: number): { label: string; emoji: string; color: string } {
@@ -40,6 +41,41 @@ function getRankTier(masteryPct: number): { label: string; emoji: string; color:
   return { label: 'Bronze', emoji: '🥉', color: 'text-orange-600' };
 }
 
+const statConfig = [
+  {
+    key: 'vocab',
+    label: 'Vokabeln',
+    subLabel: 'Gesamt',
+    icon: BookOpen,
+    iconBg: 'bg-blue-50 dark:bg-blue-950',
+    iconColor: 'text-blue-500',
+  },
+  {
+    key: 'streak',
+    label: 'Streak',
+    subLabel: 'Tage',
+    icon: Zap,
+    iconBg: 'bg-orange-50 dark:bg-orange-950',
+    iconColor: 'text-orange-500',
+  },
+  {
+    key: 'mastery',
+    label: 'Meisterung',
+    subLabel: 'Genauigkeit',
+    icon: TrendingUp,
+    iconBg: 'bg-green-50 dark:bg-green-950',
+    iconColor: 'text-green-500',
+  },
+  {
+    key: 'rank',
+    label: 'Rang',
+    subLabel: 'Aktuell',
+    icon: Star,
+    iconBg: 'bg-purple-50 dark:bg-purple-950',
+    iconColor: 'text-purple-500',
+  },
+];
+
 export default function DashboardPage() {
   const { firestore, user } = useFirebase();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -48,13 +84,9 @@ export default function DashboardPage() {
   const [subjectsWithCounts, setSubjectsWithCounts] = useState<SubjectWithCounts[]>([]);
   const [isCounting, setIsCounting] = useState(true);
 
-  // Live metrics state
   const [streak, setStreak] = useState<number | null>(null);
   const [masteryPct, setMasteryPct] = useState<number | null>(null);
-  const [dailyAvg, setDailyAvg] = useState<number | null>(null);
   const [isMetricsLoading, setIsMetricsLoading] = useState(true);
-
-  const subjectsRef = useRef<HTMLElement>(null);
 
   const subjectsCollectionRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -87,14 +119,12 @@ export default function DashboardPage() {
     fetchCounts();
   }, [subjects, areSubjectsLoading, firestore, user]);
 
-  // Compute live metrics: streak, mastery, daily avg
+  // Metrics
   useEffect(() => {
     if (!firestore || !user) return;
-
     const fetchMetrics = async () => {
       setIsMetricsLoading(true);
       try {
-        // --- Streak: consecutive days with a learning session ---
         const ninetyDaysAgo = new Date();
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
         const sessionsSnap = await getDocs(
@@ -105,14 +135,10 @@ export default function DashboardPage() {
           )
         );
 
-        // Collect unique days (YYYY-MM-DD)
         const activeDays = new Set<string>();
         sessionsSnap.docs.forEach(doc => {
           const ts = doc.data().startTime as Timestamp;
-          if (ts) {
-            const date = ts.toDate();
-            activeDays.add(date.toISOString().split('T')[0]);
-          }
+          if (ts) activeDays.add(ts.toDate().toISOString().split('T')[0]);
         });
 
         let computedStreak = 0;
@@ -120,30 +146,11 @@ export default function DashboardPage() {
         for (let i = 0; i < 90; i++) {
           const d = new Date(today);
           d.setDate(today.getDate() - i);
-          const key = d.toISOString().split('T')[0];
-          if (activeDays.has(key)) {
-            computedStreak++;
-          } else if (i > 0) {
-            break; // streak broken
-          }
+          if (activeDays.has(d.toISOString().split('T')[0])) computedStreak++;
+          else if (i > 0) break;
         }
         setStreak(computedStreak);
 
-        // --- Daily average: sessions in last 30 days ---
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const recentDays = new Set<string>();
-        sessionsSnap.docs.forEach(doc => {
-          const ts = doc.data().startTime as Timestamp;
-          if (ts) {
-            const date = ts.toDate();
-            if (date >= thirtyDaysAgo) recentDays.add(date.toISOString().split('T')[0]);
-          }
-        });
-        // Simple avg: active days / 30
-        setDailyAvg(recentDays.size > 0 ? Math.round(recentDays.size / 30 * 10) : 0);
-
-        // --- Mastery: across all subjects ---
         let totalVocab = 0;
         let masteredVocab = 0;
         const subjectsSnap = await getDocs(collection(firestore, 'users', user.uid, 'subjects'));
@@ -155,16 +162,13 @@ export default function DashboardPage() {
             masteredVocab += vocabSnap.docs.filter(d => d.data().isMastered).length;
           }
         }
-        const pct = totalVocab > 0 ? Math.round((masteredVocab / totalVocab) * 100) : 0;
-        setMasteryPct(pct);
-
+        setMasteryPct(totalVocab > 0 ? Math.round((masteredVocab / totalVocab) * 100) : 0);
       } catch (e) {
         console.error('Metrics fetch error:', e);
       } finally {
         setIsMetricsLoading(false);
       }
     };
-
     fetchMetrics();
   }, [firestore, user]);
 
@@ -178,7 +182,6 @@ export default function DashboardPage() {
     if (n.includes('italienisch')) return '🇮🇹';
     if (n.includes('japanisch')) return '🇯🇵';
     if (n.includes('latein')) return '🏛️';
-    if (n.includes('mathe')) return '🔢';
     return '🌐';
   };
 
@@ -197,97 +200,85 @@ export default function DashboardPage() {
   const totalVocab = subjectsWithCounts.reduce((acc, s) => acc + s.vocabCount, 0);
   const rank = masteryPct !== null ? getRankTier(masteryPct) : null;
 
+  const statValues: Record<string, string> = {
+    vocab: isLoading ? '…' : String(totalVocab),
+    streak: isMetricsLoading ? '…' : `${streak ?? 0}`,
+    mastery: isMetricsLoading ? '…' : `${masteryPct ?? 0}%`,
+    rank: isMetricsLoading ? '…' : (rank?.emoji ?? '—'),
+  };
+
+  const statSubs: Record<string, string> = {
+    vocab: 'Gesamt',
+    streak: `${isMetricsLoading ? '…' : streak ?? 0} Tage`,
+    mastery: 'Genauigkeit',
+    rank: rank?.label ?? 'Anfänger',
+  };
+
   return (
-    <div className="space-y-12">
-      {/* Welcome Section */}
-      <section className="space-y-2 pb-4 border-b">
-        <h1 className="text-5xl font-bold font-creative tracking-tight text-foreground">
+    <div className="space-y-8">
+
+      {/* Header */}
+      <section>
+        <h1 className="text-3xl font-black font-creative tracking-tight text-foreground">
           Hallo, {user?.displayName?.split(' ')[0] || 'Lernende(r)'}! 👋
         </h1>
-        <p className="text-xl text-muted-foreground">
+        <p className="text-sm text-muted-foreground mt-1">
           {isMetricsLoading
-            ? 'Lade deine Statistiken…'
-            : `Setze dein Lernen fort. Du hast heute bereits eine Streak von ${streak ?? 0} Tagen!`}
+            ? 'Lade Statistiken…'
+            : `${streak ? `🔥 ${streak} Tage Streak` : 'Starte heute deine Lerneinheit.'}`}
         </p>
       </section>
 
-      {/* Modern Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="group bg-card border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
-          <div className="flex flex-col h-full justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-50 text-blue-500 rounded-2xl group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300">
-                <BookOpen className="h-6 w-6" />
+      {/* Compact 2×2 Stats Grid */}
+      <div className="grid grid-cols-2 gap-3">
+        {statConfig.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.key} className="bg-card border-none shadow-md shadow-primary/5 rounded-2xl p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className={cn('p-2 rounded-xl', stat.iconBg)}>
+                  <Icon className={cn('h-4 w-4', stat.iconColor)} />
+                </div>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
               </div>
-              <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Vokabeln</p>
-            </div>
-            <div>
-              <p className="text-5xl font-black font-headline tracking-tighter">{isLoading ? '…' : totalVocab}</p>
-              <p className="text-xs text-muted-foreground mt-2 font-medium">Insgesamt gelernt</p>
-            </div>
-          </div>
-        </Card>
+              <p className="text-3xl font-black font-headline tracking-tighter leading-none">{statValues[stat.key]}</p>
+              <p className="text-xs text-muted-foreground mt-1.5">{statSubs[stat.key]}</p>
+            </Card>
+          );
+        })}
+      </div>
 
-        <Card className="group bg-card border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
-          <div className="flex flex-col h-full justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-orange-50 text-orange-500 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition-colors duration-300">
-                <Zap className="h-6 w-6" />
-              </div>
-              <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Streak</p>
-            </div>
+      {/* Quick Actions */}
+      <div className="flex gap-3">
+        <Link href="/dashboard/learn" className="flex-1">
+          <div className="bg-primary text-primary-foreground rounded-2xl p-4 flex items-center justify-between active:scale-95 transition-transform">
             <div>
-              <p className="text-5xl font-black font-headline tracking-tighter">{isMetricsLoading ? '…' : `${streak ?? 0}d`}</p>
-              <p className="text-xs text-muted-foreground mt-2 font-medium">Tage in Folge</p>
+              <p className="font-black text-base">Lernen</p>
+              <p className="text-xs opacity-70 mt-0.5">Weiter üben</p>
             </div>
+            <Zap className="h-5 w-5 opacity-80" />
           </div>
-        </Card>
-
-        <Card className="group bg-card border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
-          <div className="flex flex-col h-full justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-green-50 text-green-500 rounded-2xl group-hover:bg-green-500 group-hover:text-white transition-colors duration-300">
-                <TrendingUp className="h-6 w-6" />
-              </div>
-              <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Meister</p>
-            </div>
+        </Link>
+        <Link href="/dashboard/community" className="flex-1">
+          <div className="bg-secondary text-foreground rounded-2xl p-4 flex items-center justify-between active:scale-95 transition-transform">
             <div>
-              <p className="text-5xl font-black font-headline tracking-tighter">{isMetricsLoading ? '…' : `${masteryPct ?? 0}%`}</p>
-              <p className="text-xs text-muted-foreground mt-2 font-medium">Genauigkeit</p>
+              <p className="font-black text-base">Community</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Freunde</p>
             </div>
+            <Users className="h-5 w-5 text-muted-foreground" />
           </div>
-        </Card>
-
-        <Card className="group bg-card border-none shadow-xl shadow-primary/5 rounded-[2rem] p-8 hover:shadow-2xl transition-all duration-300">
-          <div className="flex flex-col h-full justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-purple-50 text-purple-500 rounded-2xl group-hover:bg-purple-500 group-hover:text-white transition-colors duration-300">
-                <Star className="h-6 w-6" />
-              </div>
-              <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Rang</p>
-            </div>
-            <div>
-              <p className="text-5xl font-black font-headline tracking-tighter">{isMetricsLoading ? '…' : (rank ? `${rank.emoji}` : '—')}</p>
-              <p className="text-xs text-muted-foreground mt-2 font-medium">{rank?.label || 'Anfänger'}</p>
-            </div>
-          </div>
-        </Card>
+        </Link>
       </div>
 
       {/* Subjects Section */}
-      <section ref={subjectsRef} className="space-y-8">
+      <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-card p-2 rounded-lg border shadow-sm">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <h2 className="text-2xl font-bold font-headline tracking-tight uppercase tracking-widest text-muted-foreground text-xs">Deine Fächer</h2>
-          </div>
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Deine Fächer</h2>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="rounded-xl font-bold h-10 px-6 border-2 hover:bg-background shadow-sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Fach hinzufügen
+              <Button size="sm" variant="ghost" className="h-8 px-3 rounded-xl gap-1.5 text-xs font-bold">
+                <Plus className="h-3.5 w-3.5" />
+                Neu
               </Button>
             </DialogTrigger>
             <DialogContent className="rounded-[2rem] sm:max-w-[425px] border-none shadow-2xl p-8" aria-describedby="dialog-description">
@@ -317,35 +308,46 @@ export default function DashboardPage() {
           </Dialog>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Subject list – compact rows on mobile, cards on larger screens */}
+        <div className="space-y-2 md:grid md:gap-4 md:grid-cols-2 md:space-y-0 lg:grid-cols-3">
           {isLoading && subjectsWithCounts.length === 0 ? (
             Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="min-h-[220px] p-10 flex flex-col justify-center items-center text-center rounded-[2rem] border-none bg-card shadow-xl shadow-primary/5">
-                <Skeleton className="h-16 w-16 rounded-2xl mb-6 bg-muted/50" />
-                <Skeleton className="h-8 w-3/4 mb-4 bg-muted/50" />
-                <Skeleton className="h-5 w-1/2 bg-muted/50" />
-              </Card>
+              <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-card shadow-sm">
+                <Skeleton className="h-10 w-10 rounded-xl" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-3/4 mb-2" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              </div>
             ))
+          ) : subjectsWithCounts.length === 0 ? (
+            <div className="col-span-full text-center py-12 rounded-2xl bg-card shadow-sm">
+              <p className="text-4xl mb-3">📚</p>
+              <p className="font-bold text-foreground">Noch keine Fächer</p>
+              <p className="text-sm text-muted-foreground mt-1">Erstelle dein erstes Fach oben.</p>
+            </div>
           ) : (
-            <>
-              {subjectsWithCounts.map((subject) => (
-                <SubjectCard
-                  key={subject.id}
-                  subject={subject}
-                />
-              ))}
-            </>
+            subjectsWithCounts.map((subject) => (
+              <Link
+                key={subject.id}
+                href={`/dashboard/subjects/${subject.id}`}
+                className="flex items-center gap-4 p-4 rounded-2xl bg-card shadow-sm hover:shadow-md active:scale-98 transition-all duration-150 border border-transparent hover:border-primary/10"
+              >
+                <div className="h-11 w-11 rounded-xl bg-secondary flex items-center justify-center text-2xl shrink-0">
+                  {subject.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-base tracking-tight truncate">{subject.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {subject.vocabCount} Vokabeln · {subject.verbCount} Verben
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </Link>
+            ))
           )}
         </div>
       </section>
-
-      <footer className="w-full text-center text-sm text-muted-foreground p-12 mt-20 border-t bg-card rounded-[3rem_3rem_0_0]">
-        <p className="font-bold text-lg text-foreground">Vocaro</p>
-        <p className="mt-2 text-sm opacity-70">
-          Entwickelt für moderne Sprachlernende. <br className="md:hidden" />
-          <Link href="/privacy" className="hover:underline underline-offset-4">Datenschutz</Link> · <Link href="/terms" className="hover:underline underline-offset-4">AGB</Link>
-        </p>
-      </footer>
     </div>
   );
 }

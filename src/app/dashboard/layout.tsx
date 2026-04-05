@@ -75,8 +75,8 @@ function DashboardClientLayout({ children }: { children: ReactNode }) {
 
   if (isMobile) {
     return (
-      <div className="flex flex-col min-h-screen pt-[var(--sat)] bg-background pb-32">
-        <main className="flex-1 w-full relative">
+      <div className="flex flex-col min-h-screen pt-[var(--sat)] bg-background" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
+        <main className="flex-1 w-full px-5 py-6">
           {children}
         </main>
         {!isLearnPage && <NavBar subjects={subjects} isLoadingSubjects={isLoadingSubjects} />}
@@ -101,7 +101,7 @@ function DashboardClientLayout({ children }: { children: ReactNode }) {
         <header className={cn("sticky top-0 z-10 h-20 flex items-center justify-end px-8 bg-background/80 backdrop-blur-sm border-b pt-[var(--sat)]", isLearnPage && 'hidden')}>
            <UserNav />
         </header>
-        <main className={cn("flex-1 p-8 md:p-12 pb-28 md:pb-12 bg-secondary/30", isLearnPage && 'p-0 md:p-0 bg-background')}>
+        <main className={cn("flex-1 p-8 md:p-16 pb-28 md:pb-16 bg-secondary/30", isLearnPage && 'p-0 md:p-0 bg-background')}>
           {children}
         </main>
         <TaskProgressToast />
